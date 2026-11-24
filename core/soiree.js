@@ -1,4 +1,4 @@
-/* caisse · soiree · v3 — code commun à tous les amis */
+/* caisse · soiree · v4 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -345,7 +345,7 @@ var FEATURES = [
     { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
     { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
     { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'Bouton « Remise ticket » dans le panier.' },
-    { id: 'codePatron', nom: 'Remise ticket avec code patron', desc: 'Menu ⋮ › Remise ticket, protégée par un code à 4 chiffres (1234 dans la démo).', off: true },
+    { id: 'codePatron', nom: 'Remise ticket sécurisée', desc: 'Menu ⋮ › Remise ticket, après saisie d’un code à 4 chiffres. Le code se change dans Paramètres › Sécurité (1234 par défaut).', off: true },
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
   { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
     { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
@@ -399,7 +399,7 @@ function FEAT(id) {
 /* Contenu de config.json : toutes les fonctionnalités, valeur explicite */
 function featFile(c, version) {
   var f = {}, d0 = FEAT_DEF; Object.keys(d0).forEach(function (id) { f[id] = c.f && c.f[id] != null ? !!c.f[id] : !d0[id].off; });
-  return { format: CONFIG_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), fonctionnalites: f, raccourciId: c.raccourciId || '' };
+  return { format: CONFIG_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), fonctionnalites: f, raccourciId: c.raccourciId || '', remiseCodeSha: c.remiseCodeSha || '', remiseCodeLe: c.remiseCodeLe || '' };
 }
 function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
 
@@ -477,6 +477,10 @@ function themeCheck(onChange) {
 }
 try { themeApply(); } catch (e) {}
 
+/* Code de la remise ticket : empreinte SHA-256 de 'caisse-remise:<code>' (jamais le code), publiée dans config.json */
+var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
+function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
+
 var STORE_KEY = KP + 'soiree'; // propre à cette application (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
@@ -485,7 +489,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v3'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v4'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

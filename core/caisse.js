@@ -1,4 +1,4 @@
-/* caisse · caisse · v3 — code commun à tous les amis */
+/* caisse · caisse · v4 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -345,7 +345,7 @@ var FEATURES = [
     { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
     { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
     { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'Bouton « Remise ticket » dans le panier.' },
-    { id: 'codePatron', nom: 'Remise ticket avec code patron', desc: 'Menu ⋮ › Remise ticket, protégée par un code à 4 chiffres (1234 dans la démo).', off: true },
+    { id: 'codePatron', nom: 'Remise ticket sécurisée', desc: 'Menu ⋮ › Remise ticket, après saisie d’un code à 4 chiffres. Le code se change dans Paramètres › Sécurité (1234 par défaut).', off: true },
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
   { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
     { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
@@ -399,7 +399,7 @@ function FEAT(id) {
 /* Contenu de config.json : toutes les fonctionnalités, valeur explicite */
 function featFile(c, version) {
   var f = {}, d0 = FEAT_DEF; Object.keys(d0).forEach(function (id) { f[id] = c.f && c.f[id] != null ? !!c.f[id] : !d0[id].off; });
-  return { format: CONFIG_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), fonctionnalites: f, raccourciId: c.raccourciId || '' };
+  return { format: CONFIG_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), fonctionnalites: f, raccourciId: c.raccourciId || '', remiseCodeSha: c.remiseCodeSha || '', remiseCodeLe: c.remiseCodeLe || '' };
 }
 function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
 
@@ -477,7 +477,11 @@ function themeCheck(onChange) {
 }
 try { themeApply(); } catch (e) {}
 
-var APP_VERSION = 'v3'; // à monter en même temps que le cache de sw.js
+/* Code de la remise ticket : empreinte SHA-256 de 'caisse-remise:<code>' (jamais le code), publiée dans config.json */
+var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
+function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
+
+var APP_VERSION = 'v4'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
@@ -501,9 +505,9 @@ function deliveryProduct() { if (!FEAT('livraison')) return null;
 /* Raccourci à côté des onglets (à la place de « + Article libre », qui passe dans le menu ⋮) : un article du catalogue,
    désigné par son identifiant. S'il est absent ou désactivé dans le catalogue, le bouton « + Article libre » revient à sa place. */
 var RACCOURCI_ID = ''; // réglé dans Admin › Paramètres › Fonctionnalités (raccourciId)
-/* Remises (sur une ligne ou sur le ticket) : désactivées sur les tablettes (seul le patron fait des remises). true = réactiver. */
+/* Remises (sur une ligne ou sur le ticket) : désactivées sur les tablettes (remises réservées aux responsables). true = réactiver. */
 var REMISES = false;
-/* Remise ticket par le menu ⋮, protégée par un code patron à 4 chiffres. Seule l'empreinte SHA-256 de
+/* Remise ticket par le menu ⋮, protégée par un code à 4 chiffres. Seule l'empreinte SHA-256 de
    'agri-garden-remise:<code>' est dans le code (jamais le code en clair). Pour changer le code : recalculer l'empreinte. */
 var REMISE_CODE_SHA = '2c181bcaafc0b2945b26b125ec66928c87a4d35c5a087ed1bd6c337dbfac87dc'; // démo : code 1234
 function sha256Hex(t) { return crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)).then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }); }
@@ -1849,7 +1853,7 @@ var A = {
   },
   openFree: function () { S.modal = 'free'; S.freeLabel = ''; S.freePrice = ''; },
   openFreeMenu: function () { S.menu = false; A.openFree(); },
-  /* Remise ticket : code patron, puis la fenêtre de remise habituelle */
+  /* Remise ticket : code, puis la fenêtre de remise habituelle */
   discAsk: function () { if (!S.cart.length) return; S.menu = false; S.modal = 'code'; S.codeVal = ''; S.codeMsg = null; },
   codeKey: function (k) {
     if (S.codeBusy) return;
@@ -1859,9 +1863,9 @@ var A = {
     S.codeVal = (S.codeVal || '') + k; S.codeMsg = null;
     if (S.codeVal.length < 4) return;
     S.codeBusy = true;
-    sha256Hex('agri-garden-remise:' + S.codeVal).then(function (h) {
+    sha256Hex('caisse-remise:' + S.codeVal).then(function (h) {
       S.codeBusy = false;
-      if (h === REMISE_CODE_SHA) { S.codeTries = 0; S.codeVal = ''; A.ticketDisc(); }
+      if (h === remiseCodeSha()) { S.codeTries = 0; S.codeVal = ''; A.ticketDisc(); }
       else {
         S.codeTries = (S.codeTries || 0) + 1; S.codeVal = '';
         if (S.codeTries >= 5) { S.codeTries = 0; S.codeLock = Date.now() + 60000; S.codeMsg = 'Code incorrect. Trop d\u2019essais : réessayez dans 60 s.'; }
@@ -2372,7 +2376,7 @@ function vMenu() {
     (ghConfigured() ? tile('stkShow', MI.chart, 'Stock du stand', STKC.at && STKC.place === S.placeId ? 'Calculé le ' + frDate(STKC.at).slice(0, 5) + ' à ' + STKC.at.slice(11, 16) : 'Restant par article') : '') +
     (ghConfigured() ? tile('rcOpen', MI.box, 'Réception de stock', STK.queue.length ? STK.queue.length + ' en attente d\u2019envoi' : 'Articles venus d\u2019un autre stand') : '') +
     tile('openFreeMenu', MI.tag, 'Article libre', 'Hors catalogue : libellé et prix') +
-    tile('discAsk', MI.percent, 'Remise ticket', !S.cart.length ? 'Panier vide' : S.ticketDisc ? 'Remise : ' + discText(S.ticketDisc) : 'Code patron demandé', S.cart.length ? '' : ' disabled') +
+    tile('discAsk', MI.percent, 'Remise ticket', !S.cart.length ? 'Panier vide' : S.ticketDisc ? 'Remise : ' + discText(S.ticketDisc) : 'Code demandé', S.cart.length ? '' : ' disabled') +
     (prConfigured() ? tile('drawerAsk', MI.drawer, 'Ouvrir le tiroir', 'Sans vente (motif demandé)') : '');
   return '<div class="menu-back" data-a="toggleMenu"></div><div class="menu tiles" role="menu">' +
     '<div class="mgrid m3">' + tiles + '</div>' +
@@ -2498,7 +2502,7 @@ function vLiv() {
 function vFac() {
   var cart = S.facCtx === 'cart', o = cart ? null : findSale((S.facCtx || '').split('|')[1]);
   return '<div class="overlay"><div class="modal" style="width:min(600px,96vw)" data-keep="fac"><h2>À facturer</h2>' +
-    '<div class="sub">Le patron établira la facture plus tard avec ces données.' + (o ? ' Vente n° ' + esc(saleNum(o.v.id)) + ' de ' + o.v.horodatage.slice(11, 16) + '.' : '') + '</div>' +
+    '<div class="sub">La facture sera établie plus tard avec ces données.' + (o ? ' Vente n° ' + esc(saleNum(o.v.id)) + ' de ' + o.v.horodatage.slice(11, 16) + '.' : '') + '</div>' +
     '<label class="f">Nom de la société<input type="text" data-f="fSoc" value="' + esc(S.fSoc || '') + '" autocomplete="off"></label>' +
     '<label class="f">Adresse de la société<input type="text" data-f="fFAdr" value="' + esc(S.fFAdr || '') + '" placeholder="Rue, numéro, code postal, localité" autocomplete="off"></label>' +
     '<label class="f">Numéro de TVA<input type="text" data-f="fTva" value="' + esc(S.fTva || '') + '" placeholder="BE 0123.456.789" autocomplete="off" autocapitalize="characters"></label>' +
@@ -2520,7 +2524,7 @@ function vFree() {
 function vCode() {
   var n = (S.codeVal || '').length, keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
   return '<div class="overlay"><div class="modal" style="width:min(400px,96vw)"><h2>Remise ticket</h2>' +
-    '<div class="sub">Code patron (4 chiffres)</div>' +
+    '<div class="sub">Code de remise (4 chiffres)</div>' +
     '<div class="codedots">' + [0, 1, 2, 3].map(function (i) { return '<span class="' + (i < n ? 'on' : '') + '"></span>'; }).join('') + '</div>' +
     (S.codeMsg ? '<div class="result ko" style="display:block;font-size:16px;text-align:center">' + esc(S.codeMsg) + '</div>' : '') +
     '<div class="codepad">' + keys.map(function (k) { return k === '' ? '<span></span>' : '<button class="btn" data-a="codeKey" data-v="' + k + '">' + (k === 'del' ? '\u232B' : k) + '</button>'; }).join('') + '</div>' +
@@ -2651,7 +2655,7 @@ function cfgCheck(manual) {
       var cur = featCfg();
       if (!j || j.format !== CONFIG_FMT) { if (!j && cur.version) { featSave({ f: {}, raccourciId: '' }); cfgApply(); } return; }
       if (+j.version === cur.version) return;
-      featSave({ f: j.fonctionnalites || {}, raccourciId: j.raccourciId || '', version: +j.version, majLe: j.majLe });
+      featSave({ f: j.fonctionnalites || {}, raccourciId: j.raccourciId || '', remiseCodeSha: j.remiseCodeSha || '', version: +j.version, majLe: j.majLe });
       cfgApply(); toast('Réglages mis à jour (version ' + j.version + ')');
     }).catch(function () {});
 }

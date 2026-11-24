@@ -47,4 +47,4 @@ Les dossiers d’amis **ne dépendent pas de la version** : une mise à jour ne 
 
 Apparence (theme.json) · Fonctionnalités (config.json) · Sécurité (accès, clé, données de démonstration).
 
-Code patron de la remise ticket (option) dans la démo : 1234.
+Remise ticket sécurisée (option) : code 1234 par défaut, à changer dans Admin › Paramètres › Sécurité (empreinte publiée dans config.json).

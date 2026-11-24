@@ -1,4 +1,4 @@
-/* caisse · admin · v3 — code commun à tous les amis */
+/* caisse · admin · v4 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -345,7 +345,7 @@ var FEATURES = [
     { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
     { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
     { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'Bouton « Remise ticket » dans le panier.' },
-    { id: 'codePatron', nom: 'Remise ticket avec code patron', desc: 'Menu ⋮ › Remise ticket, protégée par un code à 4 chiffres (1234 dans la démo).', off: true },
+    { id: 'codePatron', nom: 'Remise ticket sécurisée', desc: 'Menu ⋮ › Remise ticket, après saisie d’un code à 4 chiffres. Le code se change dans Paramètres › Sécurité (1234 par défaut).', off: true },
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
   { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
     { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
@@ -399,7 +399,7 @@ function FEAT(id) {
 /* Contenu de config.json : toutes les fonctionnalités, valeur explicite */
 function featFile(c, version) {
   var f = {}, d0 = FEAT_DEF; Object.keys(d0).forEach(function (id) { f[id] = c.f && c.f[id] != null ? !!c.f[id] : !d0[id].off; });
-  return { format: CONFIG_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), fonctionnalites: f, raccourciId: c.raccourciId || '' };
+  return { format: CONFIG_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), fonctionnalites: f, raccourciId: c.raccourciId || '', remiseCodeSha: c.remiseCodeSha || '', remiseCodeLe: c.remiseCodeLe || '' };
 }
 function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
 
@@ -476,6 +476,10 @@ function themeCheck(onChange) {
     }).catch(function () {});
 }
 try { themeApply(); } catch (e) {}
+
+/* Code de la remise ticket : empreinte SHA-256 de 'caisse-remise:<code>' (jamais le code), publiée dans config.json */
+var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
+function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
 try { if (!localStorage.getItem(KP + 'admin-gh-token')) { localStorage.setItem(KP + 'admin-gh-token', 'demo'); localStorage.setItem(KP + 'admin-gh-tokens', '["demo"]'); } } catch (e) {}
 var LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMCIgZmlsbD0iIzJGNUQ4QSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxyZWN0IHg9IjE0IiB5PSI0MCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjQ0IiByeD0iOCIvPjxwYXRoIGQ9Ik0yNiA0MFYyMmg0OHYxOCIvPjxwYXRoIGQ9Ik0zNCAzMGgzMiIvPjxwYXRoIGQ9Ik0yOCA1OGgxMk00OCA1OGgxMk0yOCA3MGgxMk00OCA3MGgxMiIvPjxwYXRoIGQ9Ik02OCA1OGg2djEyaC02eiIvPjwvZz48L3N2Zz4='; // Agri-Garden by Xavier Vaerman (icône de la Caisse)
@@ -3460,7 +3464,7 @@ function featSync() {
   var c = featCfg(); if (c.pending) { featPublish(); return; }
   ghFetch('/repos/' + DEMO_CAT_REPO + '/contents/config.json', {}, getToken()).then(function (j) {
     var f = JSON.parse(b64utf8(j.content)), cur = featCfg();
-    if (f.format === CONFIG_FMT && !cur.pending && +f.version > (cur.version || 0)) { featSave({ f: f.fonctionnalites || {}, raccourciId: f.raccourciId || '', version: +f.version, publieLe: f.majLe }); render(); }
+    if (f.format === CONFIG_FMT && !cur.pending && +f.version > (cur.version || 0)) { featSave({ f: f.fonctionnalites || {}, raccourciId: f.raccourciId || '', remiseCodeSha: f.remiseCodeSha || '', remiseCodeLe: f.remiseCodeLe || '', version: +f.version, publieLe: f.majLe }); render(); }
   }, function () {});
 }
 window.addEventListener('online', function () { if (featCfg().pending) featPublish(); });
@@ -3472,8 +3476,17 @@ function featPubStatus() {
   if (c.version) return '<span class="okt">Publié pour les caisses · version ' + c.version + (c.publieLe ? ' du ' + new Date(c.publieLe).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + '</span>';
   return '<span class="faint">Réglages par défaut (rien de publié)</span>';
 }
+function vRemiseCode() {
+  var c = featCfg(), perso = !!c.remiseCodeSha;
+  return '<section><h3>Code de remise</h3><p class="lead">Code à 4 chiffres demandé sur la caisse pour accorder une remise sur le ticket (menu ⋮ › Remise ticket). Seule son empreinte est publiée, jamais le code lui-même.</p>' +
+    '<p class="hint">' + (perso ? '<span class="okt">Code personnalisé' + (c.remiseCodeLe ? ', changé le ' + new Date(c.remiseCodeLe).toLocaleDateString('fr-BE') : '') + '</span>' : '<span class="warnt">Code par défaut (1234) : changez-le avant d’utiliser la caisse.</span>') +
+    (FEAT('codePatron') ? '' : ' · la fonctionnalité « Remise ticket sécurisée » est coupée (Paramètres › Fonctionnalités).') + '</p>' +
+    '<div class="aprow"><div><label class="fl">Nouveau code</label><input type="password" inputmode="numeric" maxlength="4" autocomplete="off" id="rc1" placeholder="4 chiffres"></div><div><label class="fl">Retaper le code</label><input type="password" inputmode="numeric" maxlength="4" autocomplete="off" id="rc2"></div></div>' +
+    '<div class="cbtns" style="margin-top:12px"><button class="btn" data-p="rcSave">Enregistrer le code</button>' + (perso ? '<button class="btn danger" data-p="rcReset">Revenir au code par défaut</button>' : '') + '</div>' +
+    '<p class="hint">Les caisses reçoivent le nouveau code à leur prochaine relecture des réglages (au plus tard 30 secondes, ou ⋮ › Vérifier le catalogue). Ce code freine le personnel, ce n’est pas une protection forte.</p></section>';
+}
 function vSecuriteHead() {
-  return CLIENT.donnees === 'github' ? '' : '<section><h3>Accès</h3><p class="lead">Mode démonstration : aucune clé ni jeton, les données restent dans ce navigateur. Pour enregistrer les données dans un dépôt GitHub privé (plusieurs tablettes), préparez une clé d’accès et envoyez-la à la personne qui gère votre compte.</p><div class="cbtns"><a class="btn" href="../../cle.html" target="_blank" rel="noopener">Préparer une clé d’accès</a></div></section>';
+  return vRemiseCode() + (CLIENT.donnees === 'github' ? '' : '<section><h3>Accès</h3><p class="lead">Mode démonstration : aucune clé ni jeton, les données restent dans ce navigateur. Pour enregistrer les données dans un dépôt GitHub privé (plusieurs tablettes), préparez une clé d’accès et envoyez-la à la personne qui gère votre compte.</p><div class="cbtns"><a class="btn" href="../../cle.html" target="_blank" rel="noopener">Préparer une clé d’accès</a></div></section>');
 }
 function vConnexion() {
   var acc = caisseAcces();
@@ -3483,6 +3496,17 @@ function vConnexion() {
 }
 function demoParClick(act, el) {
   if (act === 'caisseLock') { caisseLock(); return true; }
+  if (act === 'rcSave') {
+    var r1 = (document.getElementById('rc1') || {}).value || '', r2 = (document.getElementById('rc2') || {}).value || '';
+    if (!/^\d{4}$/.test(r1)) { toast('Le code doit avoir 4 chiffres'); return true; }
+    if (r1 !== r2) { toast('Les deux codes ne sont pas identiques'); return true; }
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode('caisse-remise:' + r1)).then(function (b) {
+      var h = Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''), cc = featCfg();
+      cc.remiseCodeSha = h; cc.remiseCodeLe = new Date().toISOString(); featChanged(cc); toast('Code de remise enregistré');
+    });
+    return true;
+  }
+  if (act === 'rcReset') { var cr = featCfg(); cr.remiseCodeSha = ''; cr.remiseCodeLe = ''; featChanged(cr); toast('Code par défaut (1234)'); return true; }
   if (act === 'feat') { var c = featCfg(); c.f[el.getAttribute('data-v')] = !!el.checked; featChanged(c); return true; }
   if (act === 'featAll') { var c2 = featCfg(); FEATURES.forEach(function (g) { g.items.forEach(function (it) { c2.f[it.id] = true; }); }); featChanged(c2); return true; }
   if (act === 'featDefault') { var c3 = featCfg(); c3.f = {}; featChanged(c3); return true; }
