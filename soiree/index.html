@@ -1,0 +1,1973 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0B0F14">
+<title>Caisse Soirée · Démo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+/* Couleurs (logo Soirée démo : noir, or, feuillage). --acc = couleur de la caisse ouverte. */
+:root{--bg:#0B0F14;--surface:#131A22;--surface2:#1A2330;--soft:#1E2833;--line:#26313E;--line2:#3A4757;--text:#EEF2F7;--muted:#A6B0BD;--faint:#7F8A97;
+--gold:#6FA8DC;--gold-l:#9CC4EA;--leaf:#6FC3A0;--mint:#E0B262;--red:#EE8571;--amber:#E7AE5C;--on-acc:#0B0F14;--warn-bg:#3A2619;--warn-text:#F2BC8C;
+--acc:var(--gold);color-scheme:dark}
+[data-caisse="tickets"]{--acc:var(--leaf)}
+[data-caisse="boissons"]{--acc:var(--mint)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:"Montserrat","Segoe UI",Roboto,system-ui,sans-serif;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer;color:var(--text)}
+button:active{transform:scale(.98)}
+button:disabled{opacity:.4;cursor:not-allowed}
+input{font-family:inherit;background:var(--surface);color:var(--text)}
+input:focus{outline:2px solid var(--acc);outline-offset:1px}
+#app{height:100%;position:relative;overflow:hidden;user-select:none}
+.full{height:100%;display:flex;flex-direction:column}
+.neon{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.55),0 0 18px rgba(111,168,220,.35);letter-spacing:.14em;text-transform:uppercase;font-weight:300}
+.btn{height:54px;padding:0 24px;border-radius:12px;font-size:17px;font-weight:700;border:1px solid var(--line2);background:var(--surface2)}
+.btn-primary{border:none;background:var(--acc);color:var(--on-acc);font-weight:800}
+.btn-link{border:none;background:transparent;color:var(--gold-l);font-weight:700;text-decoration:underline;font-size:15px;height:40px}
+.btn-danger{border:none;background:transparent;color:var(--red);font-weight:700}
+.sub{font-size:15px;color:var(--muted)}
+.iconbtn{width:48px;height:48px;border:1px solid var(--line);border-radius:12px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Accueil */
+.home{height:100%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:22px;padding:28px 16px 32px;background:radial-gradient(ellipse at 50% 0%,#15202c 0%,var(--bg) 62%)}
+.home .logo{width:min(300px,52vw);border-radius:16px;box-shadow:0 0 40px rgba(111,168,220,.12)}
+.night{font-size:15px;color:var(--gold-l);font-weight:700;letter-spacing:.06em}
+.ctiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;width:min(1000px,100%)}
+.ctile{position:relative;min-height:190px;border:1px solid var(--line2);border-radius:20px;background:linear-gradient(160deg,var(--surface2),var(--surface));display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px;text-align:left;overflow:hidden}
+.ctile::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--acc)}
+.ctile svg{color:var(--acc)}
+.ctile .t{font-size:28px;font-weight:800;letter-spacing:.04em}
+.ctile .d{font-size:15px;color:var(--muted);line-height:1.35}
+.ctile .k{font-size:15px;font-weight:800;color:var(--acc)}
+.homelinks{display:flex;flex-wrap:wrap;gap:10px 20px;justify-content:center;align-items:center}
+.homebtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* En-tête caisse */
+.header{height:70px;flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.header img{height:52px;border-radius:8px;cursor:pointer}
+.seg{display:flex;gap:6px;background:var(--bg);padding:5px;border-radius:12px;border:1px solid var(--line)}
+.seg button{height:44px;padding:0 18px;border:none;border-radius:9px;background:transparent;font-size:16px;font-weight:700;white-space:nowrap}
+.seg button.on{background:var(--acc);color:var(--on-acc);font-weight:800}
+.seg.cs button[data-v="entrees"].on{background:var(--gold)}
+.seg.cs button[data-v="tickets"].on{background:var(--leaf)}
+.seg.cs button[data-v="boissons"].on{background:var(--mint)}
+.homebtn{height:48px;padding:0 16px;display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:16px}
+.ctitle{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;color:var(--acc);white-space:nowrap}
+.phone .homebtn{height:44px;padding:0 12px}
+.phone .ctitle{font-size:19px}
+.hdate{font-size:14px;font-weight:700;color:var(--muted);text-align:right;line-height:1.3}
+.body{flex:1;display:flex;min-height:0}
+.main{flex:1;display:flex;flex-direction:column;gap:16px;padding:16px 18px;min-width:0;overflow-y:auto}
+.strip{display:flex;flex-wrap:wrap;gap:10px}
+.stat{flex:1;min-width:130px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:10px 14px;display:flex;flex-direction:column;gap:2px}
+.statbtn{text-align:left;font:inherit;color:inherit;cursor:pointer;border-color:var(--acc)}
+.statbtn:active{background:var(--soft)}
+.qrow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--soft)}
+.qrow .h{font-size:17px;font-weight:800}
+.qrow code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;word-break:break-all;user-select:text}
+.qrow.cancelled .h,.qrow.cancelled code{opacity:.45;text-decoration:line-through}
+.stat b{font-size:26px;font-weight:800;color:var(--acc)}
+.stat span{font-size:13px;color:var(--muted);font-weight:700}
+
+/* Tuiles produits */
+.cats{display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.cat{height:48px;padding:0 20px;border:2px solid var(--line);border-radius:12px;background:var(--surface);font-size:17px;font-weight:700}
+.cat.on{border-color:var(--acc);background:var(--acc);color:var(--on-acc);font-weight:800}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;align-content:start}
+.prod{height:118px;border:1px solid var(--line2);border-radius:14px;background:var(--surface2);display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:12px 14px;text-align:left;position:relative}
+.prod .m{font-size:18px;font-weight:800;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prod .p{font-size:18px;font-weight:800;color:var(--acc)}
+.prod .p small{font-size:13px;color:var(--faint);font-weight:700;margin-left:6px}
+.prod.btl{background:linear-gradient(160deg,#20281c,var(--surface2));border-color:#4a5638}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--on-acc);background:var(--gold);border-radius:6px;padding:2px 6px;margin-top:4px}
+.bigtiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.bigt{min-height:150px;border:1px solid var(--line2);border-radius:18px;background:var(--surface2);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:18px 20px;text-align:left}
+.bigt .m{font-size:26px;font-weight:800}
+.bigt .p{font-size:30px;font-weight:800;color:var(--acc)}
+.bigt.scan{grid-column:1/-1;min-height:120px;flex-direction:row;align-items:center;justify-content:flex-start;gap:18px;border:2px dashed var(--acc);background:var(--surface)}
+.bigt.nqr{border-style:solid;border-width:1px;border-color:var(--line2);min-height:96px}
+.bigt.nqr .m{font-size:21px}
+.bigt.scan svg{color:var(--acc);flex-shrink:0}
+.bigt.scan .m{font-size:24px}
+
+/* Panier / commande */
+.cart{width:380px;flex-shrink:0;display:flex;flex-direction:column;background:var(--surface);border-left:1px solid var(--line)}
+.cart-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px 6px}
+.cart-h h2{margin:0;font-size:22px;font-weight:800}
+.lines{flex:1;overflow-y:auto;padding:0 10px}
+.empty{padding:40px 12px;text-align:center;color:var(--faint);font-size:16px}
+.line{display:flex;align-items:center;gap:8px;padding:10px 6px;border-bottom:1px solid var(--soft)}
+.line .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.line .n{font-size:16px;font-weight:700}
+.line .u{font-size:13px;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:42px;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--surface2);font-size:22px;font-weight:700}
+.qty span{width:28px;text-align:center;font-size:18px;font-weight:800}
+.line .t{width:82px;text-align:right;font-size:17px;font-weight:800}
+.cart-f{padding:12px 18px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.small{height:40px;padding:0 14px;border:1px solid var(--line2);border-radius:10px;background:var(--surface2);font-size:15px;font-weight:700}
+.total{font-size:34px;font-weight:800}
+.pay{height:68px;border:none;border-radius:14px;background:var(--acc);color:var(--on-acc);font-size:24px;font-weight:800}
+.barrer{display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 0}
+.barrer b{font-size:56px;line-height:1;color:var(--acc);font-weight:800}
+.barrer span{font-size:15px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+
+/* Tickets */
+.tk{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start}
+.panel{border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.panel h3{margin:0;font-size:17px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tkbig{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 14px;border-radius:16px;background:var(--surface2);border:1px solid var(--line2)}
+.tkbig .n{font-size:58px;font-weight:800;line-height:1;color:var(--acc)}
+.tkbig .l{font-size:16px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tkbig .s{font-size:20px;font-weight:800}
+.tkbig .e{font-size:34px;font-weight:800;margin-top:2px}
+.card18{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;width:100%;max-width:250px}
+.card18 i{aspect-ratio:1;border-radius:5px;border:1px solid var(--line2);background:var(--bg)}
+.card18 i.on{background:var(--acc);border-color:var(--acc)}
+.cards-more{font-size:14px;font-weight:700;color:var(--muted)}
+.tkbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tkbtns button{height:56px;border-radius:14px;border:1px solid var(--line2);background:var(--surface2);font-size:18px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.tkbtns button small{font-size:12px;color:var(--muted);font-weight:700}
+.tkbtns button.plus{border-color:var(--acc);color:var(--acc)}
+.kp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kp button{height:52px;border-radius:12px;border:1px solid var(--line2);background:var(--surface2);font-size:24px;font-weight:800}
+.kpdisp{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 16px;border-radius:12px;background:var(--bg);border:1px solid var(--line2);min-height:64px}
+.kpdisp b{font-size:34px;font-weight:800}
+.kpdisp span{font-size:15px;color:var(--muted);font-weight:700;text-align:right}
+.quick{display:flex;flex-wrap:wrap;gap:8px}
+.quick button{flex:1;min-width:60px;height:46px;border-radius:10px;border:1px solid var(--line2);background:var(--surface2);font-size:16px;font-weight:800}
+.hint{padding:10px 14px;border-radius:12px;background:var(--soft);font-size:15px;line-height:1.4;font-weight:600}
+
+/* Historique / bilan */
+.hist{flex:1;overflow-y:auto;padding:20px 24px}
+.hist h2{margin:0;font-size:24px;font-weight:800}
+.hhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-bottom:12px}
+.hdays{display:flex;flex-wrap:wrap;gap:6px}
+.choice{height:40px;padding:0 14px;border:1px solid var(--line2);border-radius:10px;background:var(--surface);font-size:15px;font-weight:700}
+.choice.on{border:2px solid var(--acc);color:var(--acc);font-weight:800}
+.hsum{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-bottom:10px;font-size:17px}
+.table{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.sale{display:grid;grid-template-columns:80px minmax(0,1fr) 200px 110px 110px;gap:14px;align-items:start;padding:12px 16px;border-bottom:1px solid var(--soft)}
+.sale .h{font-size:19px;font-weight:800}
+.sale .l{display:flex;flex-direction:column;gap:3px;font-size:16px}
+.sale .pm{font-size:15px;color:var(--muted);font-weight:600}
+.sale .tt{font-size:19px;font-weight:800;text-align:right}
+.sale .act{display:flex;justify-content:flex-end}
+.sale .act .btn{height:40px;padding:0 12px;font-size:15px}
+.sale.cancelled .h,.sale.cancelled .l>span:not(.annul),.sale.cancelled .pm,.sale.cancelled .tt{opacity:.45;text-decoration:line-through}
+.sale .annul{color:var(--red);font-weight:700;font-size:14px}
+.pill{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--acc);margin-left:6px}
+.pill.warn{color:var(--amber)}
+.bilan{flex:1;overflow-y:auto;padding:20px 24px 40px;display:flex;flex-direction:column;gap:18px}
+.bilan>*{width:100%;max-width:1100px;margin:0 auto}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi span{font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.kpi b{font-size:30px;font-weight:800}
+.kpi small{font-size:13px;color:var(--faint);font-weight:600}
+.sect h3{margin:0 0 10px;font-size:19px;font-weight:800;display:flex;align-items:center;gap:10px}
+.sect h3 i{width:10px;height:22px;border-radius:3px;display:inline-block}
+.btable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+.btable th,.btable td{padding:9px 12px;border-bottom:1px solid var(--soft);text-align:left}
+.btable th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--surface2)}
+.btable td.n,.btable th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.btable tr.cat td{background:var(--soft);font-weight:800}
+.bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--mint)}
+.hours{display:flex;align-items:flex-end;gap:6px;height:180px;padding:12px 12px 0;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow-x:auto}
+.hcol{flex:1;min-width:34px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.hcol .bars{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;gap:2px}
+.hcol .bars i{width:42%;border-radius:4px 4px 0 0;min-height:2px}
+.hcol span{font-size:12px;color:var(--muted);font-weight:700;padding-bottom:6px}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);font-weight:700;margin-top:8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.srcs{font-size:14px;color:var(--muted);line-height:1.5}
+
+/* Menu, fenêtres */
+.menu-back{position:absolute;inset:0;z-index:4}
+.menu{position:absolute;top:74px;right:16px;width:min(480px,94vw);background:var(--surface);border:1px solid var(--line2);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.6);padding:14px;display:flex;flex-direction:column;gap:8px;z-index:5;max-height:calc(100% - 90px);overflow-y:auto}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.mtile{min-height:108px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface2);text-align:left;font-size:16px}
+.mtile svg{color:var(--gold)}
+.mt-l{font-weight:800;line-height:1.2}
+.mt-s{font-size:13px;font-weight:600;color:var(--muted);line-height:1.25}
+.mgroup{font-size:13px;font-weight:800;color:var(--muted);padding:2px 4px 0}
+.meta{padding:8px 4px 0;font-size:13px;color:var(--faint);border-top:1px solid var(--line)}
+.toast{position:absolute;left:50%;top:80px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:16px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:30;max-width:90vw;text-align:center}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
+.modal{width:min(560px,96vw);max-height:96%;overflow-y:auto;background:var(--surface);border:1px solid var(--line2);border-radius:18px;padding:24px 26px;display:flex;flex-direction:column;gap:16px}
+.modal h2{margin:0;font-size:24px;font-weight:800}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:15px;font-weight:700;color:var(--muted)}
+label.f input{height:52px;border:1px solid var(--line2);border-radius:10px;padding:0 14px;font-size:20px;font-weight:700;width:100%}
+.actions{display:flex;gap:12px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mode{height:58px;border:1px solid var(--line2);border-radius:12px;background:var(--surface2);font-size:19px;font-weight:700}
+.mode.on{border:2px solid var(--acc);background:var(--acc);color:var(--on-acc);font-weight:800}
+.bills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bill{height:58px;border:1px solid var(--line2);border-radius:12px;background:var(--bg);font-size:20px;font-weight:800}
+.bill.exact{font-size:14px;color:var(--acc)}
+.result{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-radius:14px;background:var(--soft)}
+.result.ko{background:var(--warn-bg);color:var(--warn-text)}
+.result b{font-size:19px}
+.result span{font-size:32px;font-weight:800}
+.paybody{min-height:330px;display:flex;flex-direction:column;gap:14px}
+.paybody.mid{justify-content:center}
+.autobar{border:1px solid var(--line2);background:var(--surface);border-radius:12px;padding:10px 16px;font-size:15px;font-weight:700;max-width:min(640px,100%);text-align:center}
+.memwarn{display:block;width:100%;flex-shrink:0;border:none;background:var(--warn-bg);color:var(--warn-text);font-size:15px;font-weight:700;padding:10px 16px;text-align:center}
+.memgauge{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.memgauge .bar i{background:var(--leaf)}
+.dayact{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+
+/* Scanner */
+.scanbox{position:relative;width:100%;aspect-ratio:4/3;max-height:52vh;border-radius:16px;overflow:hidden;background:#000;border:2px solid var(--line2)}
+#camslot{position:absolute;inset:0}
+#camslot video{width:100%;height:100%;object-fit:cover;display:block}
+.scanframe{position:absolute;inset:16% 24%;border:3px solid rgba(255,255,255,.85);border-radius:18px;box-shadow:0 0 0 2000px rgba(0,0,0,.25);pointer-events:none}
+.scanmsg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;font-size:18px;font-weight:700}
+.scanmsg.ok{background:rgba(20,90,40,.92)}
+.scanmsg.dup{background:rgba(140,30,25,.94)}
+.scanmsg.info{background:rgba(10,12,10,.9);color:var(--muted)}
+.scanmsg big{font-size:36px;font-weight:800;color:#fff}
+.scanbox.count{aspect-ratio:auto;max-height:none}
+.scanbox.count #camslot{display:none}
+.scanbox.count .scanmsg{position:relative;inset:auto;padding:16px 12px}
+.scanbox.count .scanmsg big{font-size:30px}
+.scanmsg code{font-size:15px;background:rgba(0,0,0,.35);padding:4px 10px;border-radius:8px;word-break:break-all;color:#fff}
+.bigok{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0}
+.bigok b{font-size:110px;line-height:1;color:var(--acc);font-weight:800}
+.bigok span{font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:.1em}
+@media (max-width:1100px){.cart{width:330px}.sale{grid-template-columns:70px minmax(0,1fr) 150px 90px 100px}.header .hdate{display:none}}
+
+/* ---------- Vue smartphone ---------- */
+.phone .header{height:58px;gap:8px;padding:0 10px}
+.phone .header img{height:40px}
+.phone .seg button{height:40px;padding:0 10px;font-size:14px}
+.phone .seg{padding:4px;gap:4px}
+.subbar{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--line);flex-shrink:0}
+.phone .body{flex-direction:column;position:relative}
+.phone .main{padding:12px 12px 92px;gap:12px}
+.phone .cats{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 2px;gap:8px}
+.phone .cats::-webkit-scrollbar{display:none}
+.phone .cat{flex-shrink:0;height:42px;padding:0 14px;font-size:15px}
+.phone .products{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.phone .prod{height:104px;padding:10px 12px}
+.phone .prod .m{font-size:16px}
+.phone .bigtiles{gap:10px}
+.phone .bigt{min-height:120px;padding:14px}
+.phone .bigt .m{font-size:20px}.phone .bigt .p{font-size:24px}
+.phone .strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.phone .stat{min-width:0;padding:8px}.phone .stat b{font-size:22px}.phone .stat span{font-size:11px}
+.cartbar{position:absolute;left:12px;right:12px;bottom:12px;height:62px;border:none;border-radius:16px;background:var(--acc);color:var(--on-acc);display:flex;align-items:center;gap:12px;padding:0 18px;font-size:17px;font-weight:800;z-index:3;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.cartbar .n{background:var(--on-acc);color:var(--acc);min-width:30px;height:30px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:15px;padding:0 8px}
+.cartbar .tt{margin-left:auto;font-size:20px}
+.phone .cart{position:absolute;inset:0;width:auto;border-left:none;z-index:4;display:none}
+.phone .cart.open{display:flex}
+.back{height:40px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--surface2);font-size:15px;font-weight:700}
+.phone .tk{grid-template-columns:1fr}
+.phone .tkbig .n{font-size:60px}
+.phone .hist,.phone .bilan{padding:14px 12px}
+.phone .sale{grid-template-columns:1fr auto;grid-template-areas:"h tt" "l l" "pm act";gap:4px 12px;padding:12px 14px}
+.phone .sale .h{grid-area:h;font-size:17px}.phone .sale .tt{grid-area:tt}.phone .sale .l{grid-area:l;font-size:15px}.phone .sale .pm{grid-area:pm;font-size:13px}.phone .sale .act{grid-area:act}
+.phone .menu{top:62px;left:8px;right:8px;width:auto}
+.phone .mgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.phone .overlay{padding:0;align-items:flex-end}
+.phone .modal{width:100% !important;max-height:94%;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.phone .modal.paymodal{height:100%;max-height:100%;border-radius:0}
+.phone .paymodal .actions{margin-top:auto}
+.phone .actions .btn{flex:1}
+.phone .ctiles{grid-template-columns:1fr;gap:12px}
+.phone .ctile{min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;gap:16px;padding:16px 16px 16px 22px}
+.phone .bgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.phone .kpi{padding:10px 12px}.phone .kpi b{font-size:24px}.phone .kpi span{font-size:11px}
+.phone .bilan .actions .btn{flex:1 1 100%;height:auto;min-height:52px;padding:8px 14px}
+.phone .ctile .t{font-size:22px}
+.phone .ctile .d{display:none}
+.phone .home .logo{width:min(220px,60vw)}
+.phone .toast{top:64px;font-size:16px}
+.phone .btable{font-size:14px}.phone .btable th,.phone .btable td{padding:8px}
+.phone .hide-phone{display:none}
+.phone:not(.framed) #app{padding-top:env(safe-area-inset-top,0px)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="camhold" style="display:none"><video id="cam" playsinline muted autoplay></video></div>
+<input id="plistfile" type="file" multiple style="display:none">
+<input id="importfile" type="file" accept=".json,application/json" multiple style="display:none">
+<script>
+/* ================= Mode démo : serveur local à la place de GitHub =================
+   Les appels à l'API GitHub (api.github.com) et la lecture de catalogue.json sont servis par un petit
+   « serveur » rangé dans la mémoire du navigateur (localStorage, clé DEMO_KEY). L'Admin et la Caisse,
+   publiées sur le même site (admin/ et caisse/), partagent donc les mêmes données : catalogue publié,
+   ventes envoyées, stock, fichiers de caisse. Aucun jeton, aucun compte. */
+var DEMO_KEY = 'demo-serveur';
+var DEMO_CAT_REPO = 'demo/caisse', DEMO_SALES_REPO = 'demo/ventes';
+function demoDb() { try { return JSON.parse(localStorage.getItem(DEMO_KEY)) || {}; } catch (e) { return {}; } }
+function demoDbSave(db) { try { localStorage.setItem(DEMO_KEY, JSON.stringify(db)); return true; } catch (e) { return false; } }
+function demoB64(s) { return btoa(unescape(encodeURIComponent(s))); }
+function demoUnb64(s) { return decodeURIComponent(escape(atob(String(s).replace(/\s/g, '')))); }
+function demoSha(text) { var h = 2166136261; for (var i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return ('0000000' + h.toString(16)).slice(-8) + Date.now().toString(16) + Math.random().toString(16).slice(2, 10); }
+function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][path] = { sha: demoSha(text), text: text }; return db[repo][path]; }
+(function () {
+  var realFetch = window.fetch ? window.fetch.bind(window) : null;
+  function res(status, body, raw) {
+    return new Response(raw ? body : JSON.stringify(body), { status: status, headers: { 'Content-Type': raw ? 'text/plain; charset=utf-8' : 'application/json' } });
+  }
+  function later(v) { return new Promise(function (ok) { setTimeout(function () { ok(v); }, 120 + Math.random() * 120); }); }
+  function api(path, opts) {
+    if (navigator.onLine === false) return Promise.reject(new TypeError('Failed to fetch'));
+    var method = (opts.method || 'GET').toUpperCase(), q = path.indexOf('?'), p = q >= 0 ? path.slice(0, q) : path;
+    var hdr = opts.headers || {}, accept = (typeof hdr.get === 'function' ? hdr.get('Accept') : hdr.Accept || hdr.accept) || '';
+    var body = null; try { body = opts.body ? JSON.parse(opts.body) : null; } catch (e) {}
+    var m = /^\/repos\/([^/]+\/[^/]+)(?:\/(.*))?$/.exec(p);
+    if (p === '/user') return later(res(200, { login: 'demo' }));
+    if (!m) return later(res(404, { message: 'Not Found' }));
+    var repo = decodeURIComponent(m[1]), rest = m[2] || '', db = demoDb(), files = db[repo] || {};
+    if (!rest) return later(res(200, { full_name: repo, private: true, permissions: { pull: true, push: true } }));
+    if (rest.indexOf('contents') === 0) {
+      var fp = rest.slice(9).split('/').filter(Boolean).map(decodeURIComponent).join('/'), f = files[fp];
+      if (method === 'GET') {
+        if (f) {
+          if (/raw/.test(accept)) return later(res(200, f.text, true));
+          return later(res(200, { type: 'file', name: fp.split('/').pop(), path: fp, sha: f.sha, size: f.text.length, encoding: 'base64', content: demoB64(f.text) }));
+        }
+        var seen = {}, list = [];
+        Object.keys(files).forEach(function (k) {
+          if (fp && k.indexOf(fp + '/') !== 0) return;
+          var r = fp ? k.slice(fp.length + 1) : k, parts = r.split('/'), name = parts[0], full = (fp ? fp + '/' : '') + name;
+          if (seen[name]) return; seen[name] = 1;
+          list.push(parts.length > 1 ? { type: 'dir', name: name, path: full, sha: 'dir' } : { type: 'file', name: name, path: full, sha: files[full].sha, size: files[full].text.length });
+        });
+        return later(list.length ? res(200, list) : res(404, { message: 'Not Found' }));
+      }
+      if (method === 'PUT') {
+        if (!body || typeof body.content !== 'string') return later(res(422, { message: 'content missing' }));
+        if (f && body.sha !== f.sha) return later(res(409, { message: 'sha does not match' }));
+        if (!f && body.sha) return later(res(422, { message: 'sha given for a new file' }));
+        var n = demoPut(db, repo, fp, demoUnb64(body.content));
+        if (!demoDbSave(db)) return later(res(422, { message: 'Mémoire de démonstration pleine' }));
+        return later(res(f ? 200 : 201, { content: { name: fp.split('/').pop(), path: fp, sha: n.sha }, commit: { sha: n.sha } }));
+      }
+      if (method === 'DELETE') {
+        if (!f) return later(res(404, { message: 'Not Found' }));
+        if (!body || body.sha !== f.sha) return later(res(409, { message: 'sha does not match' }));
+        delete files[fp]; db[repo] = files; demoDbSave(db);
+        return later(res(200, { commit: {} }));
+      }
+    }
+    if (rest.indexOf('git/trees') === 0) {
+      var tree = [], dirs = {};
+      Object.keys(files).forEach(function (k) {
+        var parts = k.split('/'); for (var i = 1; i < parts.length; i++) dirs[parts.slice(0, i).join('/')] = 1;
+        tree.push({ path: k, mode: '100644', type: 'blob', sha: files[k].sha, size: files[k].text.length });
+      });
+      Object.keys(dirs).forEach(function (d) { tree.push({ path: d, mode: '040000', type: 'tree', sha: 'dir' }); });
+      return later(res(200, { sha: 'demo', tree: tree, truncated: false }));
+    }
+    if (rest.indexOf('git/blobs/') === 0) {
+      var sha = rest.slice(10), hit = null;
+      Object.keys(files).forEach(function (k) { if (files[k].sha === sha) hit = files[k]; });
+      return later(hit ? res(200, { sha: sha, encoding: 'base64', content: demoB64(hit.text), size: hit.text.length }) : res(404, { message: 'Not Found' }));
+    }
+    return later(res(404, { message: 'Not Found' }));
+  }
+  window.fetch = function (input, opts) {
+    var url = String(input && input.url ? input.url : input);
+    if (url.indexOf('https://api.github.com') === 0) return api(url.slice(22), opts || {});
+    if (/^(\.\/)?catalogue\.json(\?|$)/.test(url)) {
+      var f = (demoDb()[/\/soiree\//.test(location.pathname) ? 'demo/soiree' : DEMO_CAT_REPO] || {})['catalogue.json'];
+      return later(f ? res(200, f.text, true) : res(404, 'Not Found', true));
+    }
+    return realFetch(input, opts);
+  };
+})();
+
+/* ---------- Données d'exemple (bouton « Charger un exemple » de l'Admin) ---------- */
+var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 1, version: 1, date: '2026-11-24', soiree: 'Soirée démo',
+  entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
+    { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
+  tickets: { prixCase: 3, casesParCarte: 18 },
+  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  boissons: [
+    { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
+    { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
+    { id: 'vins', nom: 'Vins et bulles', ordre: 3, actif: true, produits: [{ id: 'vin', libelle: 'Verre de vin', format: 'verre', cases: 2, ordre: 1, actif: true }, { id: 'cava-btl', libelle: 'Cava', format: 'bouteille', cases: 10, ordre: 2, actif: true }] }] };
+function demoIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function demoReset() {
+  var keys = [];
+  for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('demo-') === 0) keys.push(k); }
+  keys.forEach(function (k) { localStorage.removeItem(k); });
+}
+function demoSeed() {
+  var keepCfg = null; try { keepCfg = localStorage.getItem('demo-config'); } catch (e) {}
+  demoReset();
+  if (keepCfg) try { localStorage.setItem('demo-config', keepCfg); } catch (e) {}
+  var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function pick(a) { return a[Math.floor(rnd() * a.length)]; }
+  function r2(n) { return Math.round(n * 100) / 100; }
+  /* les deux jours précédents : aujourd'hui reste libre pour les ventes faites pendant la démo */
+  var today = new Date(), d1 = new Date(today), d2 = new Date(today); d1.setDate(today.getDate() - 1); d2.setDate(today.getDate() - 2);
+  var days = [demoIso(d2), demoIso(d1)], start = new Date(today); start.setDate(today.getDate() - 3);
+  var PDV = [{ id: 'pdv1', nom: 'Stand principal' }, { id: 'pdv2', nom: 'Stand 2' }];
+  var CATS = [
+    { id: 'boissons', nom: 'Boissons', produits: [['eau', 'Eau', 2], ['soft', 'Soft', 2.5], ['biere', 'Bière', 3], ['vin', 'Verre de vin', 4]] },
+    { id: 'snacks', nom: 'Snacks', produits: [['chips', 'Chips', 2], ['hotdog', 'Hot-dog', 4.5], ['gaufre', 'Gaufre', 3.5]] },
+    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] }
+  ];
+  var cat = { format: 'agri-garden-caisse/catalogue', formatVersion: 1, version: 1, date: demoIso(start),
+    pointsDeVente: PDV.map(function (p) { return { id: p.id, nom: p.nom, actif: true }; }),
+    categories: CATS.map(function (k, i) { return { id: k.id, nom: k.nom, ordre: i + 1, actif: true, prefixe: false,
+      produits: k.produits.map(function (p, j) { return { id: p[0], libelle: p[1], prix: p[2], ordre: j + 1, actif: true }; }) }; }) };
+  var db = {};
+  demoPut(db, DEMO_CAT_REPO, 'catalogue.json', JSON.stringify(cat, null, 1) + '\n');
+  var PROD = []; CATS.forEach(function (k) { k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
+  /* Stock : livraison au début, un transfert entre stands */
+  var arts = {}; PROD.forEach(function (p) { arts[p.id] = { libelle: p.libelle, categorie: p.cat }; });
+  var liv1 = {}, liv2 = {}, tr = {};
+  PROD.forEach(function (p) { liv1[p.id] = p.prix >= 10 ? 30 : 200; liv2[p.id] = p.prix >= 10 ? 15 : 120; });
+  tr.biere = 24; tr.eau = 24;
+  var t0 = demoIso(start) + 'T09:00:00', stockId = 'evenement-demo';
+  var stock = { format: 'agri-garden-caisse/stock', formatVersion: 1, id: stockId, nom: 'Événement démo', creeLe: t0, majLe: t0, majPar: 'Admin',
+    depot: { id: 'depot', nom: 'Réserve' }, stands: { pdv1: { nom: PDV[0].nom }, pdv2: { nom: PDV[1].nom } }, articles: arts,
+    mouvements: {
+      m1: { type: 'livraison', date: demoIso(start), stand: 'pdv1', lignes: liv1, creeLe: t0, source: 'admin' },
+      m2: { type: 'livraison', date: demoIso(start), stand: 'pdv2', lignes: liv2, creeLe: t0, source: 'admin' },
+      m3: { type: 'transfert', date: days[1], de: 'pdv1', vers: 'pdv2', lignes: tr, creeLe: days[1] + 'T12:30:00', source: 'admin' }
+    } };
+  demoPut(db, DEMO_SALES_REPO, 'sapin/stock/' + stockId + '.json', JSON.stringify(stock, null, 1) + '\n');
+  /* Ventes et caisse : deux jours, deux stands */
+  days.forEach(function (day, di) {
+    PDV.forEach(function (pl, pi) {
+      var n = (pi ? 22 : 38) + Math.floor(rnd() * 10), ventes = [], cash = 0, banc = 0, tir = [];
+      var last = 18;
+      for (var i = 0; i < n; i++) {
+        var tm = 600 + Math.floor((480 * (i + rnd() * 0.8)) / n), hor = day + 'T' + String(Math.floor(tm / 60)).padStart(2, '0') + ':' + String(tm % 60).padStart(2, '0') + ':' + String(Math.floor(rnd() * 60)).padStart(2, '0');
+        var lignes = [], nl = 1 + Math.floor(rnd() * 3), used = {};
+        for (var j = 0; j < nl; j++) {
+          var p = pick(PROD); if (used[p.id]) continue; used[p.id] = 1;
+          var q = p.prix >= 10 ? 1 : 1 + Math.floor(rnd() * 3);
+          lignes.push({ produitId: p.id, categorie: p.cat, libelle: p.libelle, articleLibre: false, prixUnitaire: p.prix, quantite: q, remise: null, total: r2(p.prix * q) });
+        }
+        var tot = r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remT = null;
+        if (i % 17 === 5) { remT = { type: 'pourcentage', valeur: 10 }; tot = r2(Math.round(tot * 0.9 * 20) / 20); }
+        var mode = rnd() < 0.55 ? 'cash' : 'bancontact', pay = { mode: mode, cash: mode === 'cash' ? tot : 0, bancontact: mode === 'cash' ? 0 : tot };
+        var id = pl.id + '-' + day.replace(/-/g, '') + '-' + String(i + 1).padStart(4, '0');
+        var v = { id: id, horodatage: hor, pointDeVente: { id: pl.id, nom: pl.nom }, lignes: lignes, sousTotal: r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remiseTicket: remT, total: tot, paiement: pay };
+        if (i === 9 && di === 0) v.annulation = { horodatage: hor.slice(0, 14) + '59:00', motif: 'Erreur de saisie' };
+        else { cash += pay.cash; banc += pay.bancontact; }
+        if (mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
+        ventes.push(v);
+      }
+      tir.push({ horodatage: day + 'T14:05:00', motif: 'Faire de la monnaie', venteId: null });
+      var valid = ventes.filter(function (v) { return !v.annulation; });
+      var file = { format: 'agri-garden-caisse/ventes', formatVersion: 1, date: day, pointDeVente: { id: pl.id, nom: pl.nom }, catalogueVersion: 1,
+        miseAJour: day + 'T' + String(last).padStart(2, '0') + ':30:00', nombreVentes: valid.length, nombreAnnulations: ventes.length - valid.length,
+        totalJournee: r2(cash + banc), totalCash: r2(cash), totalBancontact: r2(banc), ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
+      demoPut(db, DEMO_SALES_REPO, 'sapin/' + day + '_' + pl.id + '_' + pl.nom.toLowerCase().replace(/\s+/g, '-') + '_demo.json', JSON.stringify(file, null, 1) + '\n');
+      /* fichier de caisse : fond, retrait, et comptage la veille */
+      var fond = 150, ent = {
+        f1: { type: 'fond', montant: fond, detail: null, horodatage: day + 'T09:45:00', source: 'admin' },
+        r1: { type: 'retrait', montant: 100, motif: 'Dépôt au coffre', detail: null, horodatage: day + 'T15:00:00', source: 'caisse', appareil: 'demo' }
+      };
+      if (true) {
+        var att = r2(fond + cash - 100), compte = r2(att - (pi ? 0 : 2.5));
+        ent.c1 = { type: 'comptage', montant: compte, detail: null, horodatage: day + 'T18:30:00', source: 'caisse', appareil: 'demo', attendu: att, ecart: r2(compte - att), laisse: fond, recette: r2(compte - fond), attenduApres: fond };
+      }
+      var cx = { format: 'agri-garden-caisse/caisse', formatVersion: 1, date: day, pointDeVente: { id: pl.id, nom: pl.nom }, creeLe: day + 'T09:45:00', majLe: day + 'T18:30:00', majPar: 'Admin', entrees: ent };
+      demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
+    });
+  });
+  /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
+  var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
+  demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
+  var csv = 'control;cout;paye;reference;date\n', ref = demoIso(today).replace(/-/g, '');
+  ['0a1b2c3d4e5f60718293a4b5c6d7e8f9', '1111aaaa2222bbbb3333cccc4444dddd', '9f8e7d6c5b4a39281706f5e4d3c2b1a0', 'abcdefabcdefabcdefabcdefabcdef01', '00112233445566778899aabbccddeeff']
+    .forEach(function (c, i) { csv += c + ';' + (i === 3 ? 24 : 12) + ';' + (i === 4 ? 'NULL' : '1') + ';' + ref + ';' + today.getDate() + '\n'; });
+  demoPut(db, DEMO_SALES_REPO, 'preventes/billetterie-demo.csv', csv);
+  /* Comptage du stock d'événement */
+  var sid = 'stock-evenement-' + days[0], sart = [['fut', 'Bière (fût)', 'fûts', 'Boissons'], ['soft', 'Softs', 'caisses', 'Boissons'], ['vin', 'Vin', 'bouteilles', 'Boissons'], ['gob', 'Gobelets', 'cartons', 'Matériel']];
+  var sdoc = { format: 'admin/stock', formatVersion: 1, id: sid, nom: 'Stock événement', debut: days[0], statut: 'ouvert', creeLe: days[0] + 'T08:00:00', clotureLe: null, majLe: days[1] + 'T23:00:00',
+    articles: sart.map(function (a) { return { id: a[0], nom: a[1], unite: a[2], categorie: a[3], actif: true }; }),
+    stockInitial: { fut: 10, soft: 20, vin: 48, gob: 6 },
+    jours: {} };
+  sdoc.jours[days[0]] = { livraisons: { fut: 4 }, restant: { fut: 7, soft: 12, vin: 30, gob: 4 } };
+  sdoc.jours[days[1]] = { livraisons: { soft: 10 }, restant: { fut: 2, soft: 11, vin: 14, gob: 3 } };
+  demoPut(db, 'demo/admin-donnees', 'stock/' + sid + '.json', JSON.stringify(sdoc, null, 1) + '\n');
+  demoDbSave(db);
+}
+
+/* ---------- Fonctionnalités activables (Admin › Paramètres) ----------
+   Réglage rangé à côté des données de démo (clé demo-config) : l'Admin l'écrit, la Caisse et la Caisse Soirée le lisent
+   à chaque affichage. Dépendances : une option « fille » est coupée quand sa « mère » est coupée. */
+var FEAT_KEY = 'demo-config';
+var FEATURES = [
+  { id: 'vente', nom: 'Vente', items: [
+    { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
+    { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
+    { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
+    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'paiement', nom: 'Paiement', items: [
+    { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
+    { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },
+  { id: 'historique', nom: 'Historique sur la tablette', items: [
+    { id: 'annulation', nom: 'Annulation d’une vente', desc: 'Avec un motif, depuis l’Historique.' },
+    { id: 'export', nom: 'Export manuel des ventes du jour', desc: 'Téléchargement d’un fichier depuis le menu.' } ] },
+  { id: 'imprimante', nom: 'Imprimante et tiroir', items: [
+    { id: 'imprimante', nom: 'Impression du ticket', desc: 'Ticket, duplicata et aperçu (imprimante Epson Wi-Fi).' },
+    { id: 'tiroir', nom: 'Tiroir-caisse', desc: 'Ouverture à l’encaissement, ouverture sans vente avec motif, journal.', req: 'imprimante' } ] },
+  { id: 'caisse', nom: 'Caisse du jour', items: [
+    { id: 'fond', nom: 'Fond de caisse', desc: 'Demandé à l’ouverture ; onglet Caisse de l’Admin.' },
+    { id: 'mouvements', nom: 'Retraits et ajouts d’argent', desc: '', req: 'fond' },
+    { id: 'decompte', nom: 'Décompte final', desc: 'Au total ou en billets et pièces, avec l’écart.', req: 'fond' } ] },
+  { id: 'stock', nom: 'Stock', items: [
+    { id: 'stock', nom: 'Stock par stand', desc: 'Livraisons, transferts et restant par stand (Admin).' },
+    { id: 'stockTablette', nom: 'Stock du stand sur la tablette', desc: '', req: 'stock' },
+    { id: 'reception', nom: 'Réception de stock sur la tablette', desc: 'Articles venus d’un autre stand.', req: 'stock' },
+    { id: 'restantTuiles', nom: 'Restant affiché sur les tuiles', desc: '', req: 'stock' } ] },
+  { id: 'catalogue', nom: 'Catalogue', items: [
+    { id: 'multiPdv', nom: 'Plusieurs points de vente', desc: 'Sinon, un seul point de vente, choisi d’office.' },
+    { id: 'prefixe', nom: 'Préfixe de catégorie dans le libellé', desc: 'Ex. « Boissons Eau » sur le ticket.' } ] },
+  { id: 'suivi', nom: 'Suivi des ventes', items: [
+    { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
+    { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'options', nom: 'Modules en option', items: [
+    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
+    { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
+];
+var FEAT_DEF = {}; FEATURES.forEach(function (g) { g.items.forEach(function (it) { FEAT_DEF[it.id] = it; }); });
+var _featRaw = null, _featCfg = { f: {}, raccourciId: '' };
+function featCfg() {
+  var raw = null; try { raw = localStorage.getItem(FEAT_KEY); } catch (e) {}
+  if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
+  return _featCfg;
+}
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; return c.f[id] != null ? !!c.f[id] : !(d && d.off); }
+function FEAT(id) {
+  var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
+  if (d && d.req && !FEAT(d.req)) return false;
+  if (id === 'raccourci' && !featCfg().raccourciId) return false;
+  return true;
+}
+function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
+
+var STORE_KEY = 'demo-soiree'; // propre à cette application (même compte GitHub = même mémoire navigateur)
+(function () {
+'use strict';
+var LOGO_FULL = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MDAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgOTAwIDIyMCI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDAsMTApIHNjYWxlKDIpIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM2RkE4REMiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48cmVjdCB4PSIxNCIgeT0iNDAiIHdpZHRoPSI3MiIgaGVpZ2h0PSI0NCIgcng9IjgiLz48cGF0aCBkPSJNMjYgNDBWMjJoNDh2MTgiLz48cGF0aCBkPSJNMzQgMzBoMzIiLz48cGF0aCBkPSJNMjggNThoMTJNNDggNThoMTJNMjggNzBoMTJNNDggNzBoMTIiLz48cGF0aCBkPSJNNjggNThoNnYxMmgtNnoiLz48L2c+PC9nPjx0ZXh0IHg9IjI3MCIgeT0iMTI4IiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iODQiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNFRUYyRjciPlNvaXLDqWUgZMOpbW88L3RleHQ+PHRleHQgeD0iMjc0IiB5PSIxNzgiIGZvbnQtZmFtaWx5PSJBcmlhbCxIZWx2ZXRpY2Esc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZmlsbD0iI0E2QjBCRCI+RW50csOpZXMgwrcgY2FzZXMgwrcgYm9pc3NvbnM8L3RleHQ+PC9zdmc+';
+var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMCIgZmlsbD0iIzFBMjMzMCIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZGQThEQyIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxyZWN0IHg9IjE0IiB5PSI0MCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjQ0IiByeD0iOCIvPjxwYXRoIGQ9Ik0yNiA0MFYyMmg0OHYxOCIvPjxwYXRoIGQ9Ik0zNCAzMGgzMiIvPjxwYXRoIGQ9Ik0yOCA1OGgxMk00OCA1OGgxMk0yOCA3MGgxMk00OCA3MGgxMiIvPjxwYXRoIGQ9Ik02OCA1OGg2djEyaC02eiIvPjwvZz48L3N2Zz4=';
+/* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
+var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
+
+var APP_VERSION = 'démo v1'; // = numéro du cache dans sw.js
+var CAT_KEY = STORE_KEY + '-catalogue';
+var DEV_KEY = STORE_KEY + '-appareil';
+var FORMAT_CAT = 'chlorophylle-caisse/catalogue';
+var FORMAT_SOIREE = 'chlorophylle-caisse/soiree';
+var CAISSES = {
+  entrees: { nom: 'Entrées', lettre: 'E', desc: 'Entrées à 15 €, tables VIP et scan des préventes' },
+  tickets: { nom: 'Tickets', lettre: 'T', desc: 'Cartes de 18 cases, vente à la case ou selon un budget' },
+  boissons: { nom: 'Boissons', lettre: 'B', desc: 'Encodage des commandes : nombre de cases à barrer' }
+};
+var BILLS = [5, 10, 20, 50, 100];
+
+/* ---------- Outils ---------- */
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function r2(n) { return Math.round(n * 100) / 100; }
+function money(n) { n = r2(n); return (n % 1 ? n.toFixed(2).replace('.', ',') : String(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; }
+function num(v) { var x = parseFloat(String(v || '').replace(',', '.')); return isNaN(x) ? 0 : x; }
+function isoDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function isoLocal(d) { var o = -d.getTimezoneOffset(), sg = o >= 0 ? '+' : '-'; o = Math.abs(o); return isoDate(d) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + sg + pad(Math.floor(o / 60)) + ':' + pad(o % 60); }
+function frDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : iso; }
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function slug(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+function plural(n, s, p) { return n + ' ' + (Math.abs(n) > 1 ? (p || s + 's') : s); }
+/* Une soirée va de midi à midi : une vente à 2 h du matin compte pour la soirée de la veille. */
+function nightOf(d) { return isoDate(new Date((d || new Date()).getTime() - 12 * 3600 * 1000)); }
+function tonight() { return nightOf(new Date()); }
+function hhmm(iso) { return String(iso || '').slice(11, 16); }
+
+/* ---------- Catalogue ---------- */
+function normalizeCatalogue(c) {
+  if (!c || typeof c !== 'object') throw new Error('Le fichier ne contient pas un catalogue.');
+  if (c.format && c.format !== FORMAT_CAT) throw new Error('Ce fichier n’est pas un catalogue de cette caisse (format « ' + c.format + ' »).');
+  if (!Array.isArray(c.entrees) || !Array.isArray(c.boissons) || !c.tickets) throw new Error('Il manque les entrées, les tickets ou les boissons.');
+  var ids = {};
+  function byOrder(a, b) { return (a.ordre || 0) - (b.ordre || 0); }
+  function active(x) { return x && x.actif !== false; }
+  function useId(id, what) { if (!id) throw new Error(what + ' sans identifiant.'); if (ids[id]) throw new Error('Identifiant en double : ' + id); ids[id] = 1; return String(id); }
+  var entrees = c.entrees.filter(active).slice().sort(byOrder).map(function (e) {
+    if (!e.libelle || typeof e.prix !== 'number' || e.prix < 0) throw new Error('Entrée invalide : ' + (e.libelle || e.id || '?'));
+    /* compte : 'personne' (entrée) ou 'table' (table VIP) ; à défaut, déduit de l'identifiant / du libellé */
+    var compte = e.compte === 'table' || e.compte === 'personne' ? e.compte : (/vip|table/i.test(String(e.id) + ' ' + e.libelle) ? 'table' : 'personne');
+    return { id: useId(e.id, 'Une entrée'), libelle: String(e.libelle), prix: e.prix, compte: compte };
+  });
+  var t = c.tickets, pc = Number(t.prixCase), cpc = Number(t.casesParCarte);
+  if (!(pc > 0) || !(cpc > 0) || cpc % 1) throw new Error('Tickets : prix de la case ou nombre de cases par carte invalide.');
+  var cats = c.boissons.filter(active).slice().sort(byOrder).map(function (k) {
+    if (!k.id || !k.nom || !Array.isArray(k.produits)) throw new Error('Catégorie de boissons incomplète : ' + (k.nom || k.id || '?'));
+    var prods = k.produits.filter(active).slice().sort(byOrder).map(function (p) {
+      if (!p.libelle) throw new Error('Boisson sans libellé dans « ' + k.nom + ' ».');
+      if (typeof p.cases !== 'number' || p.cases <= 0 || p.cases % 1) throw new Error('Nombre de cases invalide pour « ' + p.libelle + ' ».');
+      return { id: useId(p.id, 'Une boisson'), libelle: String(p.libelle), format: p.format === 'bouteille' ? 'bouteille' : 'verre', cases: p.cases };
+    });
+    return { id: String(k.id), nom: String(k.nom), produits: prods };
+  }).filter(function (k) { return k.produits.length; });
+  if (!entrees.length) throw new Error('Aucune entrée active.');
+  if (!cats.length) throw new Error('Aucune boisson active.');
+  var modele = null;
+  var pv = c.prevente || DEFAULT_CAT.prevente; // ancien catalogue sans modèle : modèle intégré
+  if (pv && pv.modele) { try { new RegExp(pv.modele); modele = String(pv.modele); } catch (e) { throw new Error('Modèle des QR de prévente invalide.'); } }
+  return { version: Number(c.version) || 0, date: String(c.date || ''), soiree: String(c.soiree || 'Soirée démo'), integre: !!c.integre, modeleQR: modele,
+    entrees: entrees, tickets: { prixCase: pc, casesParCarte: cpc }, boissons: cats };
+}
+var CATALOGUE;
+try { CATALOGUE = normalizeCatalogue(JSON.parse(localStorage.getItem(CAT_KEY))); } catch (e) { CATALOGUE = null; }
+if (!CATALOGUE) { var dc = JSON.parse(JSON.stringify(DEFAULT_CAT)); dc.integre = true; CATALOGUE = normalizeCatalogue(dc); }
+function catalogueLabel(c) { return (c.integre ? 'Catalogue intégré v' : 'Catalogue v') + c.version + (c.date ? ' du ' + frDate(c.date) : ''); }
+function PC() { return CATALOGUE.tickets.prixCase; }
+function CPC() { return CATALOGUE.tickets.casesParCarte; }
+function drinkById(id) { var r = null; CATALOGUE.boissons.forEach(function (k) { k.produits.forEach(function (p) { if (p.id === id) r = { p: p, k: k }; }); }); return r; }
+
+/* ---------- Appareil ---------- */
+var DEV = {};
+try { DEV = JSON.parse(localStorage.getItem(DEV_KEY)) || {}; } catch (e) { DEV = {}; }
+if (!DEV.id) { DEV.id = Math.random().toString(36).slice(2, 6); try { localStorage.setItem(DEV_KEY, JSON.stringify(DEV)); } catch (e) {} }
+function devName() { return DEV.nom || 'Appareil ' + DEV.id; }
+
+/* ---------- État ---------- */
+var S = {
+  screen: 'home', caisse: 'entrees', tab: 'caisse', menu: false, modal: null, toast: '', cartOpen: false,
+  cartE: [], tk: { cases: 0, budget: null }, kpMode: 'cases', kpVal: '', cartB: [], bcat: CATALOGUE.boissons[0].id,
+  payMode: 'cash', received: '', mix: '',
+  nights: {}, exported: {}, histNight: null, bilanNight: null, imports: {}, importFiles: [],
+  scan: null, scanCode: '', usedPct: 0, confirmDel: null
+};
+try {
+  var saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if (saved) { S.nights = saved.nights || {}; S.exported = saved.exported || {}; if (saved.caisse && CAISSES[saved.caisse]) S.caisse = saved.caisse; }
+} catch (e) {}
+var STORAGE_LIMIT = 5000000;
+function storageUsed() { var n = 0; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {} return n; }
+function storageMo(n) { return (n / 1000000).toFixed(1).replace('.', ',') + ' Mo'; }
+function refreshUsage() { S.usedPct = Math.round(storageUsed() * 100 / STORAGE_LIMIT); }
+function persist(noSync) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ nights: S.nights, exported: S.exported, caisse: S.caisse })); refreshUsage();
+    if (!noSync && typeof AUTO !== 'undefined' && AUTO) autoSchedule(AUTO_DELAI); // modification : envoi automatique un peu plus tard
+    return true; }
+  catch (e) { S.modal = 'storage'; S.menu = false; refreshUsage(); return false; }
+}
+refreshUsage();
+
+function recs(night) { return S.nights[night || tonight()] || []; }
+function valid(list) { return (list || []).filter(function (v) { return !v.annulation; }); }
+function nextId(caisse, night, lettre) {
+  var list = recs(night), n = list.filter(function (r) { return r.id.charAt(0) === lettre; }).length + 1;
+  return lettre + '-' + DEV.id + '-' + night.replace(/-/g, '') + '-' + ('000' + n).slice(-4);
+}
+function addRecord(r) {
+  var night = tonight(), list = S.nights[night] || (S.nights[night] = []);
+  r.horodatage = isoLocal(new Date()); r.soiree = night; r.appareil = { id: DEV.id, nom: devName() };
+  list.push(r); delete S.exported[night];
+  return persist();
+}
+
+/* ---------- Totaux ---------- */
+/* Remise en euros sur une ligne du panier Entrées (v27) : jamais plus que le montant de la ligne */
+function remiseE(l) { return Math.min(Math.max(0, l.remise || 0), r2(l.prix * l.qty)); }
+function lineTotE(l) { return r2(l.prix * l.qty - remiseE(l)); }
+function cartETotal() { return r2(S.cartE.reduce(function (a, l) { return a + lineTotE(l); }, 0)); }
+function cartBCases() { return S.cartB.reduce(function (a, l) { return a + l.cases * l.qty; }, 0); }
+function payTotal() { return S.caisse === 'entrees' ? cartETotal() : S.tk.cases * PC(); }
+function tkText(n) {
+  var c = Math.floor(n / CPC()), r = n % CPC();
+  if (!n) return 'aucune case';
+  return (c ? plural(c, 'carte') : '') + (c && r ? ' + ' : '') + (r ? plural(r, 'case') : '');
+}
+
+/* ---------- Résumé d'une soirée (utilisé par le bilan et l'export) ---------- */
+/* Ligne d'entrée = table VIP (compte à part) ou personne (compte dans les entrées) */
+function isTableLine(l) {
+  var e = CATALOGUE.entrees.filter(function (x) { return x.id === l.produitId; })[0];
+  if (e) return e.compte === 'table';
+  return /vip|table/i.test(String(l.produitId) + ' ' + l.libelle);
+}
+/* Nombre d'entrées liées à une prévente (un QR peut valoir plusieurs entrées, v24) */
+function nbQ(r) {
+  if (r.qr) return (r.lignes || []).reduce(function (a, l) { return a + (l.produitId === PQR_ID ? l.quantite : 0); }, 0);
+  return r.personnes > 0 ? r.personnes : 1;
+}
+/* v25 : les préventes scannées sont des ventes d'entrée à 0 € sur un produit propre « Prévente QR code » (hors tuiles) */
+var PQR_ID = 'prevente-qr';
+function pqrLibelle() { var e = CATALOGUE.entrees.filter(function (x) { return x.id === PQR_ID; })[0]; return e ? e.libelle : 'Prévente QR code'; }
+function isQ(r) { return r.type === 'prevente' || r.qr === true; }
+function summarize(list) {
+  var R = { recette: 0, cash: 0, bancontact: 0, entrees: { recette: 0, ventes: 0, produits: {}, personnes: 0, invites: 0, tables: 0, tablesInvitees: 0, preventes: 0, forcees: 0, anomalies: { doublon: 0, format: 0, inconnu: 0 } },
+    tickets: { recette: 0, ventes: 0, cases: 0, cartes: 0, casesSeules: 0 }, boissons: { commandes: 0, cases: 0, produits: {}, categories: {} }, heures: {}, appareils: {} };
+  function hour(r, key, n) { var h = parseInt(hhmm(r.horodatage), 10); if (isNaN(h)) return; var b = R.heures[h] || (R.heures[h] = { entrees: 0, commandes: 0 }); b[key] += n; }
+  valid(list).forEach(function (r) {
+    if (r.appareil) R.appareils[r.appareil.id] = r.appareil.nom;
+    if (r.paiement) { R.recette += r.total; R.cash += r.paiement.cash; R.bancontact += r.paiement.bancontact; }
+    if (r.type === 'prevente') { R.entrees.preventes += nbQ(r); if (r.sansQR) R.entrees.sansQR = (R.entrees.sansQR || 0) + 1; if (r.forcee) { R.entrees.forcees++; R.entrees.anomalies[r.anomalie || 'doublon']++; } hour(r, 'entrees', nbQ(r)); }
+    else if (r.type === 'entree') {
+      if (r.qr) { if (r.forcee) { R.entrees.forcees++; R.entrees.anomalies[r.anomalie || 'format'] = (R.entrees.anomalies[r.anomalie || 'format'] || 0) + 1; } } else R.entrees.ventes++;
+      R.entrees.recette += r.total; (r.lignes || []).forEach(function (l) { if (l.remise) R.entrees.remises = r2((R.entrees.remises || 0) + l.remise); });
+      r.lignes.forEach(function (l) {
+        var p = R.entrees.produits[l.produitId] || (R.entrees.produits[l.produitId] = { libelle: l.libelle, quantite: 0, total: 0 });
+        p.quantite += l.quantite; p.total += l.total;
+        if (l.produitId === PQR_ID) { R.entrees.preventes += l.quantite; hour(r, 'entrees', l.quantite); }
+        else if (isTableLine(l)) { R.entrees.tables += l.quantite; if (!l.prixUnitaire) R.entrees.tablesInvitees += l.quantite; }
+        else { R.entrees.personnes += l.quantite; if (!l.prixUnitaire) R.entrees.invites += l.quantite; hour(r, 'entrees', l.quantite); }
+      });
+    } else if (r.type === 'ticket') {
+      R.tickets.ventes++; R.tickets.recette += r.total; R.tickets.cases += r.cases; R.tickets.cartes += r.cartes; R.tickets.casesSeules += r.casesSeules;
+    } else if (r.type === 'commande') {
+      R.boissons.commandes++; R.boissons.cases += r.totalCases; hour(r, 'commandes', 1);
+      r.lignes.forEach(function (l) {
+        var p = R.boissons.produits[l.produitId] || (R.boissons.produits[l.produitId] = { libelle: l.libelle, categorie: l.categorie, format: l.format, quantite: 0, cases: 0 });
+        p.quantite += l.quantite; p.cases += l.totalCases;
+        var k = R.boissons.categories[l.categorie] || (R.boissons.categories[l.categorie] = { quantite: 0, cases: 0 });
+        k.quantite += l.quantite; k.cases += l.totalCases;
+      });
+    }
+  });
+  ['recette', 'cash', 'bancontact'].forEach(function (k) { R[k] = r2(R[k]); });
+  return R;
+}
+function nightFile(night) {
+  var all = recs(night);
+  return { format: FORMAT_SOIREE, formatVersion: 1, soiree: night, evenement: CATALOGUE.soiree,
+    appareil: { id: DEV.id, nom: devName() }, catalogueVersion: CATALOGUE.version, prixCase: PC(), casesParCarte: CPC(),
+    miseAJour: isoLocal(new Date()), nombreEnregistrements: all.length, nombreAnnulations: all.length - valid(all).length,
+    resume: summarize(all), enregistrements: all };
+}
+function fileName(night) { return 'soiree_' + night + '_' + (slug(devName()) || DEV.id) + '.json'; }
+
+var toastTimer;
+function toast(t, ms) { S.toast = t; clearTimeout(toastTimer); toastTimer = setTimeout(function () { S.toast = ''; render(); }, ms || 3500); }
+
+/* ---------- Son et vibration (scan) ---------- */
+var AC = null;
+function beep(ok) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    var o = AC.createOscillator(), g = AC.createGain(); o.connect(g); g.connect(AC.destination);
+    o.frequency.value = ok ? 1320 : 220; o.type = ok ? 'sine' : 'square'; g.gain.value = .18;
+    o.start(); o.stop(AC.currentTime + (ok ? .15 : .5));
+  } catch (e) {}
+  try { navigator.vibrate && navigator.vibrate(ok ? 80 : [200, 100, 200]); } catch (e) {}
+}
+
+/* ---------- Caméra / QR des préventes ---------- */
+var CAM = { stream: null, det: null, timer: null, ignore: null, ignoreUntil: 0 };
+var VIDEO = document.getElementById('cam'), CAMHOLD = document.getElementById('camhold');
+function camStart() {
+  S.scan.cam = 'starting';
+  if (!('BarcodeDetector' in window)) { S.scan.cam = 'nodet'; render(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.scan.cam = 'denied'; render(); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }).then(function (st) {
+    if (S.modal !== 'scan') { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+    CAM.stream = st; VIDEO.srcObject = st; VIDEO.play().catch(function () {});
+    try { CAM.det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { S.scan.cam = 'nodet'; render(); return; }
+    S.scan.cam = 'on'; render(); camLoop();
+  }).catch(function () { S.scan.cam = 'denied'; render(); });
+}
+function camLoop() {
+  clearTimeout(CAM.timer);
+  if (!CAM.stream) return;
+  if (S.scan && S.scan.state === 'live' && VIDEO.readyState >= 2) {
+    CAM.det.detect(VIDEO).then(function (codes) {
+      if (codes && codes.length && S.scan && S.scan.state === 'live') onCode(codes[0].rawValue);
+    }).catch(function () {}).then(function () { CAM.timer = setTimeout(camLoop, 180); });
+  } else CAM.timer = setTimeout(camLoop, 180);
+}
+function camStop() {
+  clearTimeout(CAM.timer);
+  if (CAM.stream) CAM.stream.getTracks().forEach(function (t) { t.stop(); });
+  CAM.stream = null; VIDEO.srcObject = null;
+}
+function findPrevente(code) {
+  var hit = null;
+  Object.keys(S.nights).forEach(function (n) { valid(S.nights[n]).forEach(function (r) { if (r.type === 'prevente' && r.code === code && (!hit || r.horodatage > hit.horodatage)) hit = r; }); });
+  return hit;
+}
+/* Lecture d'un QR (ou d'un code saisi) :
+   1. format : le QR doit suivre le modèle officiel du catalogue (prevente.modele) ; on n'en garde que le code du billet ;
+   2. doublon : déjà scanné sur cet appareil ;
+   3. liste : si la liste des billets vendus est chargée, le code doit y figurer. */
+function parseQR(raw, manual) {
+  var txt = String(raw || '').trim(), m;
+  if (!txt) return null;
+  if (/^[0-9a-f]{32}$/i.test(txt)) return { code: txt.toLowerCase(), ok: true };          // code seul (saisie ou QR simplifié)
+  if (CATALOGUE.modeleQR) {
+    m = new RegExp(CATALOGUE.modeleQR).exec(txt);
+    if (m) return { code: (m[1] || txt).toLowerCase(), ok: true };
+    return { code: txt, ok: false };
+  }
+  return { code: txt, ok: true };                                                         // pas de modèle : tout est accepté
+}
+function onCode(raw, manual) {
+  var q = parseQR(raw, manual);
+  if (!q) return;
+  if (!manual && (q.code === CAM.ignore || raw === CAM.ignore) && Date.now() < CAM.ignoreUntil) return; // le même QR est encore devant la caméra
+  S.scan.code = q.code; S.scan.raw = String(raw).trim(); S.scan.prev = null;
+  if (!q.ok) { S.scan.state = 'format'; beep(false); render(); return; }
+  /* v24 : pas de contrôle de doublon (un même QR peut être lu plusieurs fois) */
+  if (PLIST.codes && !PLIST.set[q.code]) { S.scan.state = 'inconnu'; beep(false); render(); return; }
+  var b = PLIST.billets && PLIST.billets[q.code];
+  S.scan.billet = b || null;
+  if (b && b.s && b.s !== tonight()) { S.scan.state = 'date'; beep(false); render(); return; }
+  if (b && !b.p) { S.scan.state = 'nonpaye'; beep(false); render(); return; }
+  askCount(q.code, null);
+}
+/* QR accepté : on demande le nombre d'entrées liées au QR avant d'enregistrer */
+function askCount(code, anomalie) {
+  var b = PLIST.billets && PLIST.billets[code], deja = dejaValide(code);
+  S.scan.state = 'count'; S.scan.code = code; S.scan.anomalie = anomalie; S.scanCode = '';
+  S.scan.billet = b || null; S.scan.deja = deja;
+  /* nombre proposé : entrées du billet (prix ÷ 12) moins celles déjà validées ce soir pour ce QR ; 1 sans liste */
+  /* v28-v29 : jamais plus d'entrées que le billet n'en compte, et jamais plus de MAX_QR par QR code */
+  S.scan.max = Math.min(MAX_QR, b && b.n ? b.n : MAX_QR);
+  S.scan.n = b && b.n ? Math.min(S.scan.max, Math.max(1, b.n - deja.n)) : 1;
+  CAM.ignore = code; CAM.ignoreUntil = Date.now() + 8000;
+  beep(true); render();
+}
+/* Entrées déjà validées ce soir pour ce QR (information, ne bloque pas) */
+var MAX_QR = 9; // nombre maximum d'entrées pour un QR code (v29)
+function dejaValide(code) {
+  var d = { n: 0, h: null };
+  valid(recs(tonight())).forEach(function (r) { if (isQ(r) && r.code === code) { d.n += nbQ(r); if (!d.h || r.horodatage > d.h) d.h = r.horodatage; } });
+  return d;
+}
+function recordPrevente(code, anomalie, n) {
+  n = Math.max(1, Math.min(S.scan && S.scan.max || MAX_QR, Math.round(n || 1)));
+  var forcee = !!anomalie, night = tonight(), r = { id: nextId('entrees', night, 'E'), caisse: 'entrees', type: 'entree', qr: true, code: code,
+    lignes: [{ produitId: PQR_ID, libelle: pqrLibelle(), prixUnitaire: 0, quantite: n, total: 0 }], total: 0, paiement: { mode: 'gratuit', cash: 0, bancontact: 0 } };
+  r.controle = PLIST.codes ? 'liste' : CATALOGUE.modeleQR ? 'format' : 'aucun';
+  if (forcee) { r.forcee = true; r.anomalie = anomalie; }
+  var bl = PLIST.billets && PLIST.billets[code]; if (bl) r.billet = { entrees: bl.n, soiree: bl.s, paye: bl.p };
+  var ok = addRecord(r);
+  CAM.ignore = code; CAM.ignoreUntil = Date.now() + 8000;
+  if (!ok) { S.scan = null; camStop(); S.storageMsg = 'Prévente NON enregistrée dans l’appareil'; return; }
+  S.scan.state = 'ok'; S.scan.code = code; S.scan.forcee = forcee; S.scan.controle = r.controle; S.scan.prev = null; S.scanCode = ''; S.scan.n = n;
+  render();
+  var at = r.id;
+  // reste affiché jusqu'au bouton « Scanner le suivant » (plus de retour automatique)
+  S.scan.lastId = at;
+}
+
+/* ---------- Actions ---------- */
+/* TEST UNIQUEMENT : bouton du menu qui efface les préventes scannées pour enchaîner les essais. Mettre false avant la soirée. */
+var TEST_EFFACER_PREVENTES = true;
+function countQ() { var n = 0; Object.keys(S.nights).forEach(function (d) { (S.nights[d] || []).forEach(function (r) { if (isQ(r)) n++; }); }); return n; }
+var A = {
+  open: function (c) { S.caisse = c; S.screen = 'pos'; S.tab = 'caisse'; S.menu = false; S.cartOpen = false; persist(); },
+  caisse: function (c) { S.caisse = c; S.tab = S.tab === 'hist' ? 'hist' : 'caisse'; S.cartOpen = false; S.menu = false; S.histNight = null; persist(); },
+  goHome: function () { S.screen = 'home'; S.menu = false; if (S.siteUpdate && !S.modal) { S.importing = S.siteUpdate; S.modal = 'import'; } },
+  tab: function (t) { S.tab = t; S.menu = false; S.cartOpen = false; S.histNight = null; },
+  noQr: function () { S.menu = false; S.modal = 'noqr'; S.nqN = 1; },
+  nqInc: function () { S.nqN = Math.min(50, (S.nqN || 1) + 1); },
+  nqDec: function () { S.nqN = Math.max(1, (S.nqN || 1) - 1); },
+  nqSave: function () {
+    var n = S.nqN || 1, night = tonight(), ok = true;
+    for (var i = 0; i < n && ok; i++) {
+      // une entrée par personne (comme un scan), même référence ; code vide : jamais pris pour un doublon de QR
+      ok = addRecord({ id: nextId('entrees', night, 'Q'), caisse: 'entrees', type: 'prevente', code: '', sansQR: true, controle: 'justificatif' });
+    }
+    S.modal = null;
+    if (ok) toast(plural(n, 'entrée') + ' prévente sans QR enregistrée' + (n > 1 ? 's' : ''), 4000);
+    else S.storageMsg = 'Prévente NON enregistrée dans l\u2019appareil';
+  },
+  qlist: function () { S.menu = false; S.modal = 'qlist'; S.qSearch = ''; },
+  testDelQ: function () { S.menu = false; S.modal = 'testDelQ'; },
+  testDelQGo: function () {
+    var n = countQ();
+    Object.keys(S.nights).forEach(function (d) {
+      var before = S.nights[d].length;
+      S.nights[d] = S.nights[d].filter(function (r) { return !isQ(r); });
+      if (S.nights[d].length !== before) delete S.exported[d];
+      if (!S.nights[d].length) delete S.nights[d];
+    });
+    CAM.ignore = null; S.modal = null;
+    if (persist()) toast(plural(n, 'prévente') + ' effacée' + (n > 1 ? 's' : '') + ' (test)');
+  },
+  bilan: function () { if (S.screen !== 'bilan') S.prevScreen = S.screen; S.screen = 'bilan'; S.menu = false; S.bilanNight = null; },
+  bilanBack: function () { S.screen = S.prevScreen === 'pos' ? 'pos' : 'home'; },
+  bilanNight: function (n) { S.bilanNight = n; },
+  fullscreen: function () { var el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el); },
+  toggleMenu: function () { S.menu = !S.menu; },
+  openCart: function () { S.cartOpen = true; S.menu = false; },
+  closeCart: function () { S.cartOpen = false; },
+  close: function () { if (S.modal === 'scan') camStop(); S.modal = S.modal === 'ghcfg' && S.ghBack ? S.ghBack : null; S.ghBack = null; S.ghPending = null; S.scan = null; S.storageMsg = ''; },
+  // Entrées
+  addE: function (id) {
+    var e = CATALOGUE.entrees.filter(function (x) { return x.id === id; })[0]; if (!e) return;
+    var l = S.cartE.filter(function (x) { return x.id === id && x.prix === e.prix; })[0];
+    if (l) l.qty++; else S.cartE.push({ id: e.id, libelle: e.libelle, prix: e.prix, qty: 1 });
+  },
+  incE: function (i) { S.cartE[+i].qty++; },
+  decE: function (i) { i = +i; if (--S.cartE[i].qty <= 0) S.cartE.splice(i, 1); else if (S.cartE[i].remise) S.cartE[i].remise = remiseE(S.cartE[i]); },
+  remE: function (i) { var l = S.cartE[+i]; if (!l || !(l.prix > 0)) return; S.remI = +i; S.remVal = l.remise ? String(l.remise).replace('.', ',') : ''; S.modal = 'remise'; },
+  remSet: function (v) { S.remVal = String(v); },
+  remOk: function () { var l = S.cartE[S.remI]; if (l) { var v = r2(num(S.remVal)); l.remise = v > 0 ? Math.min(v, r2(l.prix * l.qty)) : 0; if (!l.remise) delete l.remise; } S.modal = null; },
+  remDel: function () { var l = S.cartE[S.remI]; if (l) delete l.remise; S.modal = null; },
+  clearE: function () { S.cartE = []; },
+  scan: function () { S.menu = false; S.modal = 'scan'; S.scan = { state: 'live', cam: 'starting' }; S.scanCode = ''; camStart(); },
+  scanManual: function () { if (S.scanCode.trim()) onCode(S.scanCode, true); },
+  scanNext: function () { S.scan.state = 'live'; S.scanCode = ''; },
+  scanRefuse: function () { CAM.ignore = S.scan.code; CAM.ignoreUntil = Date.now() + 8000; S.scan.state = 'live'; S.scanCode = ''; },
+  scanForce: function () { var st = S.scan.state; askCount(st === 'format' ? S.scan.raw.slice(0, 300) : S.scan.code, st === 'dup' ? 'doublon' : st); },
+  scanN: function (v) { S.scan.n = Math.max(1, Math.min(S.scan.max || MAX_QR, (S.scan.n || 1) + Number(v))); },
+  scanSetN: function (v) { S.scan.n = Math.max(1, Math.min(S.scan.max || MAX_QR, Number(v))); },
+  scanOk: function () { recordPrevente(S.scan.code, S.scan.anomalie, S.scan.n); },
+  // Tickets
+  tkAdd: function (n) { S.tk.cases = Math.max(0, Math.min(9999, S.tk.cases + (+n))); S.tk.budget = null; },
+  tkClear: function () { S.tk = { cases: 0, budget: null }; S.kpVal = ''; },
+  kpMode: function (m) { S.kpMode = m; S.kpVal = ''; },
+  kp: function (d) { if (S.kpVal.length < 5) S.kpVal = (S.kpVal === '0' ? '' : S.kpVal) + d; },
+  kpBack: function () { S.kpVal = S.kpVal.slice(0, -1); },
+  kpApply: function () {
+    var v = parseInt(S.kpVal, 10) || 0; if (!v) return;
+    if (S.kpMode === 'cases') S.tk = { cases: Math.min(9999, v), budget: null };
+    else S.tk = { cases: Math.floor(v / PC()), budget: v };
+    S.kpVal = '';
+  },
+  budget: function (v) { v = +v; S.tk = { cases: Math.floor(v / PC()), budget: v }; S.kpMode = 'budget'; S.kpVal = ''; },
+  // Boissons
+  bcat: function (id) { S.bcat = id; },
+  addB: function (id) {
+    var d = drinkById(id); if (!d) return;
+    var l = S.cartB.filter(function (x) { return x.id === id && x.cases === d.p.cases; })[0];
+    if (l) l.qty++; else S.cartB.push({ id: id, libelle: d.p.libelle, format: d.p.format, categorie: d.k.nom, cases: d.p.cases, qty: 1 });
+  },
+  incB: function (i) { S.cartB[+i].qty++; },
+  decB: function (i) { i = +i; if (--S.cartB[i].qty <= 0) S.cartB.splice(i, 1); },
+  clearB: function () { S.cartB = []; },
+  saveB: function () {
+    if (!S.cartB.length) return;
+    var night = tonight(), tot = cartBCases();
+    var r = { id: nextId('boissons', night, 'B'), caisse: 'boissons', type: 'commande',
+      lignes: S.cartB.map(function (l) { return { produitId: l.id, categorie: l.categorie, libelle: l.libelle, format: l.format, cases: l.cases, quantite: l.qty, totalCases: l.cases * l.qty }; }),
+      totalCases: tot, valeur: r2(tot * PC()) };
+    S.cartB = []; S.cartOpen = false;
+    if (addRecord(r)) { S.modal = 'okB'; S.okCases = tot; S.okLines = r.lignes; } // reste affiché jusqu'à « OK »
+    else S.storageMsg = 'Commande NON enregistrée dans l’appareil';
+  },
+  // Encaissement
+  openPay: function () {
+    if (S.caisse === 'entrees' && S.cartE.length && !(payTotal() > 0)) { S.payMode = 'gratuit'; A.validate(); return; } // panier à 0 € : validé directement
+    if (!(payTotal() > 0)) return; S.modal = 'pay'; S.payMode = 'cash'; S.mix = ''; S.received = ''; /* toujours vide : le caissier saisit ce qu'il reçoit */ },
+  mode: function (m) { S.payMode = m; },
+  bill: function (b) { var f = S.payMode === 'mix' ? 'mix' : 'received'; S[f] = String(r2(num(S[f]) + +b)).replace('.', ','); },
+  exact: function () { S.received = String(r2(payTotal())).replace('.', ','); },
+  resetReceived: function () { S.received = ''; },
+  resetMix: function () { S.mix = ''; },
+  validate: function () {
+    var t = r2(payTotal()), pay, msg = 'Vente enregistrée', night = tonight(), r;
+    if (S.payMode === 'gratuit') { pay = { mode: 'gratuit', cash: 0, bancontact: 0 }; msg = 'Enregistré à 0 € · ' + S.cartE.map(function (l) { return l.qty + ' × ' + l.libelle; }).join(', '); }
+    else if (S.payMode === 'cash') { pay = { mode: 'cash', cash: t, bancontact: 0 }; msg += ' · À rendre : ' + money(Math.max(0, num(S.received) - t)); }
+    else if (S.payMode === 'bc') pay = { mode: 'bancontact', cash: 0, bancontact: t };
+    else { var c = r2(num(S.mix)); pay = { mode: 'mixte', cash: c, bancontact: r2(t - c) }; }
+    if (S.caisse === 'entrees') {
+      r = { id: nextId('entrees', night, 'E'), caisse: 'entrees', type: 'entree',
+        lignes: S.cartE.map(function (l) { var o = { produitId: l.id, libelle: l.libelle, prixUnitaire: l.prix, quantite: l.qty, total: lineTotE(l) }; if (remiseE(l)) o.remise = remiseE(l); return o; }),
+        total: t, paiement: pay };
+      S.cartE = [];
+    } else {
+      var n = S.tk.cases;
+      r = { id: nextId('tickets', night, 'T'), caisse: 'tickets', type: 'ticket', cases: n, cartes: Math.floor(n / CPC()), casesSeules: n % CPC(),
+        prixCase: PC(), budget: S.tk.budget, total: t, paiement: pay };
+      msg = plural(n, 'case') + ' vendue' + (n > 1 ? 's' : '') + (pay.mode === 'cash' ? ' · À rendre : ' + money(Math.max(0, num(S.received) - t)) : '');
+      S.tk = { cases: 0, budget: null }; S.kpVal = '';
+    }
+    S.modal = null; S.cartOpen = false;
+    if (addRecord(r)) toast(msg, 5000); else S.storageMsg = 'Vente NON enregistrée dans l’appareil';
+  },
+  // Historique, annulation
+  histNight: function (n) { S.histNight = n; },
+  askCancel: function (ref) { S.modal = 'cancel'; S.cancelRef = ref; S.cancelMotif = ''; },
+  doCancel: function () {
+    var p = (S.cancelRef || '').split('|'), v = recs(p[0]).filter(function (x) { return x.id === p[1]; })[0];
+    if (!v || v.annulation) { S.modal = null; return; }
+    v.annulation = { horodatage: isoLocal(new Date()), motif: (S.cancelMotif || '').trim().slice(0, 120) };
+    var was = !!S.exported[p[0]]; delete S.exported[p[0]]; S.modal = null;
+    if (persist()) toast('Enregistrement de ' + hhmm(v.horodatage) + ' annulé' + (was ? ' · pensez à ré-exporter la soirée' : ''));
+  },
+  // Fichiers
+  download: function (night) {
+    night = night || tonight();
+    var name = fileName(night), blob = new Blob([JSON.stringify(nightFile(night), null, 2)], { type: 'application/json' });
+    saveBlob(blob, name); S.exported[night] = true; persist(); S.menu = false; toast(name + ' téléchargé');
+  },
+  showDays: function () { S.menu = false; S.modal = 'days'; S.confirmDel = null; },
+  askDel: function (d) { S.confirmDel = d; },
+  delDay: function (d) { if (d === tonight() || !S.exported[d]) return; delete S.nights[d]; delete S.exported[d]; S.confirmDel = null; if (persist()) toast('Soirée du ' + frDate(d) + ' effacée de l’appareil'); },
+  importFiles: function () { var f = document.getElementById('importfile'); f.value = ''; f.click(); },
+  clearImports: function () { S.imports = {}; S.importFiles = []; toast('Fichiers importés retirés du bilan'); },
+  csv: function () { exportCsv(S.bilanNight || tonight()); },
+  device: function () { S.menu = false; S.modal = 'device'; S.devName = DEV.nom || ''; },
+  saveDevice: function () { DEV.nom = (S.devName || '').trim().slice(0, 30); try { localStorage.setItem(DEV_KEY, JSON.stringify(DEV)); } catch (e) {} S.modal = null; toast('Nom de l’appareil : ' + devName()); },
+  checkCat: function () { S.menu = false; if (!S.catLoading) loadSiteCatalogue(true); },
+  installCatalogue: function () {
+    var im = S.importing;
+    try { localStorage.setItem(CAT_KEY, JSON.stringify(im.raw)); } catch (e) {}
+    CATALOGUE = im.cat; S.bcat = CATALOGUE.boissons[0].id; S.cartE = []; S.cartB = []; S.tk = { cases: 0, budget: null };
+    S.modal = null; S.importing = null; S.siteUpdate = null; toast(catalogueLabel(CATALOGUE) + ' installé');
+  }
+};
+function saveBlob(blob, name) {
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* Import des fichiers des autres appareils (bilan consolidé ; gardé en mémoire tant que l'app est ouverte) */
+document.getElementById('importfile').addEventListener('change', function (e) {
+  var files = Array.prototype.slice.call(e.target.files || []); if (!files.length) return;
+  var done = 0, ok = 0, errs = [], lastNight = null;
+  files.forEach(function (f) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var j = JSON.parse(rd.result);
+        if (j.format !== FORMAT_SOIREE || !Array.isArray(j.enregistrements)) throw new Error('pas un fichier de soirée');
+        if (j.appareil && j.appareil.id === DEV.id) throw new Error('fichier de cet appareil');
+        importNight(j, f.name); lastNight = j.soiree; ok++;
+      } catch (err) { errs.push(f.name + ' : ' + err.message); }
+      if (++done === files.length) {
+        if (lastNight) S.bilanNight = lastNight;
+        toast(ok + ' fichier' + (ok > 1 ? 's' : '') + ' importé' + (ok > 1 ? 's' : '') + (errs.length ? ' · ignoré : ' + errs.join(' ; ') : ''), 6000);
+        render();
+      }
+    };
+    rd.readAsText(f);
+  });
+});
+function importNight(j, nom) {
+  var m = S.imports[j.soiree] || (S.imports[j.soiree] = {}), n = 0, ap = j.appareil || {};
+  // remplace un import précédent du même appareil pour cette soirée
+  Object.keys(m).forEach(function (id) { if (m[id].appareil && m[id].appareil.id === ap.id) delete m[id]; });
+  j.enregistrements.forEach(function (r) { if (r && r.id) { m[r.id] = r; n++; } });
+  S.importFiles = S.importFiles.filter(function (x) { return !(x.soiree === j.soiree && x.appareil === ap.id); });
+  S.importFiles.push({ nom: nom, soiree: j.soiree, appareil: ap.id, appareilNom: ap.nom || '?', n: n });
+  return n;
+}
+function bilanRecords(night) {
+  var map = {};
+  recs(night).forEach(function (r) { map[r.id] = r; });
+  var im = S.imports[night] || {};
+  Object.keys(im).forEach(function (id) { if (!map[id]) map[id] = im[id]; });
+  return Object.keys(map).map(function (k) { return map[k]; });
+}
+function exportCsv(night) {
+  var R = summarize(bilanRecords(night)), L = [], pc = PC();
+  function row() { L.push(Array.prototype.slice.call(arguments).map(function (x) { x = String(x == null ? '' : x); return /[;"\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }).join(';')); }
+  function n(x) { return String(r2(x)).replace('.', ','); }
+  row('Soirée démo', 'Soirée du ' + frDate(night)); row('');
+  row('RECETTE', 'Total', 'Cash', 'Bancontact'); row('', n(R.recette), n(R.cash), n(R.bancontact)); row('');
+  row('ENTRÉES', 'Quantité', 'Montant €');
+  Object.keys(R.entrees.produits).forEach(function (k) { var p = R.entrees.produits[k]; row(p.libelle, p.quantite, n(p.total)); });
+  row('Préventes (QR)', R.entrees.preventes, 0); var an = R.entrees.anomalies; if (an.doublon) row('dont doublons acceptés', an.doublon, ''); if (an.format) row('dont QR non reconnus acceptés', an.format, ''); if (an.inconnu) row('dont billets hors liste acceptés', an.inconnu, '');
+  row('');
+  row('TICKETS', 'Ventes', 'Cases vendues', 'Cartes complètes', 'Cases à l’unité', 'Montant €');
+  row('', R.tickets.ventes, R.tickets.cases, R.tickets.cartes, R.tickets.casesSeules, n(R.tickets.recette)); row('');
+  row('BOISSONS', 'Catégorie', 'Format', 'Quantité', 'Cases barrées', 'Valeur €');
+  Object.keys(R.boissons.produits).map(function (k) { return R.boissons.produits[k]; }).sort(function (a, b) { return a.categorie < b.categorie ? -1 : a.categorie > b.categorie ? 1 : b.quantite - a.quantite; })
+    .forEach(function (p) { row(p.libelle, p.categorie, p.format, p.quantite, p.cases, n(p.cases * pc)); });
+  row('Total', '', '', '', R.boissons.cases, n(R.boissons.cases * pc)); row('');
+  row('CASES', 'Vendues', 'Barrées', 'Écart'); row('', R.tickets.cases, R.boissons.cases, R.tickets.cases - R.boissons.cases);
+  var blob = new Blob(['﻿' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  saveBlob(blob, 'bilan_chlorophylle_' + night + '.csv'); toast('Bilan CSV téléchargé');
+}
+
+/* ---------- Envoi des ventes sur GitHub (uniquement à la demande) ----------
+   Dépôt privé des ventes, dossier de cette caisse. Jeton GitHub des CAISSES (même clé et même phrase de passe que
+   la Caisse Bar et la Caisse Sapins), intégré CHIFFRÉ (AES-GCM 256, PBKDF2-SHA256). Déverrouillé une fois par appareil.
+   Rien n'est envoyé sans un appui sur « Envoyer ». */
+var GH_REPO = DEMO_SALES_REPO;   // vide = fonction masquée
+var GH_DOSSIER = 'soiree';     // dossier de cette caisse dans le dépôt des ventes
+var CLE_CHIFFREE = { demo: true }; // démo : envoi vers le serveur local // clé « Clé de vente » du 19/11 (remplace celle du 27/10)
+var GH_KEY = STORE_KEY + '-github';
+var GH = {};
+try { GH = JSON.parse(localStorage.getItem(GH_KEY)) || {}; } catch (e) { GH = {}; }
+if (!GH.envois) GH.envois = {};
+/* Clé changée dans une nouvelle version de l'app : le jeton déverrouillé avec l'ancienne clé est oublié,
+   la phrase de passe sera redemandée au prochain envoi. */
+if (GH.cle !== CLE_CHIFFREE.data) { delete GH.token; GH.cle = CLE_CHIFFREE.data; try { localStorage.setItem(GH_KEY, JSON.stringify(GH)); } catch (e) {} }
+if (!GH.token) GH.token = 'demo';
+function saveGh() { try { localStorage.setItem(GH_KEY, JSON.stringify(GH)); return true; } catch (e) { return false; } }
+function ghConfigured() { return !!(GH_REPO && CLE_CHIFFREE); }
+function ghReady() { return ghConfigured() && !!GH.token; }
+function normPass(p) { return String(p || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase(); }
+function b64d(str) { var s = atob(str), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+function decryptToken(blob, pass) {
+  return crypto.subtle.importKey('raw', new TextEncoder().encode(normPass(pass)), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64d(blob.salt), iterations: blob.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  }).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(blob.iv) }, k, b64d(blob.data)); })
+    .then(function (pt) { return new TextDecoder().decode(pt).trim(); });
+}
+function ghApi(method, url, body) {
+  return fetch('https://api.github.com' + url, { method: method, cache: 'no-store',
+    headers: { 'Authorization': 'Bearer ' + GH.token, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+    body: body ? JSON.stringify(body) : undefined });
+}
+function ghError(status) {
+  if (status === 0) return 'Pas de connexion internet. Réessayez quand l’appareil a du réseau.';
+  if (status === 401) return 'GitHub refuse le jeton : il a expiré ou a été révoqué. L\u2019envoi a été verrouillé sur cet appareil ; si une nouvelle version de la caisse contient une nouvelle clé, déverrouillez à nouveau avec la phrase de passe.';
+  if (status === 403) return 'Accès refusé : le jeton n’a pas le droit d’écrire dans le dépôt des ventes.';
+  if (status === 404) return 'Dépôt des ventes introuvable, ou le jeton n’y a pas accès.';
+  if (status === 422) return 'GitHub a refusé le fichier.';
+  return 'Erreur GitHub (code ' + status + ').';
+}
+function b64utf8(s) { return btoa(unescape(encodeURIComponent(s))); }
+function utf8b64(s) { return decodeURIComponent(escape(atob(String(s).replace(/\s/g, '')))); }
+function ghUrl(path) { return '/repos/' + GH_REPO + '/contents/' + path.split('/').map(encodeURIComponent).join('/'); }
+/* chlorophylle/AAAA-MM-JJ_<nom de l'appareil>_<id appareil>.json : un fichier par appareil et par soirée, un renvoi le remplace */
+function ghPath(night) { var n = slug(DEV.nom || '').slice(0, 24); return GH_DOSSIER + '/' + night + '_' + (n ? n + '_' : '') + DEV.id + '.json'; }
+/* Empreinte du contenu d'une soirée : si elle change depuis le dernier envoi, la soirée est à renvoyer */
+function nightSig(night) { var l = recs(night); return l.length + '|' + l.filter(function (r) { return r.annulation; }).length + '|' + devName(); }
+/* Envoi d'une soirée (remplace le fichier de cet appareil). Lance une exception (code HTTP, ou 0 sans réseau) en cas d'échec. */
+async function ghPut(night, auto) {
+  var sig = nightSig(night), path = ghPath(night), url = ghUrl(path);
+  var body = { message: (auto ? 'Envoi automatique · ' : '') + 'Soirée démo, soirée du ' + frDate(night) + ' (' + devName() + ', appareil ' + DEV.id + ')',
+               content: b64utf8(JSON.stringify(nightFile(night), null, 2)) };
+  var old = GH.chemins && GH.chemins[night]; // ancien nom de fichier (appareil renommé) : supprimé pour ne pas compter deux fois
+  for (var essai = 0; essai < 2; essai++) {
+    var g = await ghApi('GET', url);
+    if (g.ok) body.sha = (await g.json()).sha; else if (g.status === 404) delete body.sha; else throw g.status;
+    var r = await ghApi('PUT', url, body);
+    if (r.ok) break;
+    if ((r.status === 409 || r.status === 422) && essai === 0) continue; // fichier modifié entre-temps : on relit et on réessaie
+    throw r.status;
+  }
+  if (old && old !== path) {
+    try { var go = await ghApi('GET', ghUrl(old)); if (go.ok) await ghApi('DELETE', ghUrl(old), { message: 'Renommage de l’appareil ' + DEV.id, sha: (await go.json()).sha }); } catch (e) {}
+  }
+  GH.envois[night] = isoLocal(new Date()); GH.chemins = GH.chemins || {}; GH.chemins[night] = path;
+  GH.sig = GH.sig || {}; GH.sig[night] = sig; saveGh();
+  S.exported[night] = true; persist(true);
+  return path;
+}
+async function ghSend(night) {
+  if (S.ghBusy || !ghReady()) return;
+  night = night || tonight();
+  S.ghBusy = night; S.menu = false; render();
+  try {
+    var path = await ghPut(night, false);
+    AUTO.err = null; AUTO.last = Date.now();
+    toast('Envoyé sur GitHub à ' + hhmm(GH.envois[night]) + ' : ' + path, 5000);
+  } catch (e) {
+    if (e === 401) { delete GH.token; saveGh(); } // jeton refusé : il faudra déverrouiller à nouveau
+    S.ghResult = { titre: 'Envoi impossible', text: ghError(typeof e === 'number' ? e : 0) }; S.modal = 'ghres';
+  } finally { S.ghBusy = null; render(); }
+}
+
+/* ---------- Envoi automatique ----------
+   Dès que l'appareil a internet (et que l'envoi est déverrouillé), chaque soirée modifiée depuis son dernier envoi
+   est envoyée, sans action ni message. Après une modification : envoi ~15 s plus tard, au plus une fois par minute.
+   Vérification aussi au démarrage, au retour du réseau, au retour de l'app au premier plan et toutes les minutes. */
+var AUTO_DELAI = 15000, AUTO_MIN_INTERVALLE = 60000;
+var AUTO = { timer: null, last: 0, err: null };
+function nightsToSend() {
+  GH.sig = GH.sig || {};
+  return Object.keys(S.nights).filter(function (n) { return S.nights[n] && S.nights[n].length && GH.sig[n] !== nightSig(n); }).sort();
+}
+function autoSchedule(delay) { if (!ghConfigured()) return; clearTimeout(AUTO.timer); AUTO.timer = setTimeout(autoSync, delay); }
+async function autoSync() {
+  if (!ghReady() || S.ghBusy || navigator.onLine === false) return;
+  var todo = nightsToSend(); if (!todo.length) return;
+  var wait = AUTO.last + AUTO_MIN_INTERVALLE - Date.now();
+  if (wait > 0 && !AUTO.err) { autoSchedule(wait); return; }
+  S.ghBusy = 'auto'; render();
+  try { for (var i = 0; i < todo.length; i++) await ghPut(todo[i], true); AUTO.err = null; }
+  catch (e) { if (e === 401) { delete GH.token; saveGh(); } AUTO.err = typeof e === 'number' ? e : 0; }
+  finally { AUTO.last = Date.now(); S.ghBusy = null; render(); }
+}
+function autoStatus() {
+  if (!ghConfigured()) return null;
+  if (!ghReady()) return { ko: true, court: 'Envoi auto inactif', t: 'Envoi automatique inactif : touchez pour déverrouiller GitHub' };
+  if (S.ghBusy === 'auto') return { court: 'Envoi…', t: 'Envoi automatique en cours…' };
+  var n = nightsToSend().length, last = Object.keys(GH.envois).map(function (k) { return GH.envois[k]; }).sort().pop();
+  if (n) {
+    if (navigator.onLine === false) return { warn: true, court: 'En attente de réseau', t: 'Pas de réseau : ' + plural(n, 'soirée') + ' à envoyer dès le retour d’internet' };
+    if (AUTO.err === 401) return { ko: true, court: 'Envoi auto inactif', t: 'GitHub refuse le jeton : touchez pour déverrouiller à nouveau' };
+    if (AUTO.err != null) return { warn: true, court: 'Nouvel essai bientôt', t: 'Dernier envoi automatique échoué (' + ghError(AUTO.err) + ') : nouvel essai automatique' };
+    return { court: 'Envoi prévu', t: 'Envoi automatique dans quelques instants' };
+  }
+  return { ok: true, court: last ? 'À jour ' + hhmm(last) : 'À jour', t: last ? 'Envoi automatique : à jour (dernier envoi ' + (frDate(last).slice(0, 5)) + ' à ' + hhmm(last) + ')' : 'Envoi automatique actif : rien à envoyer' };
+}
+window.addEventListener('online', function () { autoSchedule(2000); render(); });
+window.addEventListener('offline', function () { render(); });
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') autoSchedule(3000); });
+setInterval(function () { autoSync(); }, 60000);
+autoSchedule(5000);
+
+/* Bilan : charge depuis GitHub les fichiers des AUTRES appareils pour la soirée affichée */
+async function ghLoad(night) {
+  if (S.ghBusy || !ghReady()) return;
+  S.ghBusy = 'load'; render();
+  try {
+    var r = await ghApi('GET', ghUrl(GH_DOSSIER));
+    if (r.status === 404) throw 'vide';
+    if (!r.ok) throw r.status;
+    var list = (await r.json()).filter(function (f) { return f.type === 'file' && f.name.indexOf(night + '_') === 0 && /\.json$/.test(f.name); });
+    var n = 0, recsN = 0, mine = 0;
+    for (var i = 0; i < list.length; i++) {
+      var fr = await ghApi('GET', ghUrl(list[i].path));
+      if (!fr.ok) throw fr.status;
+      var meta = await fr.json(), j;
+      try { j = JSON.parse(utf8b64(meta.content)); } catch (e) { continue; }
+      if (j.format !== FORMAT_SOIREE || !Array.isArray(j.enregistrements)) continue;
+      if (j.appareil && j.appareil.id === DEV.id) { mine++; continue; }
+      recsN += importNight(j, list[i].name); n++;
+    }
+    S.bilanNight = night;
+    toast(n ? n + ' fichier' + (n > 1 ? 's' : '') + ' chargé' + (n > 1 ? 's' : '') + ' depuis GitHub (' + recsN + ' enregistrements)' : 'Aucun fichier d’un autre appareil pour la soirée du ' + frDate(night) + ' sur GitHub', 6000);
+  } catch (e) {
+    if (e === 'vide') toast('Aucun fichier sur GitHub dans le dossier « ' + GH_DOSSIER + ' »', 6000);
+    else { S.ghResult = { titre: 'Chargement impossible', text: ghError(typeof e === 'number' ? e : 0).replace('d’écrire dans', 'de lire'), lecture: true }; S.modal = 'ghres'; }
+  } finally { S.ghBusy = null; render(); }
+}
+async function ghUnlock() {
+  if (!normPass(S.ghPass)) { S.ghMsg = { ok: false, text: 'Saisissez la phrase de passe.' }; render(); return; }
+  S.ghMsg = { ok: null, text: 'Déverrouillage…' }; render();
+  var token;
+  try { token = await decryptToken(CLE_CHIFFREE, S.ghPass); }
+  catch (e) { S.ghMsg = { ok: false, text: 'Phrase de passe incorrecte.' }; S.ghPass = ''; render(); return; }
+  GH.token = token; saveGh(); S.ghPass = '';
+  S.ghMsg = { ok: true, text: 'Déverrouillé sur cet appareil. Vérification de l’accès au dépôt…' }; render();
+  await ghTest();
+  AUTO.err = null; autoSchedule(1000);
+  if (typeof plistAuto === 'function') setTimeout(function () { plistAuto(true); }, 1500);
+  if (S.ghPending && S.ghMsg && S.ghMsg.ok) { var d = S.ghPending; S.ghPending = null; S.modal = S.ghBack || null; S.ghBack = null; if (d === 'load') ghLoad(S.bilanNight || tonight()); else ghSend(d); }
+}
+async function ghTest() {
+  if (!ghReady()) return;
+  try {
+    var r = await ghApi('GET', '/repos/' + GH_REPO);
+    if (!r.ok) throw r.status;
+    var d = await r.json();
+    S.ghMsg = { ok: true, text: 'Dépôt « ' + d.full_name + ' » accessible' + (d.private ? ' (privé)' : ' — attention : ce dépôt est PUBLIC') + '. Les fichiers vont dans le dossier « ' + GH_DOSSIER + ' ».' };
+  } catch (e) { S.ghMsg = { ok: false, text: ghError(typeof e === 'number' ? e : 0) }; }
+  render();
+}
+Object.assign(A, {
+  openGh: function () { S.menu = false; S.modal = 'ghcfg'; S.ghPass = ''; S.ghMsg = null; S.ghPending = null; S.ghBack = null; },
+  ghUnlock: function () { ghUnlock(); },
+  ghAsk: function (d) { S.menu = false; S.ghPending = d; S.ghBack = S.modal; S.modal = 'ghcfg'; S.ghPass = '';
+    S.ghMsg = { ok: null, text: d === 'load' ? 'Pour charger les fichiers des autres appareils, déverrouillez d’abord GitHub sur cet appareil.' : 'Pour envoyer la soirée du ' + frDate(d) + ', déverrouillez d’abord l’envoi sur cet appareil.' }; },
+  ghTest: function () { S.ghMsg = { ok: null, text: 'Test en cours…' }; ghTest(); },
+  ghLock: function () { delete GH.token; saveGh(); S.ghMsg = null; S.modal = null; toast('Envoi sur GitHub verrouillé sur cet appareil'); },
+  ghSend: function (d) { if (ghReady()) ghSend(d || tonight()); else A.ghAsk(d || tonight()); },
+  ghLoad: function () { if (ghReady()) ghLoad(S.bilanNight || tonight()); else A.ghAsk('load'); }
+});
+
+/* ---------- Liste des billets de prévente vendus (facultative) ----------
+   Chargée depuis le dossier « preventes/ » du dépôt privé des ventes (tous les fichiers du dossier),
+   ou importée depuis un fichier. N'importe quel format convient (CSV, JSON, texte, export de la billetterie) :
+   on y relève tous les codes de 32 caractères (0-9 a-f). Gardée sur l'appareil, utilisable hors ligne.
+   Jamais dans le dépôt public de l'app : la liste permettrait de fabriquer de faux billets valides. */
+var PLIST_KEY = STORE_KEY + '-preventes';
+var PL_DOSSIER = 'preventes';
+var PLIST = {};
+function plistLoad() {
+  try { PLIST = JSON.parse(localStorage.getItem(PLIST_KEY)) || {}; } catch (e) { PLIST = {}; }
+  PLIST.set = {}; (PLIST.codes || []).forEach(function (c) { PLIST.set[c] = 1; });
+  PLIST.billets = PLIST.billets || {};
+}
+/* Export de la billetterie (v26) : CSV « ; » avec colonnes control (code du QR), cout (prix : 12 € par entrée),
+   paye (NULL = paiement non confirmé), reference (AAAAMMJJ de l'événement) et date (jour de la soirée). */
+var PRIX_ENTREE_PREVENTE = 12;
+function parseBillets(txt) {
+  var lines = String(txt || '').split(/\r?\n/), out = {};
+  function cells(l) { return l.split(';').map(function (c) { return c.trim().replace(/^"|"$/g, '').trim(); }); }
+  var h = null;
+  for (var i = 0; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    var c = cells(lines[i]);
+    if (!h) { var low = c.map(function (x) { return x.toLowerCase(); }); if (low.indexOf('control') >= 0) h = low; continue; }
+    var g = function (k) { var j = h.indexOf(k); return j >= 0 ? (c[j] || '') : ''; };
+    var code = g('control').toLowerCase();
+    if (!/^[0-9a-f]{32}$/.test(code)) continue;
+    var cout = parseFloat(g('cout').replace(',', '.')), n = cout > 0 ? Math.max(1, Math.round(cout / PRIX_ENTREE_PREVENTE)) : 0;
+    var ref = g('reference').replace(/\D/g, ''), jour = parseInt(g('date'), 10), soiree = '';
+    if (ref.length >= 6 && jour >= 1 && jour <= 31) soiree = ref.slice(0, 4) + '-' + ref.slice(4, 6) + '-' + (jour < 10 ? '0' : '') + jour;
+    var p = g('paye'); 
+    out[code] = { n: n, s: soiree, p: !!p && p.toUpperCase() !== 'NULL' && parseFloat(p) !== 0 };
+  }
+  return out;
+}
+plistLoad();
+function plistSave(codes, source, billets) {
+  var uniq = {}; codes.forEach(function (c) { uniq[c.toLowerCase()] = 1; });
+  var data = { codes: Object.keys(uniq), billets: billets || {}, source: source, charge: isoLocal(new Date()) };
+  try { localStorage.setItem(PLIST_KEY, JSON.stringify(data)); } catch (e) { toast('Mémoire pleine : liste non enregistrée'); return false; }
+  plistLoad(); refreshUsage(); return true;
+}
+function extractCodes(txt) { return String(txt || '').match(/\b[0-9a-fA-F]{32}\b/g) || []; }
+function plistLabel() {
+  if (!PLIST.codes) return CATALOGUE.modeleQR ? 'Pas de liste : seul le format du QR est contrôlé' : 'Pas de liste ni de modèle : tout QR est accepté';
+  var t = tonight(), nb = 0, ne = 0;
+  Object.keys(PLIST.billets || {}).forEach(function (k) { var b = PLIST.billets[k]; if (b.s === t) { nb++; ne += b.n || 0; } });
+  var v = PLIST.verifie || PLIST.charge;
+  return 'Liste des préventes : ' + plural(PLIST.codes.length, 'billet') + (nb ? ' dont ' + plural(nb, 'billet') + ' (' + plural(ne, 'entrée') + ') pour ce soir' : '') +
+    ' · mise à jour ' + (frDate(v) === frDate(isoLocal(new Date())) ? '' : 'le ' + frDate(v) + ' ') + 'à ' + hhmm(v);
+}
+async function plistFromGitHub(quiet) {
+  if (S.plBusy || !ghReady()) return;
+  S.plBusy = true; PLIST_AUTO.last = Date.now(); if (!quiet) { S.plMsg = { ok: null, text: 'Chargement depuis GitHub…' }; render(); }
+  try {
+    var r = await ghApi('GET', ghUrl(PL_DOSSIER));
+    if (r.status === 404) throw 'vide';
+    if (!r.ok) throw r.status;
+    var files = (await r.json()).filter(function (f) { return f.type === 'file'; }), codes = [], names = [], billets = {};
+    for (var i = 0; i < files.length; i++) {
+      var fr = await ghApi('GET', ghUrl(files[i].path));
+      if (!fr.ok) throw fr.status;
+      var meta = await fr.json(), txt;
+      if (meta.content) { try { txt = utf8b64(meta.content); } catch (e8) { txt = atob(String(meta.content).replace(/\s/g, '')); } } // export Windows (cp1252) : les codes restent lisibles
+      else if (meta.download_url) { var raw = await fetch(meta.download_url); txt = await raw.text(); } // gros fichier (> 1 Mo)
+      var found = extractCodes(txt), b = parseBillets(txt); Object.keys(b).forEach(function (k) { billets[k] = b[k]; });
+      if (found.length) { codes = codes.concat(found); names.push(files[i].name); }
+    }
+    if (!codes.length) throw 'aucun';
+    if (quiet && PLIST.codes && PLIST.codes.length === codes.filter(function (c, i, a) { return a.indexOf(c) === i; }).length && JSON.stringify(PLIST.billets || {}) === JSON.stringify(billets)) { PLIST.verifie = isoLocal(new Date()); return; } // rien de neuf
+    if (plistSave(codes, 'GitHub ' + PL_DOSSIER + '/' + (names.length > 1 ? ' (' + names.length + ' fichiers)' : names[0]), billets))
+      S.plMsg = { ok: true, text: plural(PLIST.codes.length, 'billet') + ' chargé' + (PLIST.codes.length > 1 ? 's' : '') + ' depuis ' + names.join(', ') + '.' };
+  } catch (e) {
+    PLIST_AUTO.err = e;
+    if (quiet) return;
+    S.plMsg = { ok: false, text: e === 'vide' ? 'Le dossier « ' + PL_DOSSIER + ' » n’existe pas dans le dépôt des ventes.'
+      : e === 'aucun' ? 'Aucun code de billet (32 caractères 0-9 a-f) trouvé dans le dossier « ' + PL_DOSSIER + ' ».'
+      : ghError(typeof e === 'number' ? e : 0).replace('d’écrire dans', 'de lire') };
+  } finally { S.plBusy = false; if (!quiet || S.modal === 'scan') render(); }
+}
+/* Chargement automatique (v26) : au démarrage, au retour du réseau / au premier plan, puis toutes les 10 min, si l'envoi GitHub est déverrouillé */
+var PLIST_AUTO = { last: 0, err: null };
+function plistAuto(force) {
+  if (!navigator.onLine || !ghReady() || S.plBusy) return;
+  if (!force && Date.now() - PLIST_AUTO.last < 10 * 60 * 1000) return;
+  plistFromGitHub(true);
+}
+setTimeout(function () { plistAuto(true); }, 4000);
+setInterval(function () { plistAuto(false); }, 60 * 1000);
+window.addEventListener('online', function () { setTimeout(function () { plistAuto(true); }, 3000); });
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') plistAuto(false); });
+document.getElementById('plistfile').addEventListener('change', function (e) {
+  var files = Array.prototype.slice.call(e.target.files || []); if (!files.length) return;
+  var codes = [], done = 0, billets = {};
+  files.forEach(function (f) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      codes = codes.concat(extractCodes(rd.result)); var b = parseBillets(rd.result); Object.keys(b).forEach(function (k) { billets[k] = b[k]; });
+      if (++done === files.length) {
+        if (!codes.length) S.plMsg = { ok: false, text: 'Aucun code de billet (32 caractères 0-9 a-f) trouvé dans ' + (files.length > 1 ? 'ces fichiers' : 'ce fichier') + '.' };
+        else if (plistSave(codes, files.length > 1 ? files.length + ' fichiers' : 'fichier ' + files[0].name, billets)) S.plMsg = { ok: true, text: plural(PLIST.codes.length, 'billet') + ' importé' + (PLIST.codes.length > 1 ? 's' : '') + '.' };
+        render();
+      }
+    };
+    rd.readAsText(f);
+  });
+});
+Object.assign(A, {
+  plist: function () { S.menu = false; S.plBack = S.modal === 'scan' ? 'scan' : null; if (S.modal === 'scan') camStop(); S.modal = 'plist'; S.plMsg = null; S.plDel = false; },
+  plistBack: function () { S.modal = null; S.scan = null; if (S.plBack === 'scan') A.scan(); S.plBack = null; },
+  plistGh: function () { if (ghReady()) plistFromGitHub(); else { S.ghPending = null; S.ghBack = 'plist'; S.modal = 'ghcfg'; S.ghPass = ''; S.ghMsg = { ok: null, text: 'Pour charger la liste depuis GitHub, déverrouillez d’abord GitHub sur cet appareil.' }; } },
+  plistFile: function () { var f = document.getElementById('plistfile'); f.value = ''; f.click(); },
+  plistAskDel: function () { S.plDel = true; },
+  plistDel: function () { try { localStorage.removeItem(PLIST_KEY); } catch (e) {} plistLoad(); refreshUsage(); S.plDel = false; S.plMsg = { ok: true, text: 'Liste effacée de cet appareil : seul le format du QR est contrôlé.' }; }
+});
+function vPlist() {
+  var m = S.plMsg;
+  return '<div class="overlay"><div class="modal" style="width:min(620px,96vw)" data-caisse="entrees"><h2>Liste des préventes vendues</h2>' +
+    '<div class="result" style="display:block;font-size:16px;line-height:1.45"><strong>' + plistLabel() + '</strong></div>' +
+    '<div class="sub" style="line-height:1.5">Avec une liste, un QR au bon format mais absent de la liste est signalé comme <strong>billet inconnu</strong>. ' +
+      'Déposez l’export de la billetterie (CSV, Excel enregistré en CSV, JSON ou texte) dans le dossier <strong>' + PL_DOSSIER + '/</strong> du dépôt privé des ventes, puis chargez-le ici ; ou importez le fichier directement. ' +
+      'Tous les codes de 32 caractères trouvés sont repris. Rechargez la liste si des préventes ont été vendues depuis.</div>' +
+    (m ? '<div class="result' + (m.ok === false ? ' ko' : '') + '" style="display:block;font-size:15px;line-height:1.45">' + esc(m.text) + '</div>' : '') +
+    '<div class="actions" style="justify-content:flex-start">' +
+      (ghConfigured() ? '<button class="btn btn-primary" data-a="plistGh"' + (S.plBusy ? ' disabled' : '') + '>' + (S.plBusy ? 'Chargement…' : 'Charger depuis GitHub') + '</button>' : '') +
+      '<button class="btn" data-a="plistFile">Importer un fichier</button>' +
+      (PLIST.codes ? (S.plDel ? '<button class="btn btn-danger" data-a="plistDel" style="border:1px solid var(--red)">Confirmer l’effacement</button>' : '<button class="btn btn-danger" data-a="plistAskDel">Effacer la liste</button>') : '') +
+    '</div>' +
+    '<div class="actions"><button class="btn" data-a="plistBack">' + (S.plBack === 'scan' ? '← Retour au scan' : 'Fermer') + '</button></div></div></div>';
+}
+
+/* ---------- Icônes ---------- */
+function svg(p, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 26) + '" height="' + (s || 26) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>'; }
+var I = {
+  entrees: '<path d="M4 21V5a2 2 0 0 1 2-2h8l4 4v14"/><path d="M2 21h20"/><circle cx="12" cy="13" r="1"/>',
+  tickets: '<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M9 7v10M15 7v10"/>',
+  boissons: '<path d="M7 3h10l-1.5 8a3.5 3.5 0 0 1-7 0z"/><path d="M12 14.5V21M8.5 21h7"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M17 20h4v-3M14 20v.01"/>',
+  dots: '<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>',
+  down: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.34-5.66L20 8"/><path d="M20 3v5h-5"/>',
+  home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>',
+  tablet: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/>',
+  up: '<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>'
+};
+/* Smartphone ou tablette : plus petit côté de l'écran < 600 px */
+var PHONE = Math.min(screen.width, screen.height) < 600;
+if (PHONE) document.documentElement.classList.add('phone');
+try { screen.orientation.lock(PHONE ? 'portrait' : 'landscape').catch(function () {}); } catch (e) {}
+
+function nightStats(night) {
+  var R = summarize(recs(night));
+  return R;
+}
+function nightLabel(n) { return 'Soirée du ' + frDate(n); }
+
+/* ---------- Accueil ---------- */
+function vHome() {
+  var R = nightStats(tonight());
+  var k = {
+    entrees: plural(R.entrees.personnes + R.entrees.preventes, 'entrée') + ' ce soir',
+    tickets: plural(R.tickets.cases, 'case') + ' vendue' + (R.tickets.cases > 1 ? 's' : ''),
+    boissons: plural(R.boissons.commandes, 'commande')
+  };
+  return '<div class="home">' +
+    '<img class="logo" src="' + LOGO_FULL + '" alt="Soirée démo">' +
+    (S.usedPct >= 80 ? vStorageBar() : '') +
+    vAutoBar() +
+    '<div class="ctiles">' + Object.keys(CAISSES).map(function (c) {
+      return '<button class="ctile" data-caisse="' + c + '" data-a="open" data-v="' + c + '">' + svg(I[c], 40) +
+        '<div style="display:flex;flex-direction:column;gap:6px"><span class="t">' + CAISSES[c].nom + '</span><span class="d">' + CAISSES[c].desc + '</span><span class="k">' + k[c] + '</span></div></button>';
+    }).join('') + '</div>' +
+    '<div class="homelinks"><span class="sub">App ' + APP_VERSION + ' · ' + esc(catalogueLabel(CATALOGUE)) + '</span>' +
+      '<button class="btn-link" data-a="device">Nom de l’appareil</button>' +
+      (ghConfigured() ? '<button class="btn-link" data-a="openGh">Envoi des ventes</button>' : '') +
+      '</div>' +
+    '</div>';
+}
+
+/* ---------- En-tête caisse ---------- */
+/* État de l'envoi automatique : bandeau sur l'accueil, mention discrète dans l'en-tête des caisses */
+function vAutoBar() {
+  var a = autoStatus(); if (!a) return '';
+  var st = a.ko ? 'background:var(--warn-bg);color:var(--red);border-color:var(--red)' : a.warn ? 'background:var(--warn-bg);color:var(--warn-text)' : 'color:var(--muted)';
+  return '<button class="autobar" data-a="openGh" style="' + st + '">☁ ' + esc(a.t) + '</button>';
+}
+function vAutoMini() {
+  var a = autoStatus(); if (!a) return '';
+  return '<br><span data-a="openGh" style="cursor:pointer;color:' + (a.ko ? 'var(--red)' : a.warn ? 'var(--amber)' : 'var(--faint)') + '">☁ ' + esc(a.court) + '</span>';
+}
+function vHeader() {
+  var home = '<img src="' + LOGO_S + '" alt="Soirée démo \u2013 retour à l\u2019accueil" title="Accueil" data-a="goHome" style="cursor:pointer">';
+  var segC = '<div class="ctitle">' + svg(I[S.caisse], PHONE ? 22 : 26) + '<span>' + CAISSES[S.caisse].nom + '</span></div>';
+  var segT = '<div class="seg"><button class="' + (S.tab === 'caisse' ? 'on' : '') + '" data-a="tab" data-v="caisse">' + (S.caisse === 'boissons' ? 'Commande' : 'Caisse') + '</button><button class="' + (S.tab === 'hist' ? 'on' : '') + '" data-a="tab" data-v="hist">Historique</button></div>';
+  var right = '<button class="iconbtn" data-a="toggleMenu" aria-label="Menu">' + svg(I.dots, 22) + '</button>';
+  if (PHONE) return '<div class="header">' + home + segC + '<div style="flex:1"></div>' + right + '</div>' +
+    '<div class="subbar">' + segT + '<div class="hdate" style="margin-left:auto;font-size:12px">' + frDate(tonight()).slice(0, 5) + '<br>' + esc(devName()) + '</div></div>';
+  return '<div class="header">' + home + segC + segT +
+    '<div style="flex:1"></div><div class="hdate">' + nightLabel(tonight()) + '<br>' + esc(devName()) + vAutoMini() + '</div>' + right + '</div>';
+}
+
+function vPos() {
+  var body = S.tab === 'hist' ? vHist() : S.caisse === 'entrees' ? vEntrees() : S.caisse === 'tickets' ? vTickets() : vBoissons();
+  return '<div class="full" data-caisse="' + S.caisse + '">' + vHeader() + vStorageBar() + body + vMenu() + '</div>';
+}
+
+/* ---------- Caisse 1 : Entrées ---------- */
+function vEntrees() {
+  var R = nightStats(tonight()), vip = R.entrees.tables, tot0 = S.cartE.length && !(cartETotal() > 0);
+  var html = '<div class="body"><div class="main">' +
+    '<div class="strip"><div class="stat"><b>' + (R.entrees.personnes + R.entrees.preventes) + '</b><span>Entrées ce soir</span></div>' +
+      '<div class="stat"><b>' + (R.entrees.personnes - R.entrees.invites) + '</b><span>Payantes</span></div>' +
+      '<button class="stat statbtn" data-a="qlist"><b>' + R.entrees.preventes + '</b><span>Préventes QR · voir la liste ›</span></button>' +
+      '<div class="stat"><b>' + vip + '</b><span>Tables VIP</span></div></div>' +
+    '<div class="bigtiles">' + CATALOGUE.entrees.filter(function (e) { return e.id !== PQR_ID; }).map(function (e) {
+      return '<button class="bigt" data-a="addE" data-v="' + esc(e.id) + '"><span class="m">' + esc(e.libelle) + '</span><span class="p">' + money(e.prix) + '</span></button>';
+    }).join('') +
+    '<button class="bigt scan" data-a="scan">' + svg(I.qr, 54) + '<div style="display:flex;flex-direction:column;gap:4px"><span class="m">Scanner une prévente</span><span class="sub">QR code du billet · contrôle du format, puis nombre d\u2019entrées</span></div></button>' +
+    '</div></div>';
+  html += vCart('E', S.cartE, function (l) { return money(l.prix) + ' / unité' + (remiseE(l) ? ' · <b style="color:var(--amber)">remise −' + money(remiseE(l)) + '</b>' : l.prix > 0 ? ' · <span style="opacity:.7">toucher pour une remise</span>' : ''); },
+    function (l) { return (remiseE(l) ? '<s style="opacity:.55;font-size:.8em;margin-right:6px">' + money(l.prix * l.qty) + '</s>' : '') + money(lineTotE(l)); },
+    '<div class="row"><span style="font-size:22px;font-weight:800">TOTAL</span><span class="total">' + money(cartETotal()) + '</span></div>' +
+    '<button class="pay" data-a="openPay"' + (S.cartE.length ? '' : ' disabled') + '>' + (tot0 ? 'Valider (0\u00a0€)' : 'Encaisser') + '</button>', 'Panier', 'Touchez une entrée pour l’ajouter',
+    money(cartETotal()));
+  return html + '</div>';
+}
+
+function vCart(K, cart, unit, lineTot, footer, title, emptyTxt, barTotal) {
+  var html = '';
+  if (PHONE && cart.length && !S.cartOpen) {
+    var nb = cart.reduce(function (a, l) { return a + l.qty; }, 0);
+    html += '<button class="cartbar" data-a="openCart"><span class="n">' + nb + '</span><span>Voir ' + (K === 'B' ? 'la commande' : 'le panier') + '</span><span class="tt">' + barTotal + '</span></button>';
+  }
+  html += '<div class="cart' + (S.cartOpen ? ' open' : '') + '"><div class="cart-h">' + (PHONE ? '<button class="back" data-a="closeCart">← Retour</button>' : '') +
+    '<h2>' + title + '</h2>' + (cart.length ? '<button class="small btn-danger" data-a="clear' + K + '">Vider</button>' : '') + '</div><div class="lines">';
+  if (!cart.length) html += '<div class="empty">' + emptyTxt + '</div>';
+  cart.forEach(function (l, i) {
+    var clic = K === 'E' && l.prix > 0;
+    html += '<div class="line"><div class="info"' + (clic ? ' data-a="remE" data-v="' + i + '" style="cursor:pointer" title="Toucher pour une remise"' : '') + '><span class="n">' + esc(l.libelle) + (l.format === 'bouteille' ? ' <span class="pill">bouteille</span>' : '') + '</span><span class="u">' + unit(l) + '</span></div>' +
+      '<div class="qty"><button data-a="dec' + K + '" data-v="' + i + '" aria-label="Retirer un">−</button><span>' + l.qty + '</span><button data-a="inc' + K + '" data-v="' + i + '" aria-label="Ajouter un">+</button></div>' +
+      '<span class="t">' + lineTot(l) + '</span></div>';
+  });
+  return html + '</div><div class="cart-f">' + footer + '</div></div>';
+}
+
+/* ---------- Caisse 2 : Tickets ---------- */
+function vTickets() {
+  var n = S.tk.cases, cpc = CPC(), pc = PC(), cartes = Math.floor(n / cpc), reste = n % cpc, tot = n * pc;
+  var grid = '<div class="card18" style="grid-template-columns:repeat(' + Math.ceil(cpc / 2) + ',1fr)">';
+  var shown = n && reste === 0 ? cpc : reste;
+  for (var i = 0; i < cpc; i++) grid += '<i class="' + (i < shown ? 'on' : '') + '"></i>';
+  grid += '</div>';
+  var more = cartes ? (reste ? plural(cartes, 'carte complète', 'cartes complètes') + ' + la carte ci-dessus' : (cartes > 1 ? plural(cartes, 'carte complète', 'cartes complètes') : '1 carte complète')) : (n ? 'carte entamée' : 'carte de ' + cpc + ' cases à ' + money(pc) + ' la case');
+  var kv = parseInt(S.kpVal, 10) || 0, prev;
+  if (S.kpMode === 'cases') prev = kv ? plural(kv, 'case') + ' = <strong>' + money(kv * pc) + '</strong>' : 'Nombre de cases demandé';
+  else prev = kv ? 'Max <strong>' + plural(Math.floor(kv / pc), 'case') + '</strong> = ' + money(Math.floor(kv / pc) * pc) + (kv % pc ? ' · reste ' + money(kv % pc) : '') : 'Budget du client en €';
+  var budgetInfo = S.tk.budget != null ? '<div class="hint">Budget ' + money(S.tk.budget) + ' → <strong>' + plural(n, 'case') + '</strong> pour ' + money(tot) +
+    (S.tk.budget - tot > 0 ? ' · il reste ' + money(S.tk.budget - tot) + ' (moins d’une case)' : ' · budget utilisé entièrement') + '</div>' : '';
+  return '<div class="body"><div class="main"><div class="tk">' +
+    '<div class="panel"><div class="row"><h3>Vente en cours</h3><button class="small btn-danger" data-a="tkClear"' + (n ? '' : ' disabled') + '>Remettre à zéro</button></div>' +
+      '<div class="tkbig"><span class="n">' + n + '</span><span class="l">' + (n > 1 ? 'cases' : 'case') + '</span><span class="s">' + tkText(n) + '</span>' +
+        '<div style="height:8px"></div>' + grid + '<span class="cards-more">' + more + '</span>' +
+        '<span class="e">' + money(tot) + '</span></div>' + budgetInfo +
+      '<div class="tkbtns">' +
+        '<button class="plus" data-a="tkAdd" data-v="' + cpc + '">+ 1 carte<small>' + cpc + ' cases · ' + money(cpc * pc) + '</small></button>' +
+        '<button class="plus" data-a="tkAdd" data-v="1">+ 1 case<small>' + money(pc) + '</small></button>' +
+        '<button data-a="tkAdd" data-v="-' + cpc + '"' + (n >= cpc ? '' : ' disabled') + '>− 1 carte<small>−' + cpc + ' cases</small></button>' +
+        '<button data-a="tkAdd" data-v="-1"' + (n ? '' : ' disabled') + '>− 1 case<small>−' + money(pc) + '</small></button>' +
+      '</div>' +
+      
+      '<button class="pay" data-a="openPay"' + (n ? '' : ' disabled') + '>Encaisser ' + (n ? money(tot) : '') + '</button>' +
+    '</div>' +
+    '<div class="panel"><h3>Le client demande…</h3>' +
+      '<div class="seg" style="align-self:stretch"><button style="flex:1" class="' + (S.kpMode === 'cases' ? 'on' : '') + '" data-a="kpMode" data-v="cases">Un nombre de cases</button><button style="flex:1" class="' + (S.kpMode === 'budget' ? 'on' : '') + '" data-a="kpMode" data-v="budget">Un budget (€)</button></div>' +
+      '<div class="kpdisp"><b>' + (S.kpVal || '0') + (S.kpMode === 'budget' ? ' €' : '') + '</b><span>' + prev + '</span></div>' +
+      '<div class="kp">' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (d) { return '<button data-a="kp" data-v="' + d + '">' + d + '</button>'; }).join('') +
+        '<button data-a="kpBack" aria-label="Effacer un chiffre">⌫</button><button data-a="kp" data-v="0">0</button>' +
+        '<button data-a="kpApply" style="background:var(--acc);color:var(--on-acc);border:none;font-size:18px"' + (kv ? '' : ' disabled') + '>OK</button></div>' +
+      '<div class="sub" style="font-weight:700">Budgets rapides</div>' +
+      '<div class="quick">' + [10, 20, 30, 50, 100].map(function (b) { return '<button data-a="budget" data-v="' + b + '">' + b + ' €</button>'; }).join('') + '</div>' +
+      '<div class="sub">« OK » remplace la vente en cours. Avec un budget, l’app calcule le maximum de cases possible (' + money(pc) + ' la case).</div>' +
+    '</div></div></div></div>';
+}
+
+/* ---------- Caisse 3 : Boissons ---------- */
+function vBoissons() {
+  var cats = CATALOGUE.boissons, cat = cats.filter(function (k) { return k.id === S.bcat; })[0] || cats[0], pc = PC(), tot = cartBCases();
+  var html = '<div class="body"><div class="main"><div class="cats">' +
+    cats.map(function (k) { return '<button class="cat' + (k.id === cat.id ? ' on' : '') + '" data-a="bcat" data-v="' + esc(k.id) + '">' + esc(k.nom) + '</button>'; }).join('') +
+    '</div><div class="products">' +
+    cat.produits.map(function (p) {
+      return '<button class="prod' + (p.format === 'bouteille' ? ' btl' : '') + '" data-a="addB" data-v="' + esc(p.id) + '"><div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start"><span class="m">' + esc(p.libelle) + '</span>' +
+        (p.format === 'bouteille' ? '<span class="tag">Bouteille</span>' : '') + '</div><span class="p">' + plural(p.cases, 'case') + '<small>' + money(p.cases * pc) + '</small></span></button>';
+    }).join('') + '</div></div>';
+  html += vCart('B', S.cartB, function (l) { return plural(l.cases, 'case') + ' / unité'; }, function (l) { return plural(l.cases * l.qty, 'case'); },
+    '<div class="barrer"><b>' + tot + '</b><span>' + (tot > 1 ? 'cases à barrer' : 'case à barrer') + '</span><span style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--faint)">valeur ' + money(tot * pc) + '</span></div>' +
+    '<button class="pay" data-a="saveB"' + (S.cartB.length ? '' : ' disabled') + '>Valider la commande</button>', 'Commande', 'Touchez une boisson pour l’ajouter', plural(tot, 'case'));
+  return html + '</div>';
+}
+
+/* ---------- Historique ---------- */
+function nightsList(extra) {
+  var t = tonight(), ds = Object.keys(S.nights).filter(function (d) { return S.nights[d] && S.nights[d].length; });
+  (extra || []).forEach(function (d) { if (ds.indexOf(d) < 0) ds.push(d); });
+  if (ds.indexOf(t) < 0) ds.push(t);
+  return ds.sort().reverse().slice(0, 7);
+}
+function payText(p) { return p.mode === 'gratuit' ? 'Gratuit (0\u00a0€)' : p.mode === 'cash' ? 'Cash' : p.mode === 'bancontact' ? 'Bancontact' : 'Mixte · cash ' + money(p.cash) + ' + BC ' + money(p.bancontact); }
+function vHist() {
+  var days = nightsList(), night = days.indexOf(S.histNight) >= 0 ? S.histNight : tonight();
+  var all = recs(night).filter(function (r) { return r.caisse === S.caisse; }), ok = valid(all), nAnn = all.length - ok.length;
+  var html = '<div class="hist"><div class="hhead"><h2>' + CAISSES[S.caisse].nom + ' · ' + nightLabel(night).toLowerCase() + '</h2>' +
+    (days.length > 1 ? '<div class="hdays">' + days.map(function (d) { return '<button class="choice' + (d === night ? ' on' : '') + '" data-a="histNight" data-v="' + d + '">' + (d === tonight() ? 'Ce soir' : frDate(d).slice(0, 5)) + '</button>'; }).join('') + '</div>' : '') + '</div>';
+  if (!all.length) return html + '<div class="empty" style="padding:60px">Rien d’enregistré pour cette soirée sur cet appareil</div></div>';
+  var R = summarize(ok), sum;
+  if (S.caisse === 'entrees') sum = plural(R.entrees.personnes + R.entrees.preventes, 'entrée') + ' (' + (R.entrees.personnes - R.entrees.invites) + ' payantes, ' + R.entrees.invites + ' invités, ' + R.entrees.preventes + ' préventes QR) · ' + money(R.entrees.recette);
+  else if (S.caisse === 'tickets') sum = plural(R.tickets.ventes, 'vente') + ' · ' + plural(R.tickets.cases, 'case') + ' · ' + money(R.tickets.recette);
+  else sum = plural(R.boissons.commandes, 'commande') + ' · ' + plural(R.boissons.cases, 'case') + ' à barrer';
+  html += '<div class="hsum"><strong>' + sum + '</strong>' + (nAnn ? '<span class="sub">' + nAnn + ' annulé' + (nAnn > 1 ? 's' : '') + ', non compté' + (nAnn > 1 ? 's' : '') + '</span>' : '') + '</div><div class="table">';
+  all.slice().reverse().forEach(function (v) {
+    var lines, pm = '', tt;
+    if (v.type === 'prevente' && v.sansQR) { lines = ['Prévente sans QR <span class="pill warn">justificatif</span>', '<span class="sub">justificatif de paiement</span>']; tt = '0\u00a0€'; pm = 'Prévente'; }
+    else if (isQ(v)) { lines = ['Prévente QR' + (nbQ(v) > 1 ? ' · <strong>' + nbQ(v) + ' entrées</strong>' : '') + (v.forcee ? ' <span class="pill warn">' + ({ format: 'QR non reconnu accepté', inconnu: 'hors liste, accepté', date: 'autre soirée, accepté', nonpaye: 'non payé, accepté' }[v.anomalie] || 'doublon accepté') + '</span>' : v.controle === 'liste' ? ' <span class="pill">liste ✓</span>' : ''), '<span class="sub" style="word-break:break-all">' + esc(v.code) + '</span>']; tt = '0 €'; pm = 'Prévente'; }
+    else if (v.type === 'entree') { lines = v.lignes.map(function (l) { return l.quantite + ' × ' + esc(l.libelle) + (l.remise ? ' <span class="pill warn">remise −' + money(l.remise) + '</span>' : ''); }); pm = payText(v.paiement); tt = money(v.total); }
+    else if (v.type === 'ticket') { lines = [plural(v.cases, 'case') + ' (' + tkText(v.cases) + ')']; if (v.budget) lines.push('<span class="sub">budget ' + money(v.budget) + '</span>'); pm = payText(v.paiement); tt = money(v.total); }
+    else { lines = v.lignes.map(function (l) { return l.quantite + ' × ' + esc(l.libelle) + (l.format === 'bouteille' ? ' (bouteille)' : '') + ' · ' + plural(l.totalCases, 'case'); }); pm = 'à barrer'; tt = plural(v.totalCases, 'case'); }
+    var an = v.annulation;
+    html += '<div class="sale' + (an ? ' cancelled' : '') + '"><span class="h">' + hhmm(v.horodatage) + '</span><div class="l">' + lines.map(function (x) { return '<span>' + x + '</span>'; }).join('') +
+      (an ? '<span class="annul">Annulé à ' + hhmm(an.horodatage) + (an.motif ? ' · ' + esc(an.motif) : '') + '</span>' : '') + '</div>' +
+      '<span class="pm">' + pm + '</span><span class="tt">' + tt + '</span><span class="act">' + (an ? '' : '<button class="btn btn-danger" data-a="askCancel" data-v="' + esc(night + '|' + v.id) + '">Annuler</button>') + '</span></div>';
+  });
+  return html + '</div></div>';
+}
+
+/* ---------- Bilan de la soirée ---------- */
+function vBilan() {
+  var nights = nightsList(Object.keys(S.imports)), night = S.bilanNight && nights.indexOf(S.bilanNight) >= 0 ? S.bilanNight : tonight();
+  var R = summarize(bilanRecords(night)), pc = PC(), files = S.importFiles.filter(function (f) { return f.soiree === night; });
+  var vip = (R.entrees.produits.vip || {}).quantite || 0, ecart = R.tickets.cases - R.boissons.cases;
+  function kpi(lbl, val, small) { return '<div class="kpi"><span>' + lbl + '</span><b>' + val + '</b>' + (small ? '<small>' + small + '</small>' : '') + '</div>'; }
+  var html = '<div class="full" data-caisse="boissons"><div class="header"><img src="' + LOGO_S + '" alt="Soirée démo" data-a="goHome">' +
+    '<h2 style="margin:0;font-size:' + (PHONE ? '18' : '22') + 'px;font-weight:800">Bilan</h2><div style="flex:1"></div>' +
+    '<button class="btn" data-a="bilanBack" style="height:46px">← Retour</button></div><div class="bilan">';
+  html += '<div class="hhead" style="margin:0 auto"><h2 style="margin:0;font-size:24px">' + nightLabel(night) + '</h2>' +
+    (nights.length > 1 ? '<div class="hdays">' + nights.map(function (d) { return '<button class="choice' + (d === night ? ' on' : '') + '" data-a="bilanNight" data-v="' + d + '">' + (d === tonight() ? 'Ce soir' : frDate(d).slice(0, 5)) + '</button>'; }).join('') + '</div>' : '') + '</div>';
+  html += '<div class="srcs">Données : <strong>cet appareil (' + esc(devName()) + ')</strong>' +
+    (files.length ? ' + ' + files.map(function (f) { return '<strong>' + esc(f.appareilNom) + '</strong> (' + f.n + ')'; }).join(', ') : '') +
+    '. Pour le bilan complet, chaque appareil envoie sa soirée sur GitHub (menu ⋮), puis « Charger depuis GitHub » ici. Sans réseau : exporter les fichiers et les importer.' +
+    '<div class="actions" style="justify-content:flex-start;margin-top:10px">' +
+    (ghConfigured() ? '<button class="btn btn-primary" data-a="ghLoad"' + (S.ghBusy ? ' disabled' : '') + '>' + (S.ghBusy === 'load' ? 'Chargement…' : 'Charger depuis GitHub') + '</button>' : '') +
+    '<button class="btn" data-a="importFiles">Importer des fichiers</button>' +
+    (S.importFiles.length ? '<button class="btn btn-danger" data-a="clearImports">Retirer les imports</button>' : '') +
+    '<button class="btn" data-a="csv">Exporter le bilan (CSV)</button></div></div>';
+
+  html += '<section class="sect"><h3><i style="background:var(--gold)"></i>Recette</h3><div class="bgrid">' +
+    kpi('Total encaissé', money(R.recette)) + kpi('Cash', money(R.cash)) + kpi('Bancontact', money(R.bancontact)) +
+    kpi('Entrées', money(R.entrees.recette)) + kpi('Tickets', money(R.tickets.recette)) + '</div></section>';
+
+  html += '<section class="sect"><h3><i style="background:var(--gold)"></i>Entrées</h3><div class="bgrid">' +
+    kpi('Entrées totales', R.entrees.personnes + R.entrees.preventes, 'payantes + préventes') +
+    kpi('Entrées payantes', R.entrees.personnes - R.entrees.invites, money(((R.entrees.produits.entree || {}).total) || 0)) +
+    kpi('Préventes QR', R.entrees.preventes, R.entrees.forcees ? [['doublon', 'doublon'], ['format', 'QR non reconnu'], ['inconnu', 'hors liste']].filter(function (x) { return R.entrees.anomalies[x[0]]; }).map(function (x) { return R.entrees.anomalies[x[0]] + ' ' + x[1] + ' accepté' + (R.entrees.anomalies[x[0]] > 1 ? 's' : ''); }).join(', ') : 'aucune anomalie acceptée') +
+    kpi('Tables VIP', vip, money(((R.entrees.produits.vip || {}).total) || 0)) + '</div></section>';
+
+  html += '<section class="sect"><h3><i style="background:var(--leaf)"></i>Tickets</h3><div class="bgrid">' +
+    kpi('Cases vendues', R.tickets.cases, money(R.tickets.cases * pc)) +
+    kpi('Équivalent cartes', String(r2(R.tickets.cases / CPC())).replace('.', ','), 'de ' + CPC() + ' cases') +
+    kpi('Cartes complètes', R.tickets.cartes, plural(R.tickets.casesSeules, 'case') + ' à l’unité') +
+    kpi('Ventes', R.tickets.ventes, R.tickets.ventes ? 'moy. ' + String(r2(R.tickets.cases / R.tickets.ventes)).replace('.', ',') + ' cases' : '') + '</div></section>';
+
+  html += '<section class="sect"><h3><i style="background:var(--mint)"></i>Boissons</h3><div class="bgrid">' +
+    kpi('Commandes', R.boissons.commandes) + kpi('Cases barrées', R.boissons.cases, 'valeur ' + money(R.boissons.cases * pc)) +
+    kpi('Cases non barrées', ecart, ecart >= 0 ? 'vendues − barrées (cartes encore en poche)' : 'plus barrées que vendues : fichiers manquants ?') + '</div>';
+  var prods = Object.keys(R.boissons.produits).map(function (k) { return R.boissons.produits[k]; });
+  if (prods.length) {
+    var max = Math.max.apply(null, prods.map(function (p) { return p.quantite; }));
+    html += '<div style="height:12px"></div><table class="btable"><thead><tr><th>Boisson</th><th class="n">Qté</th><th class="hide-phone" style="width:30%"></th><th class="n">Cases</th><th class="n hide-phone">Valeur</th></tr></thead><tbody>';
+    CATALOGUE.boissons.map(function (k) { return k.nom; }).concat(Object.keys(R.boissons.categories)).filter(function (v, i, a) { return a.indexOf(v) === i && R.boissons.categories[v]; }).forEach(function (cn) {
+      var kc = R.boissons.categories[cn];
+      html += '<tr class="cat"><td>' + esc(cn) + '</td><td class="n">' + kc.quantite + '</td><td class="hide-phone"></td><td class="n">' + kc.cases + '</td><td class="n hide-phone">' + money(kc.cases * pc) + '</td></tr>';
+      prods.filter(function (p) { return p.categorie === cn; }).sort(function (a, b) { return b.quantite - a.quantite; }).forEach(function (p) {
+        html += '<tr><td>' + esc(p.libelle) + (p.format === 'bouteille' ? ' <span class="pill">bouteille</span>' : '') + '</td><td class="n">' + p.quantite + '</td>' +
+          '<td class="hide-phone"><div class="bar"><i style="width:' + Math.round(p.quantite * 100 / max) + '%"></i></div></td><td class="n">' + p.cases + '</td><td class="n hide-phone">' + money(p.cases * pc) + '</td></tr>';
+      });
+    });
+    html += '</tbody></table>';
+  } else html += '<div class="sub" style="margin-top:10px">Aucune commande enregistrée pour cette soirée.</div>';
+  html += '</section>';
+
+  var hs = Object.keys(R.heures).map(Number).sort(function (a, b) { return (a < 12 ? a + 24 : a) - (b < 12 ? b + 24 : b); });
+  if (hs.length) {
+    var mx = 1; hs.forEach(function (h) { mx = Math.max(mx, R.heures[h].entrees, R.heures[h].commandes); });
+    html += '<section class="sect"><h3><i style="background:var(--text)"></i>Activité par heure</h3><div class="hours">' + hs.map(function (h) {
+      var b = R.heures[h];
+      return '<div class="hcol" title="' + h + ' h : ' + b.entrees + ' entrées, ' + b.commandes + ' commandes"><div class="bars"><i style="height:' + Math.round(b.entrees * 100 / mx) + '%;background:var(--gold)"></i><i style="height:' + Math.round(b.commandes * 100 / mx) + '%;background:var(--mint)"></i></div><span>' + h + 'h</span></div>';
+    }).join('') + '</div><div class="legend"><span><i style="background:var(--gold)"></i>Entrées (payantes + préventes)</span><span><i style="background:var(--mint)"></i>Commandes boissons</span></div></section>';
+  }
+  return html + '</div></div>';
+}
+
+/* ---------- Menu ⋮ ---------- */
+function vMenu() {
+  if (!S.menu) return '';
+  function tile(a, icon, label, sub, v) { return '<button class="mtile" data-a="' + a + '"' + (v ? ' data-v="' + v + '"' : '') + '>' + svg(icon) + '<span class="mt-l">' + label + '</span>' + (sub ? '<span class="mt-s">' + sub + '</span>' : '') + '</button>'; }
+  return '<div class="menu-back" data-a="toggleMenu"></div><div class="menu" role="menu">' +
+    '<div class="mgroup">Soirée</div><div class="mgrid">' +
+      (ghConfigured() ? tile('ghSend', I.up, S.ghBusy && S.ghBusy !== 'load' ? 'Envoi en cours…' : 'Envoyer maintenant', (autoStatus() || {}).court || '') : '') +
+      tile('download', I.down, 'Exporter la soirée', 'Fichier des 3 caisses de cet appareil') +
+      tile('showDays', I.cal, 'Soirées enregistrées', 'Télécharger, effacer, mémoire') + '</div>' +
+    '<div class="mgroup">Appareil</div><div class="mgrid">' +
+      tile('checkCat', I.refresh, S.catLoading ? 'Vérification…' : 'Vérifier le catalogue', S.siteUpdate ? 'Mise à jour disponible' : 'Installé : v' + CATALOGUE.version) +
+      /* TEST UNIQUEMENT : à retirer avant la soirée (TEST_EFFACER_PREVENTES = false) */
+      (TEST_EFFACER_PREVENTES ? tile('testDelQ', I.qr, 'TEST · Effacer les préventes', plural(countQ(), 'prévente') + ' scannée' + (countQ() > 1 ? 's' : '') + ' sur l\u2019appareil') : '') +
+      tile('device', I.tablet, 'Nom de l’appareil', devName()) +
+      tile('goHome', I.home, 'Accueil', 'Choisir une autre caisse') + '</div>' +
+    '<div class="meta">' + esc(catalogueLabel(CATALOGUE)) + ' · appareil ' + esc(DEV.id) + '</div></div>';
+}
+
+/* ---------- Fenêtres ---------- */
+function vPay() {
+  var t = payTotal(), rec = num(S.received), ch = rec - t, mixC = num(S.mix);
+  var can = S.payMode === 'cash' ? rec >= t - 0.001 : S.payMode === 'mix' ? (mixC > 0 && mixC < t) : true;
+  var what = S.caisse === 'entrees' ? S.cartE.map(function (l) { return l.qty + ' × ' + esc(l.libelle); }).join(', ') : plural(S.tk.cases, 'case') + ' (' + tkText(S.tk.cases) + ')';
+  var html = '<div class="overlay"><div class="modal paymodal" style="width:min(640px,96vw)" data-caisse="' + S.caisse + '"><div class="row"><div><h2>Encaissement</h2><div class="sub">' + what + '</div></div><span style="font-size:40px;font-weight:800">' + money(t) + '</span></div>' +
+    '<div class="modes"><button class="mode' + (S.payMode === 'cash' ? ' on' : '') + '" data-a="mode" data-v="cash">Cash</button><button class="mode' + (S.payMode === 'bc' ? ' on' : '') + '" data-a="mode" data-v="bc">Bancontact</button><button class="mode' + (S.payMode === 'mix' ? ' on' : '') + '" data-a="mode" data-v="mix">Mixte</button></div>';
+  var body;
+  if (S.payMode === 'cash') {
+    body = '<div class="sub" style="font-weight:700">Billets reçus</div><div class="bills">' +
+      BILLS.map(function (b) { return '<button class="bill" data-a="bill" data-v="' + b + '">' + b + ' €</button>'; }).join('') + '<button class="bill exact" data-a="exact">Montant exact</button></div>' +
+      '<div style="display:flex;gap:12px;align-items:flex-end"><label class="f" style="flex:1">Montant reçu (€)<input type="text" inputmode="decimal" data-f="received" value="' + esc(S.received) + '" placeholder="0" autocomplete="off"></label><button class="btn btn-danger" data-a="resetReceived">Effacer</button></div>' +
+      '<div class="result' + (ch >= -0.001 ? '' : ' ko') + '"><b>' + (ch >= -0.001 ? 'À rendre' : 'Il manque') + '</b><span>' + money(Math.abs(ch)) + '</span></div>';
+  } else if (S.payMode === 'bc') {
+    body = '<div class="result" style="display:block;font-size:18px;line-height:1.5">Encaissez <strong style="white-space:nowrap;font-size:1.25em">' + money(t) + '</strong> sur le terminal, puis validez.</div>';
+  } else {
+    body = '<div class="sub" style="font-weight:700">Billets reçus (part cash)</div><div class="bills">' +
+      BILLS.map(function (b) { return '<button class="bill" data-a="bill" data-v="' + b + '">' + b + ' €</button>'; }).join('') + '<button class="bill" data-a="resetMix" style="font-size:15px;color:var(--red)">Effacer</button></div>' +
+      '<label class="f">Part payée en cash (€)<input type="text" inputmode="decimal" data-f="mix" value="' + esc(S.mix) + '" placeholder="0" autocomplete="off"></label>' +
+      (mixC >= t - 0.001 && mixC > 0 ? '<div class="result ko"><b>Le cash couvre tout</b><span style="font-size:18px">Choisissez « Cash »</span></div>'
+        : '<div class="result"><b>Reste en Bancontact</b><span>' + money(Math.max(0, t - mixC)) + '</span></div>');
+  }
+  html += '<div class="paybody' + (S.payMode === 'bc' ? ' mid' : '') + '">' + body + '</div>';
+  return html + '<div class="actions"><button class="btn" data-a="close" style="height:60px">Retour</button><button class="btn btn-primary" data-a="validate" style="height:60px;font-size:20px;padding:0 36px"' + (can ? '' : ' disabled') + '>Valider la vente</button></div></div></div>';
+}
+
+function vScan() {
+  var s = S.scan || {}, msg = '';
+  if (s.state === 'count') {
+    var qs = ''; var mx = s.max || MAX_QR; for (var k = 1; k <= Math.min(6, mx); k++) qs += '<button class="btn' + (s.n === k ? ' btn-primary' : '') + '" data-a="scanSetN" data-v="' + k + '" style="flex:1;height:56px;font-size:22px;font-weight:800;min-width:0;padding:0">' + k + '</button>';
+    msg = '<div class="scanmsg ok" style="gap:12px"><big>' + (s.anomalie ? '⚠ QR accepté' : '✓ QR valide') + '</big><code>' + esc(String(s.code).slice(0, 160)) + '</code>' +
+      (s.billet && s.billet.n ? '<span style="font-size:20px;font-weight:800;color:#fff">Billet : ' + plural(s.billet.n, 'entrée') + (s.billet.s ? ' · soirée du ' + frDate(s.billet.s).slice(0, 5) : '') + '</span>' : '') +
+      (s.deja && s.deja.n ? '<span style="background:rgba(150,95,10,.9);color:#fff;padding:6px 12px;border-radius:10px;font-size:16px">Déjà validé ce soir : <strong>' + plural(s.deja.n, 'entrée') + '</strong> (dernière à ' + hhmm(s.deja.h) + ')' + (s.billet && s.billet.n && s.deja.n >= s.billet.n ? ' · <strong>toutes les entrées du billet sont passées</strong>' : '') + '</span>' : '') +
+      '<span style="font-size:18px;font-weight:700">Nombre d\u2019entrées à valider ?' + (mx ? ' <span style="font-weight:600;opacity:.85">(maximum ' + mx + ')</span>' : '') + '</span>' +
+      '<div style="display:flex;gap:6px;width:100%">' + qs + '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:18px"><button class="btn" data-a="scanN" data-v="-1" style="width:64px;height:64px;font-size:30px"' + (s.n > 1 ? '' : ' disabled') + '>−</button>' +
+      '<b style="font-size:54px;min-width:80px;text-align:center;line-height:1">' + s.n + '</b><button class="btn" data-a="scanN" data-v="1" style="width:64px;height:64px;font-size:30px"' + (s.n < mx ? '' : ' disabled') + '>+</button></div></div>';
+  }
+  else if (s.state === 'ok') msg = '<div class="scanmsg ok"><big>✓ ' + plural(s.n || 1, 'entrée') + ' validée' + ((s.n || 1) > 1 ? 's' : '') + '</big><code>' + esc(s.code) + '</code><span>' + (s.forcee ? 'Entrée acceptée malgré l\u2019alerte' : 'Prévente enregistrée') +
+    (s.forcee ? '' : s.controle === 'liste' ? ' · billet trouvé dans la liste' : s.controle === 'format' ? ' · QR officiel (format)' : '') + '</span></div>';
+  else if (s.state === 'format') msg = '<div class="scanmsg dup"><big>✗ QR non reconnu</big><code>' + esc(String(s.raw).slice(0, 160)) + '</code><span>Ce n\u2019est pas un QR de prévente officiel Soirée démo</span></div>';
+  else if (s.state === 'date') msg = '<div class="scanmsg dup"><big>✗ Mauvaise soirée</big><code>' + esc(s.code) + '</code><span>Billet pour la soirée du <strong>' + frDate(s.billet.s) + '</strong>' + (s.billet.n ? ' (' + plural(s.billet.n, 'entrée') + ')' : '') + '</span></div>';
+  else if (s.state === 'nonpaye') msg = '<div class="scanmsg dup" style="background:rgba(150,95,10,.94)"><big>⚠ Paiement non confirmé</big><code>' + esc(s.code) + '</code><span>Billet ' + (s.billet.n ? 'de ' + plural(s.billet.n, 'entrée') + ' ' : '') + 'enregistré, mais <strong>pas marqué payé</strong> dans la liste. Demander la preuve de paiement.</span></div>';
+  else if (s.state === 'inconnu') msg = '<div class="scanmsg dup"><big>✗ Billet inconnu</big><code>' + esc(s.code) + '</code><span>QR au bon format mais <strong>absent de la liste</strong> des préventes vendues</span></div>';
+  else if (s.state === 'dup') msg = '<div class="scanmsg dup"><big>✗ Déjà scannée</big><code>' + esc(s.code) + '</code><span>Première entrée ' + (s.prev.soiree !== tonight() ? 'le ' + frDate(s.prev.soiree) + ' ' : '') + 'à <strong>' + hhmm(s.prev.horodatage) + '</strong>' + (s.prev.appareil ? ' (' + esc(s.prev.appareil.nom) + ')' : '') + '</span></div>';
+  else if (s.cam === 'nodet') msg = '<div class="scanmsg info">La lecture des QR codes n’est pas disponible dans ce navigateur.<br>Utilisez Chrome sur la tablette, ou saisissez le code ci-dessous.</div>';
+  else if (s.cam === 'denied') msg = '<div class="scanmsg info">Caméra inaccessible.<br>Autorisez la caméra pour cette app (icône à gauche de l’adresse dans Chrome), ou saisissez le code ci-dessous.</div>';
+  else if (s.cam === 'starting') msg = '<div class="scanmsg info">Démarrage de la caméra…</div>';
+  var acts = s.state === 'dup' || s.state === 'format' || s.state === 'inconnu' || s.state === 'date' || s.state === 'nonpaye'
+    ? '<button class="btn" data-a="scanForce" style="border-color:var(--amber);color:var(--amber)">Laisser entrer quand même</button><button class="btn btn-primary" data-a="scanRefuse" style="background:var(--red);color:#fff">Refuser · scanner le suivant</button>'
+    : s.state === 'count' ? '<button class="btn" data-a="scanRefuse">Annuler · scanner le suivant</button><button class="btn btn-primary" data-a="scanOk" style="flex:1;height:60px;font-size:20px">Valider ' + plural(s.n, 'entrée') + '</button>'
+    : s.state === 'ok' ? '<button class="btn btn-primary" data-a="scanNext">Scanner le suivant</button>' : '';
+  var n = summarize(recs(tonight())).entrees.preventes;
+  return '<div class="overlay"><div class="modal" style="width:min(640px,96vw)" data-caisse="entrees"><div class="row"><div><h2>Prévente QR</h2><div class="sub">' + plural(n, 'entrée') + ' en prévente ce soir sur cet appareil</div></div><button class="btn" data-a="close">Fermer</button></div>' +
+    '<div class="scanbox' + (s.state === 'count' ? ' count' : '') + '"><div id="camslot"></div>' + (s.cam === 'on' && s.state === 'live' ? '<div class="scanframe"></div>' : '') + msg + '</div>' +
+    (acts ? '<div class="actions">' + acts + '</div>' : '') +
+    (s.state === 'count' ? '' : '<div style="display:flex;gap:10px;align-items:flex-end"><label class="f" style="flex:1">Ou saisir le code du billet<input type="text" data-f="scanCode" value="' + esc(S.scanCode || '') + '" placeholder="code de la prévente" autocomplete="off" autocapitalize="none" spellcheck="false"></label>' +
+    '<button class="btn" data-a="scanManual"' + ((S.scanCode || '').trim() && s.state !== 'dup' ? '' : ' disabled') + '>Valider</button></div>') +
+    '<div class="row" style="padding:10px 14px;border:1px solid var(--line2);border-radius:12px;flex-wrap:wrap"><span class="sub" style="font-weight:700">' + plistLabel() + '</span></div>' +
+    '<div class="sub">Un QR code peut valoir plusieurs entrées et peut être lu plusieurs fois (pas de contrôle des doublons).</div></div></div>';
+}
+
+function vOkB() {
+  var n = S.okCases, cpc = CPC(), c = Math.floor(n / cpc), r = n % cpc;
+  function box(v, l) { return '<div class="result" style="flex:1;display:flex;flex-direction:column;gap:2px;padding:12px"><span style="font-size:40px;font-weight:800;line-height:1">' + v + '</span><b style="font-size:15px">' + l + '</b></div>'; }
+  return '<div class="overlay"><div class="modal" style="width:min(480px,96vw);align-items:center;text-align:center" data-caisse="boissons">' +
+    '<div class="sub" style="font-weight:700">Commande enregistrée</div>' +
+    '<div class="bigok"><b>' + n + '</b><span>' + (n > 1 ? 'cases à barrer' : 'case à barrer') + '</span></div>' +
+    '<div style="display:flex;align-items:center;gap:10px;width:100%">' + box(c, c > 1 ? 'cartes pleines' : 'carte pleine') + '<span style="font-size:28px;font-weight:800">+</span>' + box(r, r > 1 ? 'cases en plus' : 'case en plus') + '</div>' +
+    '<div class="sub" style="font-size:14px">carte pleine = ' + cpc + ' cases</div>' +
+    '<div class="sub" style="line-height:1.5">' + (S.okLines || []).map(function (l) { return l.quantite + ' × ' + esc(l.libelle) + (l.format === 'bouteille' ? ' (bouteille)' : ''); }).join(' · ') + '</div>' +
+    '<button class="btn btn-primary" data-a="close" style="width:100%;height:60px;font-size:20px">OK · nouvelle commande</button></div></div>';
+}
+
+/* Remise en euros sur une ligne du panier Entrées (v27) */
+function vRemise() {
+  var l = S.cartE[S.remI]; if (!l) return '';
+  var brut = r2(l.prix * l.qty), v = r2(num(S.remVal)), trop = v > brut;
+  var qs = [3, 5, 10, 15].filter(function (x) { return x <= brut; }).map(function (x) { return '<button class="btn" data-a="remSet" data-v="' + x + '" style="flex:1;height:54px;font-size:20px;font-weight:800;min-width:0;padding:0">' + x + '\u00a0€</button>'; }).join('');
+  return '<div class="overlay"><div class="modal" style="width:min(520px,96vw)" data-caisse="entrees"><h2>Remise</h2>' +
+    '<div class="result" style="display:block;font-size:17px;line-height:1.45"><strong>' + l.qty + ' × ' + esc(l.libelle) + '</strong> · ' + money(brut) + '</div>' +
+    '<label class="f">Remise sur cette ligne (€)<input type="text" inputmode="decimal" data-f="remVal" value="' + esc(S.remVal || '') + '" placeholder="0" autocomplete="off" autofocus></label>' +
+    (qs ? '<div style="display:flex;gap:8px">' + qs + '</div>' : '') +
+    '<div class="row" style="font-size:20px"><span>Nouveau total de la ligne</span><strong>' + money(Math.max(0, r2(brut - Math.min(v, brut)))) + '</strong></div>' +
+    (trop ? '<div class="sub" style="color:var(--amber)">La remise est limitée au montant de la ligne (' + money(brut) + ').</div>' : '') +
+    '<div class="actions">' + (l.remise ? '<button class="btn btn-danger" data-a="remDel">Retirer la remise</button>' : '') + '<button class="btn" data-a="close">Annuler</button><button class="btn btn-primary" data-a="remOk">Appliquer</button></div></div></div>';
+}
+function vCancel() {
+  var p = (S.cancelRef || '').split('|'), v = recs(p[0]).filter(function (x) { return x.id === p[1]; })[0];
+  if (!v) return '';
+  var desc = isQ(v) ? 'Prévente ' + esc(v.code) + ' · ' + plural(nbQ(v), 'entrée') : v.type === 'commande' ? v.lignes.map(function (l) { return l.quantite + ' × ' + esc(l.libelle); }).join(', ') + ' · ' + plural(v.totalCases, 'case')
+    : v.type === 'ticket' ? plural(v.cases, 'case') + ' · ' + money(v.total) : v.lignes.map(function (l) { return l.quantite + ' × ' + esc(l.libelle); }).join(', ') + ' · ' + money(v.total);
+  var p2 = v.paiement;
+  return '<div class="overlay"><div class="modal"><h2>Annuler cet enregistrement ?</h2>' +
+    '<div class="result" style="display:block;line-height:1.5"><strong>' + frDate(p[0]) + ' à ' + hhmm(v.horodatage) + '</strong><br>' + desc + '</div>' +
+    '<label class="f">Motif (facultatif)<input type="text" data-f="cancelMotif" value="' + esc(S.cancelMotif || '') + '" placeholder="ex. erreur de saisie" autocomplete="off"></label>' +
+    '<div class="sub">Il reste visible dans l’historique et dans l’export, marqué « annulé », mais n’est plus compté. ' +
+    (p2 && p2.cash > 0 ? 'Pensez à rendre <strong>' + money(p2.cash) + '</strong> en cash si le client est remboursé. ' : '') +
+    (p2 && p2.bancontact > 0 ? 'Un paiement Bancontact se rembourse sur le terminal. ' : '') + 'Cette action ne peut pas être défaite.</div>' +
+    '<div class="actions"><button class="btn" data-a="close">Retour</button><button class="btn" data-a="doCancel" style="background:var(--red);border-color:var(--red);color:#fff">Annuler l’enregistrement</button></div></div></div>';
+}
+
+function vDevice() {
+  return '<div class="overlay"><div class="modal"><h2>Nom de l’appareil</h2>' +
+    '<div class="sub">Sert à reconnaître les fichiers exportés et le bilan (ex. « Entrée », « Caisse tickets », « Bar 1 »). Identifiant technique : ' + esc(DEV.id) + '.</div>' +
+    '<label class="f">Nom<input type="text" data-f="devName" value="' + esc(S.devName || '') + '" placeholder="Appareil ' + esc(DEV.id) + '" autocomplete="off" maxlength="30"></label>' +
+    '<div class="actions"><button class="btn" data-a="close">Annuler</button><button class="btn btn-primary" data-a="saveDevice">Enregistrer</button></div></div></div>';
+}
+
+function vGhCfg() {
+  var m = S.ghMsg;
+  var body = ghReady()
+    ? '<div class="sub" style="font-size:15px;line-height:1.5">L’envoi est déverrouillé sur cet appareil (dépôt <strong>' + esc(GH_REPO) + '</strong>, dossier <strong>' + esc(GH_DOSSIER) + '</strong>, appareil <strong>' + esc(devName()) + '</strong>). Rien ne part sans un appui sur « Envoyer ». Verrouiller efface le jeton de cet appareil.</div>'
+    : '<div class="sub" style="font-size:15px;line-height:1.5">Saisissez la <strong>phrase de passe des caisses</strong> (la même que pour la Caisse Bar et la Caisse Sapins). Elle n’est demandée qu’une fois sur cet appareil et n’est jamais enregistrée.</div>' +
+      '<label class="f">Phrase de passe<input type="password" data-f="ghPass" value="' + esc(S.ghPass || '') + '" autocomplete="off" autocapitalize="none" spellcheck="false"></label>';
+  return '<div class="overlay"><div class="modal" style="width:min(600px,96vw)"><h2>Envoi des ventes sur GitHub</h2>' + body +
+    (m ? '<div class="result' + (m.ok === false ? ' ko' : '') + '" style="display:block;font-size:15px;line-height:1.45">' + esc(m.text) + '</div>' : '') +
+    '<div class="actions"><button class="btn" data-a="close">Fermer</button>' +
+      (ghReady() ? '<button class="btn btn-danger" data-a="ghLock">Verrouiller cet appareil</button><button class="btn btn-primary" data-a="ghTest">Tester l’accès</button>'
+                 : '<button class="btn btn-primary" data-a="ghUnlock">Déverrouiller</button>') + '</div></div></div>';
+}
+function vGhRes() {
+  var r = S.ghResult || {};
+  return '<div class="overlay"><div class="modal" style="width:min(520px,96vw)"><h2 style="color:var(--red)">' + esc(r.titre || 'Envoi impossible') + '</h2>' +
+    '<div style="font-size:17px;line-height:1.5">' + esc(r.text || '') + '</div>' +
+    '<div class="sub">' + (r.lecture ? 'Vous pouvez réessayer plus tard ou importer les fichiers exportés.' : 'Les données restent enregistrées sur l’appareil. Réessayez plus tard ou utilisez l’export en fichier.') + '</div>' +
+    '<div class="actions"><button class="btn btn-primary" data-a="close">OK</button></div></div></div>';
+}
+/* Liste des préventes validées ce soir sur cet appareil (clic sur le compteur « Préventes QR ») */
+/* Prévente sans QR code : le client montre son justificatif de paiement */
+function vNoQr() {
+  var n = S.nqN || 1;
+  return '<div class="overlay"><div class="modal" style="width:min(560px,96vw)" data-caisse="entrees"><h2>Prévente sans QR code</h2>' +
+    '<div class="sub" style="line-height:1.5">Le client a perdu son QR code mais montre la <strong>preuve de son paiement</strong> (mail de confirmation, extrait bancaire…). L\u2019entrée est comptée comme prévente, à 0 €.</div>' +
+    '<div class="row" style="justify-content:flex-start;gap:16px"><span class="sub" style="font-weight:700">Nombre de personnes</span>' +
+      '<div class="qty"><button data-a="nqDec"' + (n > 1 ? '' : ' disabled') + ' aria-label="Une de moins">−</button><span>' + n + '</span><button data-a="nqInc" aria-label="Une de plus">+</button></div></div>' +
+    '<div class="sub">Vérifiez que le justificatif correspond bien à cette soirée et au nombre de places.</div>' +
+    '<div class="actions"><button class="btn" data-a="close">Annuler</button><button class="btn btn-primary" data-a="nqSave">Enregistrer ' + plural(n, 'entrée') + '</button></div></div></div>';
+}
+function vQlist() {
+  var all = recs(tonight()).filter(isQ).slice().reverse();
+  var q = (S.qSearch || '').trim().toLowerCase(), m = /[0-9a-f]{32}/i.exec(q); if (m) q = m[0].toLowerCase(); // URL complète collée : on garde le code
+  var shown = q ? all.filter(function (r) { return (String(r.code || '') + ' ' + String(r.justificatif || '')).toLowerCase().indexOf(q) >= 0; }) : all;
+  var ok = valid(all).length, nE = valid(all).reduce(function (a, r) { return a + nbQ(r); }, 0);
+  var rows = shown.map(function (r) {
+    var tag = r.annulation ? '<span class="pill warn">annulée</span>' : r.sansQR ? '<span class="pill warn">sans QR · justificatif</span>' : r.forcee ? '<span class="pill warn">' + ({ format: 'QR non reconnu', inconnu: 'hors liste', date: 'autre soirée', nonpaye: 'non payé' }[r.anomalie] || 'doublon') + ' · accepté</span>' : r.controle === 'liste' ? '<span class="pill">liste ✓</span>' : '<span class="pill">✓</span>';
+    return '<div class="qrow' + (r.annulation ? ' cancelled' : '') + '"><span class="h">' + hhmm(r.horodatage) + '</span><code>' + esc(r.sansQR ? 'sans QR code' : r.code) + '</code>' + '<span style="white-space:nowrap">' + (nbQ(r) > 1 ? '<b style="margin-right:8px;font-size:17px">× ' + nbQ(r) + '</b>' : '') + tag + '</span></div>';
+  }).join('');
+  return '<div class="overlay"><div class="modal" style="width:min(680px,96vw);max-height:92%" data-caisse="entrees"><div class="row"><div><h2>Préventes validées</h2><div class="sub">' + nightLabel(tonight()) + ' · ' + plural(ok, 'prévente') + ' (' + plural(nE, 'entrée') + ') sur cet appareil' + (all.length > ok ? ' (+ ' + (all.length - ok) + ' annulée' + (all.length - ok > 1 ? 's' : '') + ')' : '') + '</div></div><button class="btn" data-a="close">Fermer</button></div>' +
+    (all.length ? '<label class="f">Rechercher un code<input type="text" data-f="qSearch" value="' + esc(S.qSearch || '') + '" placeholder="quelques caractères du code" autocomplete="off" autocapitalize="none" spellcheck="false"></label>' : '') +
+    '<div style="overflow-y:auto;min-height:0">' + (rows || '<div class="empty">' + (all.length ? 'Aucun code ne correspond' : 'Aucune prévente scannée ce soir') + '</div>') + '</div>' +
+    '<div class="sub">Plus récentes en haut. Pour annuler une prévente : onglet Historique.</div></div></div>';
+}
+function vTestDelQ() {
+  var n = countQ();
+  return '<div class="overlay"><div class="modal" style="width:min(520px,96vw)"><h2 style="color:var(--red)">TEST · Effacer les préventes scannées</h2>' +
+    '<div style="font-size:17px;line-height:1.5">Efface <strong>' + plural(n, 'prévente') + '</strong> enregistrée' + (n > 1 ? 's' : '') + ' sur cet appareil (toutes les soirées). Les mêmes QR codes pourront être scannés à nouveau.</div>' +
+    '<div class="sub">Fonction de test : les entrées payantes, tickets et commandes ne sont pas touchés. Les préventes effacées disparaissent de l\u2019historique et des prochains envois. À retirer avant la soirée.</div>' +
+    '<div class="actions"><button class="btn" data-a="close">Annuler</button><button class="btn" data-a="testDelQGo" style="background:var(--red);border-color:var(--red);color:#fff"' + (n ? '' : ' disabled') + '>Effacer ' + plural(n, 'prévente') + '</button></div></div></div>';
+}
+function vStorageBar() {
+  if (S.usedPct < 80) return '';
+  return '<button class="memwarn" data-a="showDays">⚠ Mémoire de l’appareil pleine à ' + S.usedPct + ' % : touchez ici pour effacer les anciennes soirées exportées</button>';
+}
+function vStorage() {
+  return '<div class="overlay"><div class="modal" style="width:min(600px,96vw)"><h2 style="color:var(--red)">Mémoire pleine : enregistrement impossible</h2>' +
+    (S.storageMsg ? '<div class="result ko" style="display:block;font-size:18px;font-weight:800">' + esc(S.storageMsg) + '</div>' : '') +
+    '<div style="font-size:17px;line-height:1.5">L’appareil n’a plus de place. Les données restent disponibles <strong>tant que l’app reste ouverte</strong>.<br><strong>1.</strong> Exportez tout de suite la soirée.<br><strong>2.</strong> Effacez les anciennes soirées déjà exportées.</div>' +
+    '<div class="actions"><button class="btn" data-a="close">Fermer</button><button class="btn" data-a="showDays">Effacer d’anciennes soirées</button><button class="btn btn-primary" data-a="download">Exporter la soirée</button></div></div></div>';
+}
+function vDays() {
+  var dates = Object.keys(S.nights).filter(function (d) { return S.nights[d] && S.nights[d].length; }).sort().reverse();
+  var rows = dates.map(function (d) {
+    var R = summarize(S.nights[d]), isT = d === tonight();
+    return '<div class="row" style="padding:12px 4px;border-bottom:1px solid var(--soft);flex-wrap:wrap">' +
+      '<div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:18px">' + nightLabel(d) + (isT ? ' <span class="sub">(ce soir)</span>' : '') + '</strong>' +
+      '<span class="sub">' + (GH.envois[d] ? 'Envoyée sur GitHub le ' + frDate(GH.envois[d]).slice(0, 5) + ' à ' + hhmm(GH.envois[d]) + ' · ' : '') + money(R.recette) + ' · ' + (R.entrees.personnes + R.entrees.preventes) + ' entrées · ' + R.tickets.cases + ' cases vendues · ' + R.boissons.commandes + ' commandes</span></div>' +
+      '<div class="dayact">' + (isT ? '' : !S.exported[d] ? '<span class="sub">Pas encore exportée</span>'
+        : S.confirmDel === d ? '<button class="btn btn-danger" data-a="delDay" data-v="' + d + '" style="border:1px solid var(--red)">Confirmer</button>'
+        : '<button class="btn btn-danger" data-a="askDel" data-v="' + d + '">Effacer</button>') +
+      (ghConfigured() ? '<button class="btn" data-a="ghSend" data-v="' + d + '"' + (S.ghBusy ? ' disabled' : '') + '>' + (S.ghBusy === d ? 'Envoi…' : GH.envois[d] ? 'Renvoyer sur GitHub' : 'Envoyer sur GitHub') + '</button>' : '') +
+      '<button class="btn" data-a="download" data-v="' + d + '">Télécharger</button></div></div>';
+  }).join('');
+  return '<div class="overlay"><div class="modal" style="width:min(680px,96vw);max-height:90%"><div class="row"><h2>Soirées enregistrées</h2><button class="btn" data-a="close">Fermer</button></div>' +
+    '<div class="memgauge"><div class="row"><span>Mémoire de l’appareil</span><strong' + (S.usedPct >= 80 ? ' style="color:var(--red)"' : '') + '>' + storageMo(storageUsed()) + ' sur ' + storageMo(STORAGE_LIMIT) + ' (' + S.usedPct + ' %)</strong></div>' +
+    '<div class="bar"><i style="width:' + Math.min(100, S.usedPct) + '%"></i></div></div>' +
+    '<div class="sub">Une soirée ne peut être effacée qu’après avoir été téléchargée ou envoyée sur GitHub. La soirée en cours ne peut pas être effacée.</div>' +
+    '<div>' + (rows || '<div class="empty">Aucune donnée enregistrée</div>') + '</div></div></div>';
+}
+function vImport() {
+  var im = S.importing;
+  if (im.error) return '<div class="overlay"><div class="modal"><h2>Catalogue non valide</h2><div class="result ko" style="display:block;font-size:16px">' + esc(im.error) + '</div>' +
+    '<div class="sub">Le catalogue actuel reste en place.</div><div class="actions"><button class="btn" data-a="close">Fermer</button></div></div></div>';
+  var c = im.cat;
+  return '<div class="overlay"><div class="modal"><h2>Nouveau catalogue disponible</h2><div class="sub">Installé actuellement : ' + esc(catalogueLabel(CATALOGUE)) + '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line2);border-radius:12px"><strong style="font-size:18px">' + esc(catalogueLabel(c)) + '</strong>' +
+    '<span class="sub">Entrées : ' + c.entrees.map(function (e) { return esc(e.libelle) + ' ' + money(e.prix); }).join(' · ') + '</span>' +
+    '<span class="sub">Tickets : ' + money(c.tickets.prixCase) + ' la case, cartes de ' + c.tickets.casesParCarte + ' cases</span>' +
+    '<span class="sub">Boissons : ' + c.boissons.map(function (k) { return esc(k.nom) + ' (' + k.produits.length + ')'; }).join(' · ') + '</span></div>' +
+    ((S.cartE.length || S.cartB.length || S.tk.cases) ? '<div class="result ko" style="font-size:15px;font-weight:700">Les paniers en cours seront vidés.</div>' : '') +
+    '<div class="sub">Ce qui est déjà enregistré ne change pas.</div>' +
+    '<div class="actions"><button class="btn" data-a="close">Plus tard</button><button class="btn btn-primary" data-a="installCatalogue">Installer</button></div></div></div>';
+}
+
+/* ---------- Rendu ---------- */
+var app = document.getElementById('app');
+function render() {
+  var act = document.activeElement, f = act && act.dataset ? act.dataset.f : null, pos = f ? act.selectionStart : null;
+  if (VIDEO.parentNode !== CAMHOLD) CAMHOLD.appendChild(VIDEO); // la vidéo survit au rendu
+  var html = S.screen === 'home' ? vHome() : S.screen === 'bilan' ? vBilan() : vPos();
+  var M = { remise: vRemise, noqr: vNoQr, qlist: vQlist, testDelQ: vTestDelQ, plist: vPlist, ghcfg: vGhCfg, ghres: vGhRes, pay: vPay, scan: vScan, okB: vOkB, cancel: vCancel, device: vDevice, storage: vStorage, days: vDays, import: vImport };
+  if (S.storageMsg && !S.modal) S.modal = 'storage';
+  if (S.modal && M[S.modal]) html += M[S.modal]();
+  if (S.toast) html += '<div class="toast">' + esc(S.toast) + '</div>';
+  app.innerHTML = html;
+  var slot = app.querySelector('#camslot');
+  if (slot) { slot.appendChild(VIDEO); if (VIDEO.srcObject) VIDEO.play().catch(function () {}); }
+  if (f) { var el = app.querySelector('[data-f="' + f + '"]'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
+}
+document.addEventListener('click', function (e) {
+  var el = e.target.closest('[data-a]');
+  if (!el || el.disabled) return;
+  if (el.classList.contains('overlay') && e.target !== el) return; // clic dans la fenêtre, pas à côté
+  var fn = A[el.dataset.a]; if (!fn) return;
+  fn(el.dataset.v); render(); reloadIfIdle();
+});
+document.addEventListener('input', function (e) {
+  var f = e.target.dataset && e.target.dataset.f;
+  if (f) { S[f] = e.target.value; render(); }
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && e.target.dataset && e.target.dataset.f === 'scanCode') { A.scanManual(); render(); }
+});
+
+/* Catalogue : catalogue.json à côté de index.html */
+function loadSiteCatalogue(manual) {
+  if (manual && navigator.onLine === false) { toast('Pas de réseau : impossible de vérifier le catalogue'); render(); return; }
+  S.catLoading = true; render();
+  fetch('catalogue.json?t=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (raw) {
+      S.catLoading = false;
+      var cat;
+      try { cat = normalizeCatalogue(raw); } catch (err) { S.importing = { error: err.message }; S.modal = 'import'; render(); return; }
+      if (CATALOGUE.integre && !localStorage.getItem(CAT_KEY)) {
+        try { localStorage.setItem(CAT_KEY, JSON.stringify(raw)); } catch (e) {}
+        CATALOGUE = cat; S.bcat = cat.boissons[0].id;
+      } else if (JSON.stringify(raw) !== localStorage.getItem(CAT_KEY)) {
+        S.siteUpdate = { raw: raw, cat: cat };
+        if ((manual || S.screen === 'home') && !S.modal) { S.importing = S.siteUpdate; S.modal = 'import'; }
+      } else { S.siteUpdate = null; if (manual) toast('Le catalogue est à jour (' + catalogueLabel(CATALOGUE) + ')'); }
+      render();
+    })
+    .catch(function () { S.catLoading = false; if (manual) toast('Pas de réseau : impossible de vérifier le catalogue'); render(); });
+}
+render();
+if (location.protocol !== 'file:') loadSiteCatalogue(false);
+if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(function () {}); }
+/* Mise à jour de l'app : le nouveau service worker prend la main dès qu'il est installé ;
+   la page se recharge alors toute seule, tout de suite sur l'accueil, sinon au prochain retour à l'accueil (jamais pendant une vente). */
+/* Écran toujours allumé tant que l'app est ouverte au premier plan (API Screen Wake Lock de Chrome).
+   Le verrou est relâché par le système quand l'app passe en arrière-plan : on le redemande au retour,
+   et au premier toucher si le navigateur l'a refusé au démarrage. */
+var WAKE = null;
+function keepAwake() {
+  if (!('wakeLock' in navigator) || document.visibilityState !== 'visible' || (WAKE && !WAKE.released)) return;
+  navigator.wakeLock.request('screen').then(function (l) { WAKE = l; }).catch(function () {});
+}
+document.addEventListener('visibilitychange', keepAwake);
+document.addEventListener('pointerdown', keepAwake, true);
+keepAwake();
+var UPDATE_READY = false;
+function reloadIfIdle() { if (UPDATE_READY && S.screen === 'home' && !S.modal && !S.cartE.length && !S.cartB.length && !S.tk.cases) location.reload(); }
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  var hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function () { if (!hadController) { hadController = true; return; } UPDATE_READY = true; reloadIfIdle(); });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') reg.update().catch(function () {}); });
+  }).catch(function () {});
+}
+})();
+</script>
+</body>
+</html>

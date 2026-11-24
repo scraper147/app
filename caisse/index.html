@@ -423,7 +423,7 @@ function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][
     var url = String(input && input.url ? input.url : input);
     if (url.indexOf('https://api.github.com') === 0) return api(url.slice(22), opts || {});
     if (/^(\.\/)?catalogue\.json(\?|$)/.test(url)) {
-      var f = (demoDb()[DEMO_CAT_REPO] || {})['catalogue.json'];
+      var f = (demoDb()[/\/soiree\//.test(location.pathname) ? 'demo/soiree' : DEMO_CAT_REPO] || {})['catalogue.json'];
       return later(f ? res(200, f.text, true) : res(404, 'Not Found', true));
     }
     return realFetch(input, opts);
@@ -431,6 +431,15 @@ function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][
 })();
 
 /* ---------- Données d'exemple (bouton « Charger un exemple » de l'Admin) ---------- */
+var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 1, version: 1, date: '2026-11-24', soiree: 'Soirée démo',
+  entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
+    { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
+  tickets: { prixCase: 3, casesParCarte: 18 },
+  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  boissons: [
+    { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
+    { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
+    { id: 'vins', nom: 'Vins et bulles', ordre: 3, actif: true, produits: [{ id: 'vin', libelle: 'Verre de vin', format: 'verre', cases: 2, ordre: 1, actif: true }, { id: 'cava-btl', libelle: 'Cava', format: 'bouteille', cases: 10, ordre: 2, actif: true }] }] };
 function demoIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function demoReset() {
   var keys = [];
@@ -438,7 +447,9 @@ function demoReset() {
   keys.forEach(function (k) { localStorage.removeItem(k); });
 }
 function demoSeed() {
+  var keepCfg = null; try { keepCfg = localStorage.getItem('demo-config'); } catch (e) {}
   demoReset();
+  if (keepCfg) try { localStorage.setItem('demo-config', keepCfg); } catch (e) {}
   var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
   function pick(a) { return a[Math.floor(rnd() * a.length)]; }
   function r2(n) { return Math.round(n * 100) / 100; }
@@ -514,10 +525,82 @@ function demoSeed() {
       demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
     });
   });
+  /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
+  var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
+  demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
+  var csv = 'control;cout;paye;reference;date\n', ref = demoIso(today).replace(/-/g, '');
+  ['0a1b2c3d4e5f60718293a4b5c6d7e8f9', '1111aaaa2222bbbb3333cccc4444dddd', '9f8e7d6c5b4a39281706f5e4d3c2b1a0', 'abcdefabcdefabcdefabcdefabcdef01', '00112233445566778899aabbccddeeff']
+    .forEach(function (c, i) { csv += c + ';' + (i === 3 ? 24 : 12) + ';' + (i === 4 ? 'NULL' : '1') + ';' + ref + ';' + today.getDate() + '\n'; });
+  demoPut(db, DEMO_SALES_REPO, 'preventes/billetterie-demo.csv', csv);
+  /* Comptage du stock d'événement */
+  var sid = 'stock-evenement-' + days[0], sart = [['fut', 'Bière (fût)', 'fûts', 'Boissons'], ['soft', 'Softs', 'caisses', 'Boissons'], ['vin', 'Vin', 'bouteilles', 'Boissons'], ['gob', 'Gobelets', 'cartons', 'Matériel']];
+  var sdoc = { format: 'admin/stock', formatVersion: 1, id: sid, nom: 'Stock événement', debut: days[0], statut: 'ouvert', creeLe: days[0] + 'T08:00:00', clotureLe: null, majLe: days[1] + 'T23:00:00',
+    articles: sart.map(function (a) { return { id: a[0], nom: a[1], unite: a[2], categorie: a[3], actif: true }; }),
+    stockInitial: { fut: 10, soft: 20, vin: 48, gob: 6 },
+    jours: {} };
+  sdoc.jours[days[0]] = { livraisons: { fut: 4 }, restant: { fut: 7, soft: 12, vin: 30, gob: 4 } };
+  sdoc.jours[days[1]] = { livraisons: { soft: 10 }, restant: { fut: 2, soft: 11, vin: 14, gob: 3 } };
+  demoPut(db, 'demo/admin-donnees', 'stock/' + sid + '.json', JSON.stringify(sdoc, null, 1) + '\n');
   demoDbSave(db);
 }
 
-var APP_VERSION = 'démo v1'; // à monter en même temps que le cache de sw.js
+/* ---------- Fonctionnalités activables (Admin › Paramètres) ----------
+   Réglage rangé à côté des données de démo (clé demo-config) : l'Admin l'écrit, la Caisse et la Caisse Soirée le lisent
+   à chaque affichage. Dépendances : une option « fille » est coupée quand sa « mère » est coupée. */
+var FEAT_KEY = 'demo-config';
+var FEATURES = [
+  { id: 'vente', nom: 'Vente', items: [
+    { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
+    { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
+    { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
+    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'paiement', nom: 'Paiement', items: [
+    { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
+    { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },
+  { id: 'historique', nom: 'Historique sur la tablette', items: [
+    { id: 'annulation', nom: 'Annulation d’une vente', desc: 'Avec un motif, depuis l’Historique.' },
+    { id: 'export', nom: 'Export manuel des ventes du jour', desc: 'Téléchargement d’un fichier depuis le menu.' } ] },
+  { id: 'imprimante', nom: 'Imprimante et tiroir', items: [
+    { id: 'imprimante', nom: 'Impression du ticket', desc: 'Ticket, duplicata et aperçu (imprimante Epson Wi-Fi).' },
+    { id: 'tiroir', nom: 'Tiroir-caisse', desc: 'Ouverture à l’encaissement, ouverture sans vente avec motif, journal.', req: 'imprimante' } ] },
+  { id: 'caisse', nom: 'Caisse du jour', items: [
+    { id: 'fond', nom: 'Fond de caisse', desc: 'Demandé à l’ouverture ; onglet Caisse de l’Admin.' },
+    { id: 'mouvements', nom: 'Retraits et ajouts d’argent', desc: '', req: 'fond' },
+    { id: 'decompte', nom: 'Décompte final', desc: 'Au total ou en billets et pièces, avec l’écart.', req: 'fond' } ] },
+  { id: 'stock', nom: 'Stock', items: [
+    { id: 'stock', nom: 'Stock par stand', desc: 'Livraisons, transferts et restant par stand (Admin).' },
+    { id: 'stockTablette', nom: 'Stock du stand sur la tablette', desc: '', req: 'stock' },
+    { id: 'reception', nom: 'Réception de stock sur la tablette', desc: 'Articles venus d’un autre stand.', req: 'stock' },
+    { id: 'restantTuiles', nom: 'Restant affiché sur les tuiles', desc: '', req: 'stock' } ] },
+  { id: 'catalogue', nom: 'Catalogue', items: [
+    { id: 'multiPdv', nom: 'Plusieurs points de vente', desc: 'Sinon, un seul point de vente, choisi d’office.' },
+    { id: 'prefixe', nom: 'Préfixe de catégorie dans le libellé', desc: 'Ex. « Boissons Eau » sur le ticket.' } ] },
+  { id: 'suivi', nom: 'Suivi des ventes', items: [
+    { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
+    { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'options', nom: 'Modules en option', items: [
+    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
+    { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
+];
+var FEAT_DEF = {}; FEATURES.forEach(function (g) { g.items.forEach(function (it) { FEAT_DEF[it.id] = it; }); });
+var _featRaw = null, _featCfg = { f: {}, raccourciId: '' };
+function featCfg() {
+  var raw = null; try { raw = localStorage.getItem(FEAT_KEY); } catch (e) {}
+  if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
+  return _featCfg;
+}
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; return c.f[id] != null ? !!c.f[id] : !(d && d.off); }
+function FEAT(id) {
+  var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
+  if (d && d.req && !FEAT(d.req)) return false;
+  if (id === 'raccourci' && !featCfg().raccourciId) return false;
+  return true;
+}
+function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
+
+var APP_VERSION = 'démo v2'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = 'demo-caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
@@ -532,19 +615,18 @@ var CAT_KEY = 'demo-caisse-catalogue'; // propre à chaque caisse
 /* Livraison : article du catalogue dont le libellé est « Livraison » (ou « Frais de livraison »), dans n'importe quelle
    catégorie (par exemple une catégorie « Services »). Il n'apparaît pas dans les tuiles : bouton « Livraison » dans le
    panier (à côté de « Remise ticket »), une seule fois par vente ; aussi depuis l'Historique (livraison après coup). Sans cet article dans le catalogue, le bouton est masqué. */
-function isDeliveryLabel(t) { return false; /* démo : pas de livraison */ }
-function isDeliveryLabelOld(t) { var s = slug(t); return s === 'livraison' || s === 'frais-de-livraison'; }
-function deliveryProduct() { return null; }
-function deliveryProductOld() {
+function isDeliveryLabel(t) { if (!FEAT('livraison')) return false; var s = slug(t); return s === 'livraison' || s === 'frais-de-livraison'; }
+function deliveryProduct() { if (!FEAT('livraison')) return null;
   var r = null;
   if (CATALOGUE) CATALOGUE.categories.forEach(function (k) { k.produits.forEach(function (p) { if (!r && isDeliveryLabel(p.libelle)) r = { p: p, cat: k }; }); });
   return r;
 }
 /* Raccourci à côté des onglets (à la place de « + Article libre », qui passe dans le menu ⋮) : un article du catalogue,
    désigné par son identifiant. S'il est absent ou désactivé dans le catalogue, le bouton « + Article libre » revient à sa place. */
-var RACCOURCI_ID = ''; // pas de raccourci : « + Article libre » à côté des catégories
+var RACCOURCI_ID = ''; // réglé dans Admin › Paramètres › Fonctionnalités (raccourciId)
 function shortcutProduct() {
   var r = null;
+  var RACCOURCI_ID = FEAT('raccourci') ? featCfg().raccourciId : '';
   if (CATALOGUE && RACCOURCI_ID) visibleCats().forEach(function (k) { k.produits.forEach(function (p) { if (!r && p.id === RACCOURCI_ID) r = p; }); });
   return r;
 }
@@ -577,9 +659,10 @@ function normalizeCatalogue(c) {
       ids[p.id] = true;
       return { id: String(p.id), libelle: String(p.libelle), prix: p.prix };
     });
-    return { id: String(k.id), nom: String(k.nom), prefixe: k.prefixe !== false, produits: prods };
+    return { id: String(k.id), nom: String(k.nom), prefixe: FEAT('prefixe') && k.prefixe !== false, produits: prods };
   }).filter(function (k) { return k.produits.length; });
   if (!pdv.length) throw new Error('Aucun point de vente actif.');
+  if (!FEAT('multiPdv')) pdv = pdv.slice(0, 1);
   return { version: Number(c.version) || 0, date: String(c.date || ''), exemple: !!c.exemple, pointsDeVente: pdv, categories: cats };
 }
 var CATALOGUE;
@@ -596,7 +679,7 @@ function pad(n) { return (n < 10 ? '0' : '') + n; }
 function money(n) { return (Math.round(n * 100) / 100).toFixed(2).replace('.', ',') + ' €'; }
 function num(v) { var x = parseFloat(String(v || '').replace(',', '.')); return isNaN(x) ? 0 : x; }
 function r2(n) { return Math.round(n * 100) / 100; }
-function up5(x) { var c = Math.round(x * 100); return Math.max(0, Math.ceil(c / 5) * 5) / 100; }
+function up5(x) { if (!FEAT('arrondi')) return Math.round(x * 100) / 100; var c = Math.round(x * 100); return Math.max(0, Math.ceil(c / 5) * 5) / 100; }
 function applyDisc(base, d) { if (!d || !d.val) return base; var r = d.type === '%' ? base * (1 - d.val / 100) : base - d.val; return up5(Math.max(0, r)); }
 function discText(d) { return d.type === '%' ? '−' + String(d.val).replace('.', ',') + ' %' : '−' + money(d.val); }
 function jsonDisc(d) { return d ? { type: d.type === '%' ? 'pourcentage' : 'montant', valeur: d.val } : null; }
@@ -764,7 +847,7 @@ function daysToSend() {
   return ds.filter(function (d) { return ((S.days[d] && S.days[d].length) || (S.tiroir[d] && S.tiroir[d].length) || cxDay(d)) && GH.sig[d] !== daySig(d); }).sort();
 }
 function autoSchedule(delay) { if (!ghConfigured()) return; clearTimeout(AUTO.timer); AUTO.timer = setTimeout(autoSync, delay); }
-async function autoSync() {
+async function autoSync() { if (!FEAT('envoiAuto')) return;
   if (!ghReady() || S.ghBusy || navigator.onLine === false) return;
   stkSync(); // mouvements de stock en attente (file séparée)
   cxSync().then(function () { cxRefresh(false); }); // fichier de caisse partagé : envoi des saisies puis lecture des saisies de l'Admin
@@ -1018,7 +1101,7 @@ async function stkcLoadSales() {
   }
   Object.keys(STKC.sums).forEach(function (sha) { if (!keep[sha]) delete STKC.sums[sha]; }); // fichiers disparus ou remplacés
 }
-async function stkcRefresh(manual) {
+async function stkcRefresh(manual) { if (!FEAT('stockTablette') && !FEAT('restantTuiles')) return;
   if (STKC.loading || !S.placeId) return;
   if (!ghReady() || navigator.onLine === false) { if (manual) toast(!ghReady() ? 'Déverrouillez l’envoi GitHub pour calculer le stock' : 'Pas de réseau : stock du dernier calcul'); return; }
   if (STKC.place && STKC.place !== S.placeId) { STKC.sums = {}; STKC.mv = null; } // point de vente changé
@@ -1059,7 +1142,7 @@ function stockOfPlace() {
   return res;
 }
 function restCls(n) { return n <= 0 ? 'ko' : n <= STOCK_BAS ? 'warn' : ''; }
-function vRest(st, pid) {
+function vRest(st, pid) { if (!FEAT('restantTuiles')) return '';
   if (!AFFICHER_RESTE || !st) return '';
   var a = st[pid], n = a ? a.rest : 0;
   return '<span class="rest ' + restCls(n) + '">reste ' + n + '</span>';
@@ -1450,7 +1533,7 @@ var PR = {}, prStored = null;
 try { prStored = localStorage.getItem(PR_KEY); PR = JSON.parse(prStored) || {}; } catch (e) { PR = {}; }
 function savePr() { try { localStorage.setItem(PR_KEY, JSON.stringify(PR)); return true; } catch (e) { return false; } }
 if (prStored === null && PR_IP_DEFAUT) { PR.ip = PR_IP_DEFAUT; savePr(); }
-function prConfigured() { return !!PR.ip; }
+function prConfigured() { return FEAT('imprimante') && !!PR.ip; }
 function prBase(ip) { ip = String(ip || '').trim().replace(/\/+$/, ''); return /^https?:\/\//i.test(ip) ? ip : 'https://' + ip; }
 var EPOS_NS = 'http://www.epson-pos.com/schemas/2011/03/epos-print';
 var PR_ST = { state: null, text: '', at: 0 }; // dernier état connu de l'imprimante
@@ -1490,11 +1573,11 @@ function prHelp(r) { return r.state === 'off' ? ' Vérifiez que l\u2019imprimant
 function prCheck() { if (!prConfigured()) return Promise.resolve(null); return eposSend('', 5000).then(function (r) { render(); return r; }); }
 /* Ouverture du tiroir (impulsion sur la prise DK). Toujours notée dans le journal du jour. */
 function drawerOpen(motif, venteId) {
-  if (!prConfigured()) return Promise.resolve({ ok: false });
+  if (!prConfigured() || !FEAT('tiroir')) return Promise.resolve({ ok: false });
   logDrawer(motif, venteId);
   return drawerPulse();
 }
-function payDrawerOpen() { if (prConfigured() && !S.payDrawer) { S.payDrawer = logDrawer('Encaissement abandonné', null); drawerPulse(); } }
+function payDrawerOpen() { if (prConfigured() && FEAT('tiroir') && !S.payDrawer) { S.payDrawer = logDrawer('Encaissement abandonné', null); drawerPulse(); } }
 function drawerPulse() {
   return eposSend('<pulse drawer="drawer_1" time="pulse_100"/>', 5000).then(function (r) {
     if (!r.ok) toast('Tiroir non ouvert : ' + r.text + '. Utilisez la clé du tiroir.');
@@ -1679,7 +1762,7 @@ var A = {
   saveSetup: function () { S.placeId = S.pending; A.prSaveIp(); S.screen = 'home'; persist(); if (prConfigured()) prCheck(); },
   goHome: function () { S.screen = 'home'; S.menu = false; if (S.siteUpdate && !S.modal) { S.importing = S.siteUpdate; S.modal = 'import'; } },
   openPos: function () { S.screen = 'pos'; S.tab = 'caisse'; S.openedDate = today(); persist();
-    S.cxDate = today(); var c = cxDay(); if ((!c || !c.fond) && !S.fondLater[today()]) A.fondOpen(); }, // début de journée : fond de caisse demandé
+    S.cxDate = today(); var c = cxDay(); if (FEAT('fond') && (!c || !c.fond) && !S.fondLater[today()]) A.fondOpen(); }, // début de journée : fond de caisse demandé
   fullscreen: function () { var el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el); },
   tab: function (t) { S.tab = t; S.menu = false; S.cartOpen = false; if (t === 'hist') S.histDay = today(); },
   toggleMenu: function () { S.menu = !S.menu; },
@@ -2013,7 +2096,7 @@ function vSetup() {
       '<div class="sub" style="font-size:16px">Choisissez le point de vente de cette tablette. Ce choix est mémorisé et toutes les ventes y seront liées.</div>' +
       places +
     '</section>' +
-    '<section style="display:flex;flex-direction:column;gap:12px">' +
+    '<section data-feat="imprimante" style="display:flex;flex-direction:column;gap:12px">' +
       '<h2 style="margin:0;font-size:19px;font-weight:800">Imprimante de tickets et tiroir-caisse <span class="sub" style="font-weight:600">(facultatif)</span></h2>' +
       '<div class="sub">Epson TM-m30III sur le même Wi-Fi que la tablette, tiroir branché sur l\u2019imprimante. Adresse IP de l\u2019imprimante (imprimée sur la feuille d\u2019état, en maintenant le bouton FEED à l\u2019allumage). Laisser vide s\u2019il n\u2019y a pas d\u2019imprimante.</div>' +
       '<label class="f">Adresse de l\u2019imprimante<input type="text" inputmode="url" data-f="prIp" value="' + esc(S.prIp || '') + '" placeholder="ex. ' + PR_IP_DEFAUT + '" autocomplete="off" autocapitalize="none" spellcheck="false"></label>' +
@@ -2268,6 +2351,7 @@ function vMenu() {
     tile('checkCatMenu', MI.refresh, S.catLoading ? 'Vérification…' : 'Vérifier le catalogue', S.siteUpdate ? 'Mise à jour disponible' : 'Installé : v' + CATALOGUE.version, S.siteUpdate ? ' style="border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)"' : '') +
     (ghConfigured() ? tile('stkShow', MI.chart, 'Stock du stand', STKC.at && STKC.place === S.placeId ? 'Calculé le ' + frDate(STKC.at).slice(0, 5) + ' à ' + STKC.at.slice(11, 16) : 'Restant par article') : '') +
     (ghConfigured() ? tile('rcOpen', MI.box, 'Réception de stock', STK.queue.length ? STK.queue.length + ' en attente d\u2019envoi' : 'Articles venus d\u2019un autre stand') : '') +
+    tile('openFreeMenu', MI.tag, 'Article libre', 'Hors catalogue : libellé et prix') +
     (prConfigured() ? tile('drawerAsk', MI.drawer, 'Ouvrir le tiroir', 'Sans vente (motif demandé)') : '');
   return '<div class="menu-back" data-a="toggleMenu"></div><div class="menu tiles" role="menu">' +
     '<div class="mgrid m3">' + tiles + '</div>' +
@@ -2471,6 +2555,28 @@ function vDays() {
 
 /* ---------- Rendu ---------- */
 var app = document.getElementById('app');
+/* Boutons des fonctionnalités coupées : retirés après chaque affichage */
+var FEAT_ACTIONS = {
+  openFree: 'articleLibre', openFreeMenu: function () { return FEAT('articleLibre') && !!shortcutProduct(); },
+  lineDisc: 'remiseLigne', ticketDisc: 'remiseTicket', askCancel: 'annulation', download: 'export',
+  reprint: 'imprimante', tkPrev: 'imprimante', tkPrint: 'imprimante', ticketYes: 'imprimante', drawerAsk: 'tiroir', prDrawerTest: 'tiroir',
+  cxOpen: 'fond', fondOpen: 'fond', cxMvOpen: 'mouvements', cptOpen: 'decompte',
+  stkShow: 'stockTablette', stkOpen: 'stockTablette', rcOpen: 'reception', rcAsk: 'reception', ghSend: 'envoiAuto',
+  mode: function (v) { return v === 'bc' ? FEAT('bancontact') : v === 'mix' ? FEAT('mixte') : true; }
+};
+function featPrune(root) {
+  root.querySelectorAll('[data-a]').forEach(function (el) {
+    var r = FEAT_ACTIONS[el.getAttribute('data-a')]; if (!r) return;
+    if (!(typeof r === 'function' ? r(el.getAttribute('data-v')) : FEAT(r))) el.remove();
+  });
+  root.querySelectorAll('[data-feat]').forEach(function (el) { if (!FEAT(el.getAttribute('data-feat'))) el.remove(); });
+}
+/* Réglage changé dans l'Admin (autre onglet) : catalogue relu (points de vente, préfixes) et écran redessiné */
+window.addEventListener('storage', function (e) {
+  if (e.key !== FEAT_KEY && e.key !== null) return;
+  try { var cc = normalizeCatalogue(JSON.parse(localStorage.getItem(CAT_KEY))); if (cc) { CATALOGUE = cc; if (S.placeId && !findPlace(S.placeId)) { S.placeId = null; persist(); } } } catch (er) {}
+  render();
+});
 function render() {
   var act = document.activeElement, f = act && act.dataset ? act.dataset.f : null, pos = f ? act.selectionStart : null;
   var keep = {}; app.querySelectorAll('[data-keep]').forEach(function (el) { keep[el.dataset.keep] = el.scrollTop; });
@@ -2496,6 +2602,7 @@ function render() {
   else if (S.modal === 'stock') html += vStock();
   if (S.toast) html += '<div class="toast">' + esc(S.toast) + '</div>';
   app.innerHTML = html;
+  featPrune(app);
   app.querySelectorAll('[data-keep]').forEach(function (el) { if (keep[el.dataset.keep]) el.scrollTop = keep[el.dataset.keep]; });
   if (f) { var el = app.querySelector('[data-f="' + f + '"]'); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
 }

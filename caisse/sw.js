@@ -6,7 +6,7 @@
 // Préfixe propre à CETTE caisse : plusieurs caisses partagent l'adresse <compte>.github.io,
 // il ne faut jamais toucher aux caches des autres.
 var PREFIX = 'demo-caisse-';
-var CACHE = PREFIX + 'v1';
+var CACHE = PREFIX + 'v2';
 var FILES = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'];
 

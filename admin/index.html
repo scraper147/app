@@ -454,6 +454,7 @@ form.stkform .cbtns{margin-top:10px}
   section{break-inside:avoid;border-color:#ccc}main{display:block}section{margin-bottom:14px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.featgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}.featg{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}.featg h4{margin:0 0 6px;font-size:15px}.featit{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--soft);cursor:pointer}.featit:first-of-type{border-top:0}.featit input{width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--green)}.featit span{display:flex;flex-direction:column;gap:2px;min-width:0}.featit small{color:var(--muted);font-size:13px;line-height:1.35}.featit.dep{opacity:.55;cursor:default}.featit .warnt{color:var(--red)}.featsel{margin-top:6px;max-width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
 </style>
 </head>
 <body>
@@ -539,7 +540,7 @@ function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][
     var url = String(input && input.url ? input.url : input);
     if (url.indexOf('https://api.github.com') === 0) return api(url.slice(22), opts || {});
     if (/^(\.\/)?catalogue\.json(\?|$)/.test(url)) {
-      var f = (demoDb()[DEMO_CAT_REPO] || {})['catalogue.json'];
+      var f = (demoDb()[/\/soiree\//.test(location.pathname) ? 'demo/soiree' : DEMO_CAT_REPO] || {})['catalogue.json'];
       return later(f ? res(200, f.text, true) : res(404, 'Not Found', true));
     }
     return realFetch(input, opts);
@@ -547,6 +548,15 @@ function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][
 })();
 
 /* ---------- Données d'exemple (bouton « Charger un exemple » de l'Admin) ---------- */
+var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 1, version: 1, date: '2026-11-24', soiree: 'Soirée démo',
+  entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
+    { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
+  tickets: { prixCase: 3, casesParCarte: 18 },
+  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  boissons: [
+    { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
+    { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
+    { id: 'vins', nom: 'Vins et bulles', ordre: 3, actif: true, produits: [{ id: 'vin', libelle: 'Verre de vin', format: 'verre', cases: 2, ordre: 1, actif: true }, { id: 'cava-btl', libelle: 'Cava', format: 'bouteille', cases: 10, ordre: 2, actif: true }] }] };
 function demoIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function demoReset() {
   var keys = [];
@@ -554,7 +564,9 @@ function demoReset() {
   keys.forEach(function (k) { localStorage.removeItem(k); });
 }
 function demoSeed() {
+  var keepCfg = null; try { keepCfg = localStorage.getItem('demo-config'); } catch (e) {}
   demoReset();
+  if (keepCfg) try { localStorage.setItem('demo-config', keepCfg); } catch (e) {}
   var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
   function pick(a) { return a[Math.floor(rnd() * a.length)]; }
   function r2(n) { return Math.round(n * 100) / 100; }
@@ -630,8 +642,80 @@ function demoSeed() {
       demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
     });
   });
+  /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
+  var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
+  demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
+  var csv = 'control;cout;paye;reference;date\n', ref = demoIso(today).replace(/-/g, '');
+  ['0a1b2c3d4e5f60718293a4b5c6d7e8f9', '1111aaaa2222bbbb3333cccc4444dddd', '9f8e7d6c5b4a39281706f5e4d3c2b1a0', 'abcdefabcdefabcdefabcdefabcdef01', '00112233445566778899aabbccddeeff']
+    .forEach(function (c, i) { csv += c + ';' + (i === 3 ? 24 : 12) + ';' + (i === 4 ? 'NULL' : '1') + ';' + ref + ';' + today.getDate() + '\n'; });
+  demoPut(db, DEMO_SALES_REPO, 'preventes/billetterie-demo.csv', csv);
+  /* Comptage du stock d'événement */
+  var sid = 'stock-evenement-' + days[0], sart = [['fut', 'Bière (fût)', 'fûts', 'Boissons'], ['soft', 'Softs', 'caisses', 'Boissons'], ['vin', 'Vin', 'bouteilles', 'Boissons'], ['gob', 'Gobelets', 'cartons', 'Matériel']];
+  var sdoc = { format: 'admin/stock', formatVersion: 1, id: sid, nom: 'Stock événement', debut: days[0], statut: 'ouvert', creeLe: days[0] + 'T08:00:00', clotureLe: null, majLe: days[1] + 'T23:00:00',
+    articles: sart.map(function (a) { return { id: a[0], nom: a[1], unite: a[2], categorie: a[3], actif: true }; }),
+    stockInitial: { fut: 10, soft: 20, vin: 48, gob: 6 },
+    jours: {} };
+  sdoc.jours[days[0]] = { livraisons: { fut: 4 }, restant: { fut: 7, soft: 12, vin: 30, gob: 4 } };
+  sdoc.jours[days[1]] = { livraisons: { soft: 10 }, restant: { fut: 2, soft: 11, vin: 14, gob: 3 } };
+  demoPut(db, 'demo/admin-donnees', 'stock/' + sid + '.json', JSON.stringify(sdoc, null, 1) + '\n');
   demoDbSave(db);
 }
+
+/* ---------- Fonctionnalités activables (Admin › Paramètres) ----------
+   Réglage rangé à côté des données de démo (clé demo-config) : l'Admin l'écrit, la Caisse et la Caisse Soirée le lisent
+   à chaque affichage. Dépendances : une option « fille » est coupée quand sa « mère » est coupée. */
+var FEAT_KEY = 'demo-config';
+var FEATURES = [
+  { id: 'vente', nom: 'Vente', items: [
+    { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
+    { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
+    { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
+    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'paiement', nom: 'Paiement', items: [
+    { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
+    { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },
+  { id: 'historique', nom: 'Historique sur la tablette', items: [
+    { id: 'annulation', nom: 'Annulation d’une vente', desc: 'Avec un motif, depuis l’Historique.' },
+    { id: 'export', nom: 'Export manuel des ventes du jour', desc: 'Téléchargement d’un fichier depuis le menu.' } ] },
+  { id: 'imprimante', nom: 'Imprimante et tiroir', items: [
+    { id: 'imprimante', nom: 'Impression du ticket', desc: 'Ticket, duplicata et aperçu (imprimante Epson Wi-Fi).' },
+    { id: 'tiroir', nom: 'Tiroir-caisse', desc: 'Ouverture à l’encaissement, ouverture sans vente avec motif, journal.', req: 'imprimante' } ] },
+  { id: 'caisse', nom: 'Caisse du jour', items: [
+    { id: 'fond', nom: 'Fond de caisse', desc: 'Demandé à l’ouverture ; onglet Caisse de l’Admin.' },
+    { id: 'mouvements', nom: 'Retraits et ajouts d’argent', desc: '', req: 'fond' },
+    { id: 'decompte', nom: 'Décompte final', desc: 'Au total ou en billets et pièces, avec l’écart.', req: 'fond' } ] },
+  { id: 'stock', nom: 'Stock', items: [
+    { id: 'stock', nom: 'Stock par stand', desc: 'Livraisons, transferts et restant par stand (Admin).' },
+    { id: 'stockTablette', nom: 'Stock du stand sur la tablette', desc: '', req: 'stock' },
+    { id: 'reception', nom: 'Réception de stock sur la tablette', desc: 'Articles venus d’un autre stand.', req: 'stock' },
+    { id: 'restantTuiles', nom: 'Restant affiché sur les tuiles', desc: '', req: 'stock' } ] },
+  { id: 'catalogue', nom: 'Catalogue', items: [
+    { id: 'multiPdv', nom: 'Plusieurs points de vente', desc: 'Sinon, un seul point de vente, choisi d’office.' },
+    { id: 'prefixe', nom: 'Préfixe de catégorie dans le libellé', desc: 'Ex. « Boissons Eau » sur le ticket.' } ] },
+  { id: 'suivi', nom: 'Suivi des ventes', items: [
+    { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
+    { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'options', nom: 'Modules en option', items: [
+    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
+    { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
+];
+var FEAT_DEF = {}; FEATURES.forEach(function (g) { g.items.forEach(function (it) { FEAT_DEF[it.id] = it; }); });
+var _featRaw = null, _featCfg = { f: {}, raccourciId: '' };
+function featCfg() {
+  var raw = null; try { raw = localStorage.getItem(FEAT_KEY); } catch (e) {}
+  if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
+  return _featCfg;
+}
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; return c.f[id] != null ? !!c.f[id] : !(d && d.off); }
+function FEAT(id) {
+  var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
+  if (d && d.req && !FEAT(d.req)) return false;
+  if (id === 'raccourci' && !featCfg().raccourciId) return false;
+  return true;
+}
+function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
 
 try { if (!localStorage.getItem('demo-admin-gh-token')) { localStorage.setItem('demo-admin-gh-token', 'demo'); localStorage.setItem('demo-admin-gh-tokens', '["demo"]'); } } catch (e) {}
 var LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMCIgZmlsbD0iIzJGNUQ4QSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxyZWN0IHg9IjE0IiB5PSI0MCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjQ0IiByeD0iOCIvPjxwYXRoIGQ9Ik0yNiA0MFYyMmg0OHYxOCIvPjxwYXRoIGQ9Ik0zNCAzMGgzMiIvPjxwYXRoIGQ9Ik0yOCA1OGgxMk00OCA1OGgxMk0yOCA3MGgxMk00OCA3MGgxMiIvPjxwYXRoIGQ9Ik02OCA1OGg2djEyaC02eiIvPjwvZz48L3N2Zz4='; // Agri-Garden by Xavier Vaerman (icône de la Caisse)
@@ -651,10 +735,10 @@ function isLivProduct(p) { return !!p && /^(frais de )?livraison$/i.test(String(
 var CAISSE_OPEN = {};
 function caisseOf(fmt) { return CAISSES_BILAN[fmt] || null; }
 function okVentes(d) { var c = d && caisseOf(d.format); return !!c && (c === 'soiree' ? Array.isArray(d.enregistrements) : Array.isArray(d.ventes)); }
-/* Trois Bilans séparés : « bar » (Bar › Bilan), « soiree » (Chlorophylle Night › Bilan), « sapin » (Gestion d’événement › Bilan).
+/* Trois Bilans séparés : « bar » (Bar › Bilan), « soiree » (Soirée démo › Bilan), « sapin » (Gestion d’événement › Bilan).
    Chacun garde ses fichiers, ses filtres et son panneau du dépôt ; render() active le bon (bilUse). */
 var BIL_CUR = 'bar', BIL_ST = {};
-var CTX_LABEL = { bar: 'Bar', soiree: 'Chlorophylle Night', sapin: 'Gestion d’événement' };
+var CTX_LABEL = { bar: 'Bar', soiree: 'Soirée démo', sapin: 'Gestion d’événement' };
 function bilAllowed(c) { return [c || BIL_CUR]; }
 function bilFresh() { return { FILES: [], F: { soiree: null, bar: 'all', caisse: null }, BGH: { open: false, loading: false, files: null, sel: {}, err: null, busy: false, tab: null }, DISMISSED: {} }; }
 function bilUse(c) {
@@ -817,7 +901,7 @@ function renderBilanInner() {
   if (F.caisse === 'soiree') { var R = soirStats(soirFiltered()); app.innerHTML = vSoirBand(R) + vFilters() + '<main>' + vGhPanel() + vAlerts() + vSoirRecette(R) + vSoirEntrees(R) + vSoirCases(R) + vSoirBoissons(R) + vSoirHours(R) + vSoirApp(R) + vSoirAnn(R) + vFiles() + '</main>' + vToast(); bindDrop(); return; }
   var list = filtered(), S = stats(list);
   var CR = caisseRows();
-  app.innerHTML = vBand(S) + vFilters() + '<main>' + vGhPanel() + vAlerts() + vBars(S) + vHours(S) + vCaisse(CR) + vLivraisons(S) + vTiroir(CR) + vArticles(S) + vAdjust(S) + vFiles() + '</main>' + vToast();
+  app.innerHTML = vBand(S) + vFilters() + '<main>' + vGhPanel() + vAlerts() + vBars(S) + vHours(S) + (F.caisse !== 'sapin' || FEAT('fond') ? vCaisse(CR) : '') + (F.caisse !== 'sapin' || FEAT('livraison') ? vLivraisons(S) : '') + (F.caisse !== 'sapin' || FEAT('tiroir') ? vTiroir(CR) : '') + vArticles(S) + vAdjust(S) + vFiles() + '</main>' + vToast();
   bindDrop();
 }
 function vToast() { return toastMsg ? '<div class="toast" role="status">' + esc(toastMsg) + '</div>' : ''; }
@@ -825,7 +909,7 @@ function toast(t) { toastMsg = t; clearTimeout(toastT); toastT = setTimeout(func
 function isDark() { var a = document.documentElement.getAttribute('data-theme'); return a ? a === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
 
 function vBand(S) {
-  var top = '<div class="band-top"><h1>' + (BIL_CUR === 'sapin' ? 'Bilan des ventes' : BIL_CUR === 'soiree' ? 'Bilan Chlorophylle Night' : 'Bilan du bar') + '</h1></div>';
+  var top = '<div class="band-top"><h1>' + (BIL_CUR === 'sapin' ? 'Bilan des ventes' : BIL_CUR === 'soiree' ? 'Bilan Soirée démo' : 'Bilan du bar') + '</h1></div>';
   if (!S) {
     return '<div class="band">' + top + '<div class="drop" id="drop"><h2>Déposez les exports des caisses</h2>' +
       (BIL_CUR === 'sapin' ? '<p>Glissez ici les fichiers <strong>ventes_….json</strong> téléchargés depuis la Caisse, de tous les points de vente et de tous les jours. Ils restent sur cet appareil : rien n\u2019est envoyé sur internet.</p>'
@@ -1363,6 +1447,8 @@ var ICONS = {
 var MODULES = [
   { id: 'sapin', nom: 'Gestion d’événement', court: 'Gestion d’événement', ready: true, ctx: 'sapin', render: function () { renderSub(); },
     desc: 'Catalogue (points de vente, articles par catégorie), stock, caisse, bilan et historique des ventes.' },
+  { id: 'chloro', nom: 'Soirée à tickets', court: 'Soirée à tickets', ready: true, ctx: 'soiree', render: function () { renderSub(); },
+    desc: 'Caisse Soirée : catalogue (entrées, prix de la case, boissons en cases) et bilan de la soirée.' },
   { id: 'parametres', nom: 'Paramètres', court: 'Paramètres', ready: true, render: function () { renderParametres(); },
     desc: 'Données de démonstration : charger un exemple ou tout effacer.' }
 ];
@@ -1374,6 +1460,24 @@ var SUBS = {
 };
 var SUB = { bar: 'catalogue', chloro: 'catalogue', sapin: 'catalogue' };
 /* Anciennes adresses (#bilan, #catalogue, #stock) : renvoyées vers le nouveau menu */
+SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }];
+(function () { var i = SUBS.sapin.map(function (x) { return x.id; }).indexOf('stock') + 1; SUBS.sapin.splice(i, 0, { id: 'stockevt', nom: 'Comptage du stock', render: function () { renderStock(); } }); })();
+var SUBS_SAPIN_ALL = SUBS.sapin.slice(), MODULES_ALL = MODULES.slice();
+/* Menus selon Admin › Paramètres › Fonctionnalités */
+function featApply() {
+  var want = { catalogue: 1, stock: FEAT('stock'), stockevt: FEAT('stockEvenement'), caisse: FEAT('fond'), bilan: 1, hist: FEAT('historiqueAdmin') };
+  SUBS.sapin = SUBS_SAPIN_ALL.filter(function (x) { return want[x.id]; });
+  if (!SUBS.sapin.some(function (x) { return x.id === SUB.sapin; })) SUB.sapin = 'catalogue';
+  MODULES = MODULES_ALL.filter(function (m) { return m.id !== 'chloro' || FEAT('soiree'); });
+  if (MOD !== 'accueil' && !modById(MOD)) MOD = 'accueil';
+}
+function featPruneAdmin(root) {
+  function rm(sel, f) { if (!FEAT(f)) root.querySelectorAll(sel).forEach(function (el) { el.remove(); }); }
+  rm('[data-cx="form"][data-v="retrait"],[data-cx="form"][data-v="apport"]', 'mouvements');
+  rm('[data-cx="form"][data-v="comptage"]', 'decompte');
+  rm('[data-c="pdvAdd"]', 'multiPdv');
+  if (!FEAT('prefixe')) root.querySelectorAll('[data-cf="c.prefixe"]').forEach(function (el) { (el.closest('label') || el).remove(); });
+}
 var OLD_HASH = { evenement: ['sapin', 'catalogue'] };
 function hashPart(h) {
   var p = (h || '').replace('#', '').split('/');
@@ -1382,6 +1486,7 @@ function hashPart(h) {
   return p[0];
 }
 function curSub() { return SUBS[MOD] ? SUB[MOD] : null; }
+featApply();
 (function () { var h = hashPart(location.hash); if (h && MODULES.some(function (m) { return m.id === h; })) { MOD = h; try { history.replaceState(null, '', '#' + h + (SUBS[h] ? '/' + SUB[h] : '')); } catch (e) {} } })();
 function modById(id) { return MODULES.filter(function (m) { return m.id === id; })[0]; }
 function go(id) {
@@ -1413,7 +1518,7 @@ function renderHome() {
     '<div class="band"><div class="home-hero"><h2>Administration de la caisse</h2><p>Version de démonstration : les données restent dans ce navigateur et sont partagées avec l’app Caisse ouverte sur le même appareil.</p></div></div>' +
     '<div class="mods">' + MODULES.map(function (m) {
       return '<button class="mod" data-a="go" data-v="' + m.id + '"><span class="ic">' + ICONS[m.id] + '</span><h3>' + esc(m.nom) + '</h3><p>' + esc(m.desc) + '</p>' +
-        '<span class="st num">' + (m.id === 'sapin' ? (cat ? 'Catalogue publié' : 'Catalogue pas encore publié') + ' · ' + nv + ' fichier' + (nv > 1 ? 's' : '') + ' de ventes' : (cat || nv ? 'Données présentes' : 'Aucune donnée')) + '</span></button>';
+        '<span class="st num">' + (m.id === 'sapin' ? (cat ? 'Catalogue publié' : 'Catalogue pas encore publié') + ' · ' + nv + ' fichier' + (nv > 1 ? 's' : '') + ' de ventes' : m.id === 'chloro' ? 'Entrées, cartes à cases, préventes' : featCount()) + '</span></button>';
     }).join('') + '</div>' + vApps() + vToast();
 }
 /* Liens vers les applications des caisses (même site GitHub Pages) */
@@ -1421,11 +1526,12 @@ var APPS = [
   { nom: 'Caisse', url: '../caisse/', desc: 'App de vente (tablette ou téléphone)' }
 ];
 function vApps() {
+  APPS = [{ nom: 'Caisse', url: '../caisse/', desc: 'App de vente (tablette ou téléphone)' }].concat(FEAT('soiree') ? [{ nom: 'Caisse Soirée', url: '../soiree/', desc: 'Entrées, cartes à cases, boissons, préventes' }] : []);
   return '<div class="apps"><h3>Application de vente</h3><div class="apps-row">' + APPS.map(function (a) {
     return '<a class="app-link" href="' + a.url + '" target="_blank" rel="noopener"><span class="ic">' + ICONS.pdv + '</span><span class="t"><b>' + esc(a.nom) + '</b><small>' + esc(a.desc) + '</small></span><span class="go" aria-hidden="true">↗</span></a>';
   }).join('') + '</div></div>';
 }
-/* ---------- Sous-menus des modules (Bar, Chlorophylle Night, Gestion d’événement) ---------- */
+/* ---------- Sous-menus des modules (Bar, Soirée démo, Gestion d’événement) ---------- */
 function vSubNav() {
   var m = modById(MOD);
   return '<nav class="subnav" aria-label="' + esc(m ? m.nom : '') + '">' + SUBS[MOD].map(function (x) {
@@ -2363,9 +2469,11 @@ function renderSoon(m) {
    celle des tableaux qui défilent en largeur), sinon la page, vidée un instant, remonte tout en haut.
    go() remet volontairement en haut quand on change de module. */
 function render() {
+  featApply();
   var y = window.scrollY || 0, sl = Array.prototype.map.call(document.querySelectorAll('#mod .scroll'), function (e) { return e.scrollLeft; });
   var app = document.getElementById('app'); if (app.offsetHeight) app.style.minHeight = app.offsetHeight + 'px'; // évite l'écrasement de la hauteur pendant le redessin
   _render();
+  featPruneAdmin(app);
   app.style.minHeight = '';
   var sc = document.querySelectorAll('#mod .scroll'); if (sc.length === sl.length) Array.prototype.forEach.call(sc, function (e, i) { if (sl[i]) e.scrollLeft = sl[i]; });
   if (Math.abs((window.scrollY || 0) - y) > 1) window.scrollTo(0, y);
@@ -2486,7 +2594,7 @@ function ghErrText(e, action) {
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function todayIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function exampleCatalogue(repo) {
-  if (repo.format === SOIREE_FMT) return normalizeCat({ format: SOIREE_FMT, formatVersion: 1, version: 1, date: '2026-10-21', exemple: true, soiree: 'Chlorophylle Night',
+  if (repo.format === SOIREE_FMT) return normalizeCat({ format: SOIREE_FMT, formatVersion: 1, version: 1, date: '2026-10-21', exemple: true, soiree: 'Soirée démo',
     entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true }, { id: 'vip', libelle: 'Table VIP', prix: 300, ordre: 2, actif: true }],
     tickets: { prixCase: 3, casesParCarte: 18 },
     boissons: [{ id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau-plate', libelle: 'Eau plate', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'coca', libelle: 'Coca-Cola', format: 'verre', cases: 1, ordre: 2, actif: true }] },
@@ -2669,7 +2777,7 @@ function renderCatalogue() {
   if (!CAT.data && !CAT.loading) { loadCatFor(CAT.repo); return; }
   var errs = catErrors(CAT.data), canPub = CAT.data && !errs.length && (dirty() || !CAT.base) && !CAT.busy, unlocked = !!getToken();
   var reps = catRepos();
-  var band = '<div class="band"><div class="band-top"><h1>' + (CAT_CUR === 'sapin' ? 'Catalogue' : CAT_CUR === 'soiree' ? 'Catalogue Chlorophylle Night' : 'Catalogue du bar') + '</h1></div>' +
+  var band = '<div class="band"><div class="band-top"><h1>' + (CAT_CUR === 'sapin' ? 'Catalogue' : CAT_CUR === 'soiree' ? 'Catalogue Soirée démo' : 'Catalogue du bar') + '</h1></div>' +
     '<div class="cat-bar">' + (reps.length > 1 ? '<div class="rsel" role="group" aria-label="Caisse">' : '<div class="rsel" hidden>') + reps.map(function (r) { return '<button class="rchip' + (CAT.repo === r.id ? ' on' : '') + '" data-c="repo" data-v="' + r.id + '">' + esc(r.nom) + '</button>'; }).join('') + '</div>' +
     '<p class="cat-status num" id="catStatus">' + catStatusLine() + '</p>' +
     '<div class="cat-acts"><button class="ghost" data-c="reload"' + (CAT.loading ? ' disabled' : '') + '>Recharger</button>' +
@@ -2847,7 +2955,7 @@ var PAR = { msg: null, busy: false, out: null, tests: null };
 function renderParametres() {
   var db = demoDb(), n = 0; Object.keys(db).forEach(function (r) { n += Object.keys(db[r]).length; });
   var used = 0; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf('demo-') === 0) used += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
-  document.getElementById('mod').innerHTML = '<div class="band"><div class="band-top"><h1>Paramètres</h1></div><p class="soon-lead">Version de démonstration.</p></div><main>' +
+  document.getElementById('mod').innerHTML = '<div class="band"><div class="band-top"><h1>Paramètres</h1></div><p class="soon-lead">Version de démonstration.</p></div><main>' + vFeatures() +
     '<section><h3>Données de démonstration</h3><p class="lead">Tout est rangé dans ce navigateur (aucun compte, aucun serveur). L’app Caisse ouverte sur ce même appareil voit le catalogue publié ici, et ses ventes arrivent dans le Bilan, le Stock et l’Historique.</p>' +
     '<p class="hint">' + n + ' fichier' + (n > 1 ? 's' : '') + ' sur le serveur de démonstration · ' + Math.round(used / 1024) + ' Ko utilisés.</p>' +
     (PAR.demoAsk ? '<div class="alert">' + (PAR.demoAsk === 'seed' ? 'Remplacer toutes les données par l’exemple ?' : 'Effacer toutes les données de démonstration (catalogue, ventes, stock, caisse) ?') + '</div>' : '') +
@@ -2911,7 +3019,29 @@ function parSubmit(form) {
     }).catch(function (e) { PAR.busy = false; PAR.msg = { err: true, t: 'Chiffrement impossible sur ce navigateur (' + esc(e && e.message || e) + ').' }; render(); });
   }
 }
-function demoParClick(act) {
+function featCount() { var n = 0, on = 0; FEATURES.forEach(function (g) { g.items.forEach(function (it) { n++; if (FEAT(it.id)) on++; }); }); return on + ' fonctionnalités actives sur ' + n; }
+/* Paramètres › Fonctionnalités : une carte par groupe, un interrupteur par fonctionnalité */
+function vFeatures() {
+  var cfg = featCfg(), prods = [];
+  try { var cj = JSON.parse((demoDb()[DEMO_CAT_REPO] || {})['catalogue.json'].text); (cj.categories || []).forEach(function (k) { (k.produits || []).forEach(function (p) { if (k.actif !== false && p.actif !== false) prods.push({ id: p.id, t: k.nom + ' · ' + p.libelle }); }); }); } catch (e) {}
+  return '<section><h3>Fonctionnalités</h3><p class="lead">Choisissez ce que la caisse et l’Admin proposent. Le changement s’applique tout de suite, sur cette app et sur la caisse ouverte sur cet appareil. Une option grisée dépend d’une autre, qui est coupée.</p>' +
+    '<p class="hint">' + featCount() + ' · <button class="btn sm" data-p="featAll">Tout activer</button> <button class="btn sm" data-p="featDefault">Réglages par défaut</button></p>' +
+    '<div class="featgrid">' + FEATURES.map(function (g) {
+      return '<div class="featg"><h4>' + esc(g.nom) + '</h4>' + g.items.map(function (it) {
+        var own = featOwn(it.id), dep = it.req && !FEAT(it.req), eff = FEAT(it.id);
+        var extra = it.id === 'raccourci' && own ? '<select id="featRac" class="featsel"><option value="">— choisir l’article —</option>' + prods.map(function (p) { return '<option value="' + esc(p.id) + '"' + (cfg.raccourciId === p.id ? ' selected' : '') + '>' + esc(p.t) + '</option>'; }).join('') + '</select>' + (prods.length ? '' : '<span class="faint"> (publiez d’abord un catalogue)</span>') : '';
+        return '<label class="featit' + (dep ? ' dep' : '') + '"><input type="checkbox" data-p="feat" data-v="' + it.id + '"' + (own ? ' checked' : '') + (dep ? ' disabled' : '') + '><span><b>' + esc(it.nom) + '</b>' +
+          (it.desc ? '<small>' + esc(it.desc) + '</small>' : '') + (dep ? '<small class="warnt">Nécessite « ' + esc(FEAT_DEF[it.req].nom) + ' »</small>' : own && !eff && it.id === 'raccourci' ? '<small class="warnt">Choisissez l’article.</small>' : '') + '</span></label>' + (extra ? '<div style="padding:0 0 8px 30px">' + extra + '</div>' : '');
+      }).join('') + '</div>';
+    }).join('') + '</div></section>';
+}
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.id === 'featRac') { var c = featCfg(); c.raccourciId = e.target.value; featSave(c); render(); }
+});
+function demoParClick(act, el) {
+  if (act === 'feat') { var c = featCfg(); c.f[el.getAttribute('data-v')] = !!el.checked; featSave(c); render(); return true; }
+  if (act === 'featAll') { var c2 = featCfg(); FEATURES.forEach(function (g) { g.items.forEach(function (it) { c2.f[it.id] = true; }); }); featSave(c2); render(); return true; }
+  if (act === 'featDefault') { var c3 = featCfg(); c3.f = {}; featSave(c3); render(); return true; }
   if (act === 'demoSeed') { PAR.demoAsk = 'seed'; render(); return true; }
   if (act === 'demoReset') { PAR.demoAsk = 'reset'; render(); return true; }
   if (act === 'demoNo') { PAR.demoAsk = null; render(); return true; }
@@ -2919,7 +3049,7 @@ function demoParClick(act) {
   return false;
 }
 function parClick(el) {
-  if (demoParClick(el.getAttribute('data-p'))) return;
+  if (demoParClick(el.getAttribute('data-p'), el)) return;
   var p = el.getAttribute('data-p');
   if (p === 'lock') { setToken(null); PAR.tests = null; PAR.msg = { t: 'Appareil verrouillé. La phrase de passe sera demandée pour publier.' }; render(); }
   else if (p === 'test') testRepos();
@@ -3199,7 +3329,7 @@ function demoEvent() {
   var arts = [['a1', 'Jupiler fût 50 L', 'fûts', 'Bières'], ['a2', 'Bière spéciale', 'bouteilles', 'Bières'], ['a3', 'Coca-Cola 33 cl', 'canettes', 'Softs'], ['a4', 'Eau plate 50 cl', 'bouteilles', 'Softs'], ['a5', 'Vin rouge', 'bouteilles', 'Vins'], ['a6', 'Cava', 'bouteilles', 'Bulles'], ['a7', 'Gobelets 25 cl', 'pièces', 'Matériel']];
   var init = { a1: 12, a2: 240, a3: 480, a4: 360, a5: 60, a6: 48, a7: 5000 };
   var d1 = { a1: 7, a2: 150, a3: 310, a4: 250, a5: 41, a6: 30, a7: 3400 }, d2 = { a1: 3, a2: 60, a3: 120, a4: 160, a5: 22, a6: 14, a7: 1500 };
-  return { format: 'admin/stock', formatVersion: 1, id: 'exemple', nom: 'Chlorophylle Night (exemple)', debut: '2026-10-16', statut: 'ouvert', creeLe: '2026-10-16T10:00:00Z', demo: true,
+  return { format: 'admin/stock', formatVersion: 1, id: 'exemple', nom: 'Soirée démo (exemple)', debut: '2026-10-16', statut: 'ouvert', creeLe: '2026-10-16T10:00:00Z', demo: true,
     articles: arts.map(function (a) { return { id: a[0], nom: a[1], unite: a[2], categorie: a[3], actif: true }; }), stockInitial: init,
     jours: { '2026-10-16': { livraisons: {}, restant: d1 }, '2026-10-17': { livraisons: { a1: 4, a3: 240 }, restant: d2 }, '2026-10-18': { livraisons: {}, restant: { a1: 2, a2: 31 } } } };
 }
@@ -3248,7 +3378,7 @@ function vStkNew() {
   var f = STK.newForm || (STK.newForm = { nom: '', debut: todayIso(), from: '', carry: true });
   var prev = (STK.list || []).slice().sort(function (a, b) { return a.debut < b.debut ? 1 : -1; });
   return '<div class="band"><div class="band-top"><h1>Nouvel événement</h1></div></div><main><section><form class="stkform" data-s-form="new">' +
-    '<label class="fl" for="evNom">Nom de l’événement</label><input type="text" id="evNom" required value="' + esc(f.nom) + '" placeholder="Ex. Chlorophylle Night 2026">' +
+    '<label class="fl" for="evNom">Nom de l’événement</label><input type="text" id="evNom" required value="' + esc(f.nom) + '" placeholder="Ex. Soirée démo 2026">' +
     '<label class="fl" for="evDebut">Premier jour</label><input type="date" id="evDebut" required value="' + esc(f.debut) + '">' +
     (prev.length ? '<label class="fl" for="evFrom">Reprendre les articles de</label><select id="evFrom"><option value="">Aucun : je crée ma liste</option>' + prev.map(function (d) { return '<option value="' + esc(d.id) + '"' + (f.from === d.id ? ' selected' : '') + '>' + esc(d.nom) + ' (' + dmy(d.debut) + ')</option>'; }).join('') + '</select>' +
       '<label class="tog"><input type="checkbox" id="evCarry"' + (f.carry ? ' checked' : '') + '>Avec leur stock restant comme stock de départ</label>' : '') +
@@ -3718,7 +3848,7 @@ function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][
     var url = String(input && input.url ? input.url : input);
     if (url.indexOf('https://api.github.com') === 0) return api(url.slice(22), opts || {});
     if (/^(\.\/)?catalogue\.json(\?|$)/.test(url)) {
-      var f = (demoDb()[DEMO_CAT_REPO] || {})['catalogue.json'];
+      var f = (demoDb()[/\/soiree\//.test(location.pathname) ? 'demo/soiree' : DEMO_CAT_REPO] || {})['catalogue.json'];
       return later(f ? res(200, f.text, true) : res(404, 'Not Found', true));
     }
     return realFetch(input, opts);
@@ -3726,6 +3856,15 @@ function demoPut(db, repo, path, text) { if (!db[repo]) db[repo] = {}; db[repo][
 })();
 
 /* ---------- Données d'exemple (bouton « Charger un exemple » de l'Admin) ---------- */
+var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 1, version: 1, date: '2026-11-24', soiree: 'Soirée démo',
+  entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
+    { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
+  tickets: { prixCase: 3, casesParCarte: 18 },
+  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  boissons: [
+    { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
+    { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
+    { id: 'vins', nom: 'Vins et bulles', ordre: 3, actif: true, produits: [{ id: 'vin', libelle: 'Verre de vin', format: 'verre', cases: 2, ordre: 1, actif: true }, { id: 'cava-btl', libelle: 'Cava', format: 'bouteille', cases: 10, ordre: 2, actif: true }] }] };
 function demoIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function demoReset() {
   var keys = [];
@@ -3733,7 +3872,9 @@ function demoReset() {
   keys.forEach(function (k) { localStorage.removeItem(k); });
 }
 function demoSeed() {
+  var keepCfg = null; try { keepCfg = localStorage.getItem('demo-config'); } catch (e) {}
   demoReset();
+  if (keepCfg) try { localStorage.setItem('demo-config', keepCfg); } catch (e) {}
   var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
   function pick(a) { return a[Math.floor(rnd() * a.length)]; }
   function r2(n) { return Math.round(n * 100) / 100; }
@@ -3809,8 +3950,80 @@ function demoSeed() {
       demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
     });
   });
+  /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
+  var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
+  demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
+  var csv = 'control;cout;paye;reference;date\n', ref = demoIso(today).replace(/-/g, '');
+  ['0a1b2c3d4e5f60718293a4b5c6d7e8f9', '1111aaaa2222bbbb3333cccc4444dddd', '9f8e7d6c5b4a39281706f5e4d3c2b1a0', 'abcdefabcdefabcdefabcdefabcdef01', '00112233445566778899aabbccddeeff']
+    .forEach(function (c, i) { csv += c + ';' + (i === 3 ? 24 : 12) + ';' + (i === 4 ? 'NULL' : '1') + ';' + ref + ';' + today.getDate() + '\n'; });
+  demoPut(db, DEMO_SALES_REPO, 'preventes/billetterie-demo.csv', csv);
+  /* Comptage du stock d'événement */
+  var sid = 'stock-evenement-' + days[0], sart = [['fut', 'Bière (fût)', 'fûts', 'Boissons'], ['soft', 'Softs', 'caisses', 'Boissons'], ['vin', 'Vin', 'bouteilles', 'Boissons'], ['gob', 'Gobelets', 'cartons', 'Matériel']];
+  var sdoc = { format: 'admin/stock', formatVersion: 1, id: sid, nom: 'Stock événement', debut: days[0], statut: 'ouvert', creeLe: days[0] + 'T08:00:00', clotureLe: null, majLe: days[1] + 'T23:00:00',
+    articles: sart.map(function (a) { return { id: a[0], nom: a[1], unite: a[2], categorie: a[3], actif: true }; }),
+    stockInitial: { fut: 10, soft: 20, vin: 48, gob: 6 },
+    jours: {} };
+  sdoc.jours[days[0]] = { livraisons: { fut: 4 }, restant: { fut: 7, soft: 12, vin: 30, gob: 4 } };
+  sdoc.jours[days[1]] = { livraisons: { soft: 10 }, restant: { fut: 2, soft: 11, vin: 14, gob: 3 } };
+  demoPut(db, 'demo/admin-donnees', 'stock/' + sid + '.json', JSON.stringify(sdoc, null, 1) + '\n');
   demoDbSave(db);
 }
+
+/* ---------- Fonctionnalités activables (Admin › Paramètres) ----------
+   Réglage rangé à côté des données de démo (clé demo-config) : l'Admin l'écrit, la Caisse et la Caisse Soirée le lisent
+   à chaque affichage. Dépendances : une option « fille » est coupée quand sa « mère » est coupée. */
+var FEAT_KEY = 'demo-config';
+var FEATURES = [
+  { id: 'vente', nom: 'Vente', items: [
+    { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
+    { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
+    { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
+    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'paiement', nom: 'Paiement', items: [
+    { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
+    { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },
+  { id: 'historique', nom: 'Historique sur la tablette', items: [
+    { id: 'annulation', nom: 'Annulation d’une vente', desc: 'Avec un motif, depuis l’Historique.' },
+    { id: 'export', nom: 'Export manuel des ventes du jour', desc: 'Téléchargement d’un fichier depuis le menu.' } ] },
+  { id: 'imprimante', nom: 'Imprimante et tiroir', items: [
+    { id: 'imprimante', nom: 'Impression du ticket', desc: 'Ticket, duplicata et aperçu (imprimante Epson Wi-Fi).' },
+    { id: 'tiroir', nom: 'Tiroir-caisse', desc: 'Ouverture à l’encaissement, ouverture sans vente avec motif, journal.', req: 'imprimante' } ] },
+  { id: 'caisse', nom: 'Caisse du jour', items: [
+    { id: 'fond', nom: 'Fond de caisse', desc: 'Demandé à l’ouverture ; onglet Caisse de l’Admin.' },
+    { id: 'mouvements', nom: 'Retraits et ajouts d’argent', desc: '', req: 'fond' },
+    { id: 'decompte', nom: 'Décompte final', desc: 'Au total ou en billets et pièces, avec l’écart.', req: 'fond' } ] },
+  { id: 'stock', nom: 'Stock', items: [
+    { id: 'stock', nom: 'Stock par stand', desc: 'Livraisons, transferts et restant par stand (Admin).' },
+    { id: 'stockTablette', nom: 'Stock du stand sur la tablette', desc: '', req: 'stock' },
+    { id: 'reception', nom: 'Réception de stock sur la tablette', desc: 'Articles venus d’un autre stand.', req: 'stock' },
+    { id: 'restantTuiles', nom: 'Restant affiché sur les tuiles', desc: '', req: 'stock' } ] },
+  { id: 'catalogue', nom: 'Catalogue', items: [
+    { id: 'multiPdv', nom: 'Plusieurs points de vente', desc: 'Sinon, un seul point de vente, choisi d’office.' },
+    { id: 'prefixe', nom: 'Préfixe de catégorie dans le libellé', desc: 'Ex. « Boissons Eau » sur le ticket.' } ] },
+  { id: 'suivi', nom: 'Suivi des ventes', items: [
+    { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
+    { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'options', nom: 'Modules en option', items: [
+    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
+    { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
+];
+var FEAT_DEF = {}; FEATURES.forEach(function (g) { g.items.forEach(function (it) { FEAT_DEF[it.id] = it; }); });
+var _featRaw = null, _featCfg = { f: {}, raccourciId: '' };
+function featCfg() {
+  var raw = null; try { raw = localStorage.getItem(FEAT_KEY); } catch (e) {}
+  if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
+  return _featCfg;
+}
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; return c.f[id] != null ? !!c.f[id] : !(d && d.off); }
+function FEAT(id) {
+  var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
+  if (d && d.req && !FEAT(d.req)) return false;
+  if (id === 'raccourci' && !featCfg().raccourciId) return false;
+  return true;
+}
+function featSave(c) { try { localStorage.setItem(FEAT_KEY, JSON.stringify(c)); return true; } catch (e) { return false; } }
 
 try { if (!localStorage.getItem('demo-admin-gh-token')) { localStorage.setItem('demo-admin-gh-token', 'demo'); localStorage.setItem('demo-admin-gh-tokens', '["demo"]'); } } catch (e) {}
 if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
