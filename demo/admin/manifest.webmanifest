@@ -1,0 +1,31 @@
+{
+  "id": "/caisse/demo/admin/",
+  "name": "Admin · Démo",
+  "short_name": "Admin",
+  "description": "Administration : catalogue, stock, caisse, bilan.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFFFFF",
+  "theme_color": "#111A26",
+  "icons": [
+    {
+      "src": "../../app/icons/admin-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../../app/icons/admin-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "../../app/icons/admin-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
