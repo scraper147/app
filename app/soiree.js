@@ -1,4 +1,4 @@
-/* caisse soiree v1 — code commun à tous les utilisateurs */
+/* caisse soiree v2 — code commun à tous les utilisateurs */
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
    Les appels à l'API GitHub (api.github.com) et la lecture de catalogue.json sont servis par un petit
@@ -279,6 +279,8 @@ var FEATURES = [
   { id: 'suivi', nom: 'Suivi des ventes', items: [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'affichage', nom: 'Affichage', items: [
+    { id: 'sombreDefaut', nom: 'Thème sombre par défaut', desc: 'La Caisse et l’Admin s’ouvrent en sombre. Chaque appareil peut encore changer avec le bouton lune / soleil, et garde son choix.', off: true } ] },
   { id: 'options', nom: 'Modules en option', items: [
     { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
     { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
@@ -386,7 +388,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v1'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v2'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

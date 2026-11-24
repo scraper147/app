@@ -1,4 +1,4 @@
-/* caisse caisse v1 — code commun à tous les utilisateurs */
+/* caisse caisse v2 — code commun à tous les utilisateurs */
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
    Les appels à l'API GitHub (api.github.com) et la lecture de catalogue.json sont servis par un petit
@@ -279,6 +279,8 @@ var FEATURES = [
   { id: 'suivi', nom: 'Suivi des ventes', items: [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'affichage', nom: 'Affichage', items: [
+    { id: 'sombreDefaut', nom: 'Thème sombre par défaut', desc: 'La Caisse et l’Admin s’ouvrent en sombre. Chaque appareil peut encore changer avec le bouton lune / soleil, et garde son choix.', off: true } ] },
   { id: 'options', nom: 'Modules en option', items: [
     { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
     { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
@@ -378,7 +380,7 @@ function themeCheck(onChange) {
 }
 try { themeApply(); } catch (e) {}
 
-var APP_VERSION = 'v1'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v2'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
@@ -1957,7 +1959,7 @@ var ICON_SUN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stro
 var THEME_KEY = STORE_KEY + '-theme';
 function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
 function applyTheme(t) { document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light'); }
-try { applyTheme(localStorage.getItem(THEME_KEY)); } catch (e) { applyTheme('light'); }
+try { applyTheme(localStorage.getItem(THEME_KEY) || (FEAT('sombreDefaut') ? 'dark' : 'light')); } catch (e) { applyTheme('light'); }
 var ICON_PEN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
 var ICON_DOTS = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
 
@@ -2539,6 +2541,7 @@ window.addEventListener('storage', function (e) {
 });
 /* Réglage des fonctionnalités publié par l'Admin (config.json à côté de catalogue.json) : copie gardée sur la tablette */
 function cfgApply() {
+  try { if (!localStorage.getItem(THEME_KEY)) applyTheme(FEAT('sombreDefaut') ? 'dark' : 'light'); } catch (e) {}
   try { var cc = normalizeCatalogue(JSON.parse(localStorage.getItem(CAT_KEY))); if (cc) { CATALOGUE = cc; if (S.cat && !CATALOGUE.categories.some(function (k) { return k.id === S.cat; })) S.cat = CATALOGUE.categories.length ? CATALOGUE.categories[0].id : null; if (S.placeId && !findPlace(S.placeId)) { S.placeId = null; persist(); } } } catch (er) {}
   render();
 }

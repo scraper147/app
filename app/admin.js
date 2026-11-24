@@ -1,4 +1,4 @@
-/* caisse admin v1 — code commun à tous les utilisateurs */
+/* caisse admin v2 — code commun à tous les utilisateurs */
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
    Les appels à l'API GitHub (api.github.com) et la lecture de catalogue.json sont servis par un petit
@@ -279,6 +279,8 @@ var FEATURES = [
   { id: 'suivi', nom: 'Suivi des ventes', items: [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'affichage', nom: 'Affichage', items: [
+    { id: 'sombreDefaut', nom: 'Thème sombre par défaut', desc: 'La Caisse et l’Admin s’ouvrent en sombre. Chaque appareil peut encore changer avec le bouton lune / soleil, et garde son choix.', off: true } ] },
   { id: 'options', nom: 'Modules en option', items: [
     { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
     { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
@@ -381,7 +383,7 @@ try { themeApply(); } catch (e) {}
 try { if (!localStorage.getItem(KP + 'admin-gh-token')) { localStorage.setItem(KP + 'admin-gh-token', 'demo'); localStorage.setItem(KP + 'admin-gh-tokens', '["demo"]'); } } catch (e) {}
 var LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMCIgZmlsbD0iIzJGNUQ4QSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxyZWN0IHg9IjE0IiB5PSI0MCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjQ0IiByeD0iOCIvPjxwYXRoIGQ9Ik0yNiA0MFYyMmg0OHYxOCIvPjxwYXRoIGQ9Ik0zNCAzMGgzMiIvPjxwYXRoIGQ9Ik0yOCA1OGgxMk00OCA1OGgxMk0yOCA3MGgxMk00OCA3MGgxMiIvPjxwYXRoIGQ9Ik02OCA1OGg2djEyaC02eiIvPjwvZz48L3N2Zz4='; // Agri-Garden by Xavier Vaerman (icône de la Caisse)
 var THEME_KEY = KP + 'admin-theme';
-try { var th = localStorage.getItem(THEME_KEY); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}
+try { var th = localStorage.getItem(THEME_KEY); if (th) document.documentElement.setAttribute('data-theme', th); else if (FEAT('sombreDefaut')) document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
 
 /* ---------- Données ---------- */
 var FILES = [];            // {name, data, status, note}
@@ -1139,6 +1141,7 @@ SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { render
 var SUBS_SAPIN_ALL = SUBS.sapin.slice(), MODULES_ALL = MODULES.slice();
 /* Menus selon Admin › Paramètres › Fonctionnalités */
 function featApply() {
+  try { if (!localStorage.getItem(THEME_KEY)) { if (FEAT('sombreDefaut')) document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme'); } } catch (e) {}
   var want = { catalogue: 1, stock: FEAT('stock'), stockevt: FEAT('stockEvenement'), caisse: FEAT('fond'), commandes: FEAT('commandes'), factures: FEAT('facture'), livraisons: FEAT('gestionLivraisons'), bilan: 1, hist: FEAT('historiqueAdmin') };
   SUBS.sapin = SUBS_SAPIN_ALL.filter(function (x) { return want[x.id]; });
   if (!SUBS.sapin.some(function (x) { return x.id === SUB.sapin; })) SUB.sapin = 'catalogue';
@@ -4381,6 +4384,8 @@ var FEATURES = [
   { id: 'suivi', nom: 'Suivi des ventes', items: [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
+  { id: 'affichage', nom: 'Affichage', items: [
+    { id: 'sombreDefaut', nom: 'Thème sombre par défaut', desc: 'La Caisse et l’Admin s’ouvrent en sombre. Chaque appareil peut encore changer avec le bouton lune / soleil, et garde son choix.', off: true } ] },
   { id: 'options', nom: 'Modules en option', items: [
     { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
     { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }

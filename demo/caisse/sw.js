@@ -1,6 +1,6 @@
 /* Hors ligne pour caisse de « demo » : réseau d'abord (3 s), sinon cache. Préfixe propre à cet ami et cette app. */
 var PREFIX = 'caisse-demo-caisse-';
-var CACHE = PREFIX + 'v1';
+var CACHE = PREFIX + 'v2';
 var FILES = ['./', './index.html', './manifest.webmanifest', '../client.js', '../../app/caisse.js', '../../app/caisse.css',
   '../../app/icons/caisse-192.png', '../../app/icons/caisse-512.png', '../../app/icons/caisse-maskable-512.png', '../../app/icons/caisse-apple.png'];
 self.addEventListener('install', function (e) {

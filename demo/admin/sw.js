@@ -1,6 +1,6 @@
 /* Hors ligne pour admin de « demo » : réseau d'abord (3 s), sinon cache. Préfixe propre à cet ami et cette app. */
 var PREFIX = 'caisse-demo-admin-';
-var CACHE = PREFIX + 'v1';
+var CACHE = PREFIX + 'v2';
 var FILES = ['./', './index.html', './manifest.webmanifest', '../client.js', '../../app/admin.js', '../../app/admin.css',
   '../../app/icons/admin-192.png', '../../app/icons/admin-512.png', '../../app/icons/admin-maskable-512.png', '../../app/icons/admin-apple.png'];
 self.addEventListener('install', function (e) {
