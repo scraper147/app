@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>SuperAdmin · Caisse</title><link rel="icon" href="../core/icons/admin-192.png">
+<style>
+:root{--c:#2F5D8A;--ink:#1A2230;--mut:#586273;--line:#DCE1E8;--bg:#F3F5F8;--red:#A33A2B;--ok:#1E7A3C}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#111A26;color:#EEF2F7;padding:16px 20px}header .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:20px;margin:0;flex:1}header small{color:#A9B4C2}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{font-size:18px;margin:0 0 10px}p{color:var(--mut);line-height:1.5;margin:6px 0}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 4px}
+input,select,textarea{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 10px;border:1px solid #C9D1DB;border-radius:10px;background:#fff}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;min-height:90px}
+button,.b{font:inherit;font-weight:700;font-size:14px;padding:9px 14px;border:1px solid var(--c);border-radius:10px;background:var(--c);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.b.sec,button.sec{background:#fff;color:var(--c)}button.danger{background:#fff;color:var(--red);border-color:var(--red)}button:disabled{opacity:.5;cursor:default}
+header button{background:transparent;border-color:#3A4757;color:#EEF2F7}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:17px}.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E8F0F8;color:var(--c)}.tag.gh{background:#E6F4EA;color:var(--ok)}.tag.warn{background:#FBEDE3;color:#7A3D00}
+.msg{font-weight:600;margin-top:8px}.ok{color:var(--ok)}.err{color:var(--red)}.faint{color:var(--mut);font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header><div class="in"><h1>SuperAdmin · Caisse <small id="ver"></small></h1><span id="hb"></span></div></header>
+<main id="m"></main>
+<script src="../core/templates.js"></script>
+<script>
+/* Écran de Loïc : gère les dossiers des amis dans le dépôt du site (scraper147/app) avec SON jeton (Contents : Read and write
+   sur ce dépôt), chiffré sur cet appareil. N'a jamais accès aux données des amis (leurs dépôts privés). */
+var K = 'caisse-superadmin:', RESERVED = ['core', 'superadmin', 'cle', 'index', 'app', 'assets'];
+var S = { acc: null, amis: null, tree: null, err: null, busy: '', form: null, edit: null, del: null, version: null };
+function $(id) { return document.getElementById(id); }
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function norm(p) { return String(p || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase(); }
+function b64e(u) { var s = ''; u = new Uint8Array(u); for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
+function b64d(s) { var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+function utf8b64(s) { return btoa(unescape(encodeURIComponent(s))); }
+function key(pass, salt, use) { return crypto.subtle.importKey('raw', new TextEncoder().encode(norm(pass)), 'PBKDF2', false, ['deriveKey']).then(function (b) { return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 600000, hash: 'SHA-256' }, b, { name: 'AES-GCM', length: 256 }, false, [use]); }); }
+function enc(obj, pass) { var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)); return key(pass, salt, 'encrypt').then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(JSON.stringify(obj))); }).then(function (c) { return { salt: b64e(salt), iv: b64e(iv), data: b64e(c) }; }); }
+function dec(b, pass) { return key(pass, b64d(b.salt), 'decrypt').then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(b.iv) }, k, b64d(b.data)); }).then(function (p) { return JSON.parse(new TextDecoder().decode(p)); }); }
+function gitSha(text) { var b = new TextEncoder().encode(text), h = new TextEncoder().encode('blob ' + b.length + '\0'), all = new Uint8Array(h.length + b.length); all.set(h); all.set(b, h.length); return crypto.subtle.digest('SHA-1', all).then(function (d) { return Array.prototype.map.call(new Uint8Array(d), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }); }
+function gh(path, opts) {
+  opts = opts || {};
+  return fetch('https://api.github.com' + path, { method: opts.method || 'GET', cache: 'no-store', body: opts.body ? JSON.stringify(opts.body) : undefined,
+    headers: { Authorization: 'Bearer ' + S.acc.token, Accept: opts.raw ? 'application/vnd.github.raw' : 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } })
+    .then(function (r) { if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { var e = new Error(j.message || ('GitHub ' + r.status)); e.status = r.status; throw e; }); return opts.raw ? r.text() : r.json(); },
+      function () { var e = new Error('Pas de réseau'); e.status = 0; throw e; });
+}
+function cpath(p) { return '/repos/' + S.acc.depot + '/contents/' + p.split('/').map(encodeURIComponent).join('/'); }
+/* ---------- chargement : arbre du dépôt du site, dossiers contenant client.js ---------- */
+function load() {
+  S.busy = 'Lecture du dépôt…'; S.err = null; render();
+  fetch('../core/version.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) { S.version = v; render(); }, function () {});
+  gh('/repos/' + S.acc.depot + '/git/trees/HEAD?recursive=1').then(function (t) {
+    S.tree = {}; (t.tree || []).forEach(function (x) { if (x.type === 'blob') S.tree[x.path] = x.sha; });
+    var ids = Object.keys(S.tree).map(function (p) { var m = /^([^/]+)\/client\.js$/.exec(p); return m ? m[1] : null; }).filter(Boolean).sort();
+    return Promise.all(ids.map(function (id) { return gh(cpath(id + '/client.js'), { raw: true }).then(function (txt) { var j = {}; try { j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) {} j.id = j.id || id; return j; }); }));
+  }).then(function (amis) { S.amis = amis; S.busy = ''; render(); }, function (e) { S.busy = ''; S.err = e.status === 401 ? 'GitHub refuse le jeton (expiré ou révoqué).' : e.status === 404 ? 'Dépôt du site introuvable avec ce jeton.' : e.message; render(); });
+}
+/* ---------- fichiers d'un ami (modèles de core/templates.js) ---------- */
+function filesFor(cl) {
+  var out = {}, T = window.CAISSE_TEMPLATES || {}, nj = JSON.stringify(cl.nom).slice(1, -1);
+  Object.keys(T).forEach(function (rel) { out[cl.id + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
+  out[cl.id + '/client.js'] = '/* Ami « ' + cl.id + ' » : seul fichier propre à cet ami. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
+  return out;
+}
+/* Écrit seulement les fichiers qui changent (empreinte git comparée à l'arbre), un par un (pas de conflit de branche) */
+function writeFiles(files, msg) {
+  var paths = Object.keys(files), n = 0;
+  return paths.reduce(function (p, path) {
+    return p.then(function () {
+      return gitSha(files[path]).then(function (sha) {
+        if (S.tree[path] === sha) return;
+        S.busy = msg + ' (' + (++n) + ')…'; render();
+        var body = { message: msg + ' : ' + path, content: utf8b64(files[path]) }; if (S.tree[path]) body.sha = S.tree[path];
+        return gh(cpath(path), { method: 'PUT', body: body }).then(function (r) { S.tree[path] = r.content.sha; });
+      });
+    });
+  }, Promise.resolve()).then(function () { return n; });
+}
+function checkCle(txt) {
+  if (!txt.trim()) return null;
+  var j = JSON.parse(txt); if (!j.salt || !j.iv || !j.data) throw new Error('Clé incomplète (salt, iv, data).');
+  return { v: j.v || 1, kdf: j.kdf || 'PBKDF2-SHA256', iter: j.iter || 600000, salt: j.salt, iv: j.iv, data: j.data, le: j.le || new Date().toISOString().slice(0, 10) };
+}
+function saveAmi(isNew) {
+  var f = S.form, id = (f.id || '').trim().toLowerCase(), nom = (f.nom || '').trim(), cle = null;
+  if (!/^[a-z0-9][a-z0-9-]{1,29}$/.test(id) || RESERVED.indexOf(id) >= 0) { S.err = 'Identifiant : 2 à 30 caractères, lettres minuscules, chiffres et tirets (pas « ' + RESERVED.join(', ') + ' »).'; render(); return; }
+  if (!nom) { S.err = 'Indiquez le nom.'; render(); return; }
+  if (isNew && Object.keys(S.tree).some(function (p) { return p.indexOf(id + '/') === 0; })) { S.err = 'Un dossier « ' + id + ' » existe déjà.'; render(); return; }
+  try { cle = checkCle(f.cle || ''); } catch (e) { S.err = 'Clé illisible : ' + e.message; render(); return; }
+  if (f.donnees === 'github' && !cle) { S.err = 'Le mode GitHub demande la clé chiffrée de l’ami (page « Préparer la clé d’accès »).'; render(); return; }
+  var old = isNew ? {} : (S.amis.filter(function (a) { return a.id === id; })[0] || {});
+  var cl = { id: id, nom: nom, donnees: f.donnees, canal: 'stable', creeLe: old.creeLe || new Date().toISOString().slice(0, 10) };
+  if (cle) cl.cle = cle;
+  S.err = null;
+  writeFiles(filesFor(cl), (isNew ? 'Nouvel ami ' : 'Mise à jour de l’ami ') + id).then(function (n) {
+    S.busy = ''; S.form = null; S.edit = null; S.flash = (isNew ? 'Dossier « ' + id + ' » créé' : n ? n + ' fichier(s) mis à jour pour « ' + id + ' »' : 'Rien à changer pour « ' + id + ' »') + '. GitHub Pages publie en une à deux minutes.'; load();
+  }, function (e) { S.busy = ''; S.err = 'Échec : ' + e.message + ' (les fichiers déjà écrits restent ; relancez pour terminer).'; render(); });
+}
+function syncAll() {
+  var all = {}; S.amis.forEach(function (a) { var fs = filesFor(a); Object.keys(fs).forEach(function (p) { all[p] = fs[p]; }); });
+  writeFiles(all, 'Mise à jour des dossiers d’amis').then(function (n) { S.busy = ''; S.flash = n ? n + ' fichier(s) remis à jour.' : 'Tous les dossiers sont à jour.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+}
+function delAmi(id) {
+  var paths = Object.keys(S.tree).filter(function (p) { return p.indexOf(id + '/') === 0; }), n = 0;
+  paths.reduce(function (p, path) { return p.then(function () { S.busy = 'Suppression (' + (++n) + '/' + paths.length + ')…'; render(); return gh(cpath(path), { method: 'DELETE', body: { message: 'Suppression de l’ami ' + id + ' : ' + path, sha: S.tree[path] } }).then(function () { delete S.tree[path]; }); }); }, Promise.resolve())
+    .then(function () { S.busy = ''; S.del = null; S.flash = 'Dossier « ' + id + ' » supprimé. Les données de l’ami (son dépôt privé) ne sont pas touchées.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+}
+/* ---------- affichage ---------- */
+function vLock() {
+  var has = !!localStorage.getItem(K + 'cle');
+  return '<section><h2>' + (has ? 'Déverrouiller' : 'Première utilisation sur cet appareil') + '</h2>' +
+    (has ? '<p>Phrase de passe de la clé SuperAdmin de cet appareil.</p><label>Phrase de passe</label><input type="password" id="pp" autocomplete="current-password"><div class="row" style="margin-top:12px"><button data-a="unlock">Déverrouiller</button><button class="danger" data-a="forget">Oublier la clé de cet appareil</button></div>'
+      : '<p>Il faut un jeton GitHub fine-grained avec <strong>Contents : Read and write</strong> sur le dépôt du site (et rien d’autre). Il est chiffré sur cet appareil avec une phrase de passe, et seulement déverrouillé pour la session.</p>' +
+        '<label>Dépôt du site</label><input id="sd" value="scraper147/app"><label>Jeton</label><input id="st" type="password" autocomplete="off" placeholder="github_pat_…">' +
+        '<div class="two"><div><label>Phrase de passe (20 caractères au moins)</label><input id="p1" type="password" autocomplete="new-password"></div><div><label>Retaper</label><input id="p2" type="password" autocomplete="new-password"></div></div><div class="row" style="margin-top:12px"><button data-a="setup">Vérifier et enregistrer</button></div>') +
+    (S.err ? '<div class="msg err">' + esc(S.err) + '</div>' : '') + (S.busy ? '<div class="msg faint">' + esc(S.busy) + '</div>' : '') + '</section>';
+}
+function vForm(isNew) {
+  var f = S.form;
+  return '<section><h2>' + (isNew ? 'Nouvel ami' : 'Modifier « ' + esc(f.id) + ' »') + '</h2><div class="two"><div><label>Identifiant (adresse)</label><input data-f="id" value="' + esc(f.id) + '"' + (isNew ? '' : ' disabled') + ' placeholder="ex. jardin"><p class="faint">Adresse : scraper147.github.io/app/<strong>' + esc(f.id || '…') + '</strong>/</p></div>' +
+    '<div><label>Nom</label><input data-f="nom" value="' + esc(f.nom) + '" placeholder="ex. Jardin de Marie"></div></div>' +
+    '<label>Données</label><select data-f="donnees"><option value="local"' + (f.donnees === 'local' ? ' selected' : '') + '>Démonstration (navigateur, un seul appareil)</option><option value="github"' + (f.donnees === 'github' ? ' selected' : '') + '>Dépôt GitHub privé de l’ami (plusieurs appareils)</option></select>' +
+    '<label>Clé chiffrée de l’ami</label><textarea data-f="cle" placeholder=\'{"v":1,"kdf":"PBKDF2-SHA256",…}\'>' + esc(f.cle || '') + '</textarea>' +
+    '<p class="faint">L’ami la prépare sur la page <a href="../cle.html" target="_blank">Préparer la clé d’accès</a> (son dépôt et son jeton, chiffrés avec sa phrase de passe) et vous envoie le texte. Vous ne voyez jamais son jeton.</p>' +
+    '<div class="row" style="margin-top:12px"><button data-a="' + (isNew ? 'create' : 'update') + '"' + (S.busy ? ' disabled' : '') + '>' + (isNew ? 'Créer le dossier' : 'Enregistrer') + '</button><button class="sec" data-a="cancel">Annuler</button></div></section>';
+}
+function vAmis() {
+  if (!S.amis) return '';
+  var base = location.href.replace(/superadmin\/.*$/, '');
+  return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Amis (' + S.amis.length + ')</h2><div class="row"><button data-a="new">+ Nouvel ami</button><button class="sec" data-a="sync" title="Réécrit les fichiers des dossiers d’après les modèles de cette version">Remettre les dossiers à jour</button><button class="sec" data-a="reload">Actualiser</button></div></div>' +
+    '<div class="grid" style="margin-top:14px">' + S.amis.map(function (a) {
+      var gh = a.donnees === 'github';
+      return '<div class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(a.nom || a.id) + '</h3><span class="tag' + (gh ? ' gh' : '') + '">' + (gh ? 'GitHub' : 'Démo locale') + '</span></div>' +
+        '<div class="mono">' + esc(a.id) + '/</div>' +
+        '<div class="faint">' + (a.creeLe ? 'Créé le ' + esc(a.creeLe) + ' · ' : '') + 'canal ' + esc(a.canal || 'stable') + (gh ? ' · ' + (a.cle ? 'clé du ' + esc(a.cle.le || '?') : '<span class="tag warn">clé manquante</span>') : '') + '</div>' +
+        '<div class="row"><a class="b sec" href="' + base + a.id + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + a.id + '/admin/" target="_blank">Admin</a><a class="b sec" href="' + base + a.id + '/caisse/" target="_blank">Caisse</a></div>' +
+        (S.del === a.id ? '<div><p class="err">Supprimer le dossier « ' + esc(a.id) + ' » ? Ses tablettes ne s’ouvriront plus. Son dépôt de données n’est pas touché.</p><div class="row"><button class="danger" data-a="delGo" data-v="' + esc(a.id) + '">Oui, supprimer</button><button class="sec" data-a="delNo">Annuler</button></div></div>'
+          : '<div class="row"><button class="sec" data-a="edit" data-v="' + esc(a.id) + '">Modifier</button><button class="danger" data-a="del" data-v="' + esc(a.id) + '">Supprimer</button></div>') + '</div>';
+    }).join('') + '</div></section>';
+}
+function render() {
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v3';
+  $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
+  if (!S.acc) { $('m').innerHTML = vLock(); return; }
+  $('m').innerHTML = (S.flash ? '<section class="msg ok" style="margin-top:0">' + esc(S.flash) + '</section>' : '') + (S.err ? '<section class="msg err" style="margin-top:0">' + esc(S.err) + '</section>' : '') +
+    (S.busy ? '<section class="faint">' + esc(S.busy) + '</section>' : '') + (S.form ? vForm(!S.edit) : '') + vAmis() +
+    '<section><h2>Mises à jour</h2><p>Le code commun est dans <span class="mono">core/</span> : déposez la nouvelle version (dossier <span class="mono">core/</span> et pages communes) dans le dépôt ; toutes les tablettes de tous les amis la prennent à leur prochain chargement. Les dossiers des amis ne changent pas, sauf si les modèles changent (bouton « Remettre les dossiers à jour »).</p></section>';
+}
+document.addEventListener('input', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) S.form[k] = e.target.value; });
+document.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) S.form[k] = e.target.value; });
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-a]'); if (!b || b.disabled) return; var a = b.getAttribute('data-a'), v = b.getAttribute('data-v');
+  if (a !== 'delGo') S.flash = null;
+  if (a === 'setup') {
+    var depot = $('sd').value.trim(), tok = $('st').value.trim(), p1 = $('p1').value, p2 = $('p2').value;
+    if (norm(p1).length < 20 || norm(p1) !== norm(p2)) { S.err = 'Phrase trop courte ou différente.'; render(); return; }
+    S.acc = { token: tok, depot: depot }; S.busy = 'Vérification…'; S.err = null; var acc = S.acc; S.acc = null; render(); S.acc = acc;
+    gh('/repos/' + depot).then(function (j) {
+      if (j.permissions && !j.permissions.push) throw new Error('Le jeton ne peut pas écrire dans ' + depot + '.');
+      return enc({ token: tok, depot: j.full_name }, p1).then(function (c) { localStorage.setItem(K + 'cle', JSON.stringify(c)); S.acc = { token: tok, depot: j.full_name }; sessionStorage.setItem(K + 'acces', JSON.stringify(S.acc)); S.busy = ''; load(); });
+    }).catch(function (x) { S.acc = null; S.busy = ''; S.err = x.status === 401 ? 'GitHub refuse le jeton.' : x.message; render(); });
+  } else if (a === 'unlock') {
+    S.busy = 'Déverrouillage…'; S.err = null; render();
+    dec(JSON.parse(localStorage.getItem(K + 'cle')), $('pp') ? $('pp').value : '').then(function (acc) { S.acc = acc; sessionStorage.setItem(K + 'acces', JSON.stringify(acc)); S.busy = ''; load(); }, function () { S.busy = ''; S.err = 'Phrase de passe incorrecte.'; render(); });
+  } else if (a === 'forget') { localStorage.removeItem(K + 'cle'); sessionStorage.removeItem(K + 'acces'); S.err = null; render(); }
+  else if (a === 'lock') { sessionStorage.removeItem(K + 'acces'); S.acc = null; S.amis = null; render(); }
+  else if (a === 'reload') load();
+  else if (a === 'new') { S.form = { id: '', nom: '', donnees: 'local', cle: '' }; S.edit = null; S.err = null; render(); }
+  else if (a === 'edit') { var am = S.amis.filter(function (x) { return x.id === v; })[0]; S.form = { id: am.id, nom: am.nom || '', donnees: am.donnees || 'local', cle: am.cle ? JSON.stringify(am.cle) : '' }; S.edit = v; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'cancel') { S.form = null; S.edit = null; S.err = null; render(); }
+  else if (a === 'create') saveAmi(true);
+  else if (a === 'update') saveAmi(false);
+  else if (a === 'sync') { S.busy = 'Comparaison des dossiers…'; render(); syncAll(); }
+  else if (a === 'del') { S.del = v; render(); }
+  else if (a === 'delNo') { S.del = null; render(); }
+  else if (a === 'delGo') delAmi(v);
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'pp') document.querySelector('[data-a="unlock"]').click(); });
+try { S.acc = JSON.parse(sessionStorage.getItem(K + 'acces')); } catch (e) {}
+render(); if (S.acc) load();
+</script>
+</body></html>

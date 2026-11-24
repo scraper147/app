@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+<title>Préparer la clé d’accès · Caisse</title><link rel="icon" href="core/icons/caisse-192.png">
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#F3F5F8;color:#1A2230}
+main{max-width:640px;margin:0 auto;padding:28px 18px 60px}h1{font-size:26px;margin:0 0 6px}h2{font-size:18px;margin:0 0 8px}
+p,li{color:#4A5463;line-height:1.5}section{background:#fff;border:1px solid #DCE1E8;border-radius:14px;padding:18px;margin-top:16px}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 4px}input,textarea{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px;border:1px solid #C9D1DB;border-radius:10px}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:120px}
+button{font:inherit;font-weight:700;font-size:16px;padding:11px 16px;border:0;border-radius:10px;background:#2F5D8A;color:#fff;cursor:pointer;margin-top:14px}
+button.sec{background:#fff;color:#2F5D8A;border:1px solid #2F5D8A}button:disabled{opacity:.5}
+.msg{margin-top:10px;font-weight:600}.ok{color:#1E7A3C}.err{color:#A33A2B}code{background:#EEF1F5;padding:1px 5px;border-radius:5px}
+</style></head>
+<body><main>
+<h1>Préparer la clé d’accès</h1>
+<p>Pour un commerce qui enregistre ses données dans <strong>son propre dépôt GitHub privé</strong>. Tout se passe dans ce navigateur : le jeton n’est envoyé qu’à GitHub, pour vérifier l’accès, puis il est chiffré avec la phrase de passe.</p>
+
+<section><h2>1. Le dépôt et le jeton</h2>
+<ol>
+<li>Créer un dépôt <strong>privé</strong> vide sur GitHub (ex. <code>mon-commerce-donnees</code>).</li>
+<li>Créer un jeton : GitHub › Settings › Developer settings › <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained tokens</a>, accès à <strong>ce seul dépôt</strong>, permission <strong>Contents : Read and write</strong>, date d’expiration (un an au plus).</li>
+</ol>
+<label for="depot">Dépôt (compte/nom)</label><input id="depot" placeholder="mon-compte/mon-commerce-donnees" autocapitalize="none" spellcheck="false">
+<label for="tok">Jeton</label><input id="tok" type="password" placeholder="github_pat_…" autocapitalize="none" spellcheck="false" autocomplete="off">
+<button class="sec" id="test">Tester l’accès</button><div class="msg" id="tmsg"></div>
+</section>
+
+<section><h2>2. La phrase de passe</h2>
+<p>Elle sera demandée une fois sur chaque appareil (tablettes, Admin). Quatre ou cinq mots sans lien entre eux, au moins 20 caractères. Elle n’est enregistrée nulle part : si elle est perdue, il faut préparer une nouvelle clé.</p>
+<label for="p1">Phrase de passe</label><input id="p1" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false">
+<label for="p2">Retaper la phrase</label><input id="p2" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false">
+<button id="go">Chiffrer</button><div class="msg" id="gmsg"></div>
+</section>
+
+<section id="out" hidden><h2>3. La clé à transmettre</h2>
+<p>Envoyez ce texte à la personne qui gère les accès (écran superAdmin). Il ne contient ni le jeton ni le dépôt en clair.</p>
+<textarea id="cle" readonly></textarea><button class="sec" id="copy">Copier</button>
+</section>
+<p style="font-size:13px;margin-top:24px">Caisse v3</p>
+</main>
+<script>
+function norm(p) { return String(p || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase(); }
+function b64(u) { var s = ''; u = new Uint8Array(u); for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
+function $(id) { return document.getElementById(id); }
+function say(id, t, ok) { var el = $(id); el.textContent = t; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
+function check() {
+  var depot = $('depot').value.trim().replace(/^https:\/\/github\.com\//, '').replace(/\/$/, ''), tok = $('tok').value.trim();
+  if (!/^[\w.-]+\/[\w.-]+$/.test(depot)) return Promise.reject(new Error('Indiquez le dépôt sous la forme compte/nom.'));
+  if (!tok) return Promise.reject(new Error('Collez le jeton.'));
+  return fetch('https://api.github.com/repos/' + depot, { headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' }, cache: 'no-store' })
+    .then(function (r) {
+      if (r.status === 401) throw new Error('GitHub refuse le jeton (expiré, révoqué ou mal copié).');
+      if (r.status === 404) throw new Error('Dépôt introuvable avec ce jeton : vérifiez le nom et que le jeton y a accès.');
+      if (!r.ok) throw new Error('GitHub a répondu ' + r.status + '.');
+      return r.json();
+    }).then(function (j) {
+      if (!j.private) throw new Error('Ce dépôt est PUBLIC : les ventes et les coordonnées des clients seraient visibles par tous. Rendez-le privé.');
+      if (j.permissions && !j.permissions.push) throw new Error('Le jeton peut lire mais pas écrire : donnez-lui « Contents : Read and write ».');
+      return { depot: j.full_name, token: tok };
+    });
+}
+$('test').onclick = function () { check().then(function (a) { say('tmsg', 'Accès vérifié : ' + a.depot + ' (privé, écriture autorisée).', true); }, function (e) { say('tmsg', e.message || 'Pas de réseau.'); }); };
+$('go').onclick = function () {
+  var p1 = $('p1').value, p2 = $('p2').value;
+  if (norm(p1).length < 20) { say('gmsg', 'Phrase trop courte : au moins 20 caractères.'); return; }
+  if (norm(p1) !== norm(p2)) { say('gmsg', 'Les deux phrases ne sont pas identiques.'); return; }
+  this.disabled = true; var btn = this;
+  check().then(function (acc) {
+    var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(norm(p1)), 'PBKDF2', false, ['deriveKey'])
+      .then(function (b) { return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 600000, hash: 'SHA-256' }, b, { name: 'AES-GCM', length: 256 }, false, ['encrypt']); })
+      .then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(JSON.stringify(acc))); })
+      .then(function (ct) {
+        $('cle').value = JSON.stringify({ v: 1, kdf: 'PBKDF2-SHA256', iter: 600000, salt: b64(salt), iv: b64(iv), data: b64(ct), le: new Date().toISOString().slice(0, 10) });
+        $('out').hidden = false; $('tok').value = ''; $('p1').value = ''; $('p2').value = ''; say('gmsg', 'Clé chiffrée prête. Le jeton a été effacé de la page.', true); $('out').scrollIntoView({ behavior: 'smooth' });
+      });
+  }).catch(function (e) { say('gmsg', e.message || 'Erreur.'); }).then(function () { btn.disabled = false; });
+};
+$('copy').onclick = function () { $('cle').select(); (navigator.clipboard ? navigator.clipboard.writeText($('cle').value) : Promise.reject()).then(function () { $('copy').textContent = 'Copié'; }, function () { document.execCommand('copy'); $('copy').textContent = 'Copié'; }); };
+</script>
+</body></html>
