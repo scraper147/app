@@ -5,7 +5,7 @@ Version de démonstration, sans marque, de la caisse tactile et de son app d’a
 - `index.html` : page d’accueil (liens vers les deux apps)
 - `caisse/` : app de vente (hors ligne, PWA)
 - `soiree/` : Caisse Soirée (option « Soirée à tickets » : entrées, cartes à cases, boissons, préventes)
-- `admin/` : Accueil · Gestion d’événement (Catalogue, Stock, Comptage du stock, Caisse, Bilan, Historique de vente) · Soirée à tickets · Paramètres
+- `admin/` : Accueil · Gestion d’événement (Catalogue, Stock, Comptage du stock, Caisse, Commandes, Factures, Livraisons, Bilan, Historique de vente) · Soirée à tickets · Paramètres
 
 ## Fonctionnement
 
@@ -19,8 +19,10 @@ Aucun compte ni serveur : les deux apps partagent un « serveur » local rangé 
 
 ## Fonctionnalités
 
-Admin › Paramètres › Fonctionnalités : 25 interrupteurs en 9 groupes (Vente, Paiement, Historique, Imprimante et tiroir, Caisse du jour, Stock, Catalogue, Suivi des ventes, Modules en option). Réglage enregistré sous `demo-config`, appliqué tout de suite dans l’Admin et dans les caisses ouvertes sur le même appareil.
+Admin › Paramètres › Fonctionnalités : 29 interrupteurs en 10 groupes (Vente, Commandes livraisons et factures, Paiement, Historique, Imprimante et tiroir, Caisse du jour, Stock, Catalogue, Suivi des ventes, Modules en option). Réglage enregistré sous `demo-config`, appliqué tout de suite dans l’Admin et dans les caisses ouvertes sur le même appareil.
 
 ## Mise en ligne
 
 Déposer tout le dossier dans un dépôt GitHub Pages (ou n’importe quel hébergement statique).
+
+Code patron de la remise ticket (option) dans la démo : 1234.

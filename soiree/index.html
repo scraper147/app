@@ -417,7 +417,8 @@ function demoSeed() {
   var CATS = [
     { id: 'boissons', nom: 'Boissons', produits: [['eau', 'Eau', 2], ['soft', 'Soft', 2.5], ['biere', 'Bière', 3], ['vin', 'Verre de vin', 4]] },
     { id: 'snacks', nom: 'Snacks', produits: [['chips', 'Chips', 2], ['hotdog', 'Hot-dog', 4.5], ['gaufre', 'Gaufre', 3.5]] },
-    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] }
+    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] },
+    { id: 'services', nom: 'Services', produits: [['livraison', 'Livraison', 10]] }
   ];
   var cat = { format: 'agri-garden-caisse/catalogue', formatVersion: 1, version: 1, date: demoIso(start),
     pointsDeVente: PDV.map(function (p) { return { id: p.id, nom: p.nom, actif: true }; }),
@@ -425,7 +426,7 @@ function demoSeed() {
       produits: k.produits.map(function (p, j) { return { id: p[0], libelle: p[1], prix: p[2], ordre: j + 1, actif: true }; }) }; }) };
   var db = {};
   demoPut(db, DEMO_CAT_REPO, 'catalogue.json', JSON.stringify(cat, null, 1) + '\n');
-  var PROD = []; CATS.forEach(function (k) { k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
+  var PROD = [], LIV = { id: 'livraison', libelle: 'Livraison', prix: 10, cat: 'Services' }; CATS.forEach(function (k) { if (k.id !== 'services') k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
   /* Stock : livraison au début, un transfert entre stands */
   var arts = {}; PROD.forEach(function (p) { arts[p.id] = { libelle: p.libelle, categorie: p.cat }; });
   var liv1 = {}, liv2 = {}, tr = {};
@@ -453,21 +454,29 @@ function demoSeed() {
           var q = p.prix >= 10 ? 1 : 1 + Math.floor(rnd() * 3);
           lignes.push({ produitId: p.id, categorie: p.cat, libelle: p.libelle, articleLibre: false, prixUnitaire: p.prix, quantite: q, remise: null, total: r2(p.prix * q) });
         }
+        var CLI = [['Dupont Marie', 'Rue des Lilas 12, 1000 Bruxelles', '0471 23 45 67'], ['Martin Paul', 'Avenue du Parc 3, 5000 Namur', '0485 11 22 33'], ['Leroy Sophie', 'Chaussée de Wavre 140, 1050 Ixelles', '0496 98 76 54']];
+        var withLiv = pi === 0 && (i === 4 || i === 15 || i === 27), cli = CLI[(i + di) % 3];
+        if (withLiv) lignes.push({ produitId: LIV.id, categorie: LIV.cat, libelle: LIV.libelle, articleLibre: false, prixUnitaire: LIV.prix, quantite: 1, remise: null, total: LIV.prix });
         var tot = r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remT = null;
         if (i % 17 === 5) { remT = { type: 'pourcentage', valeur: 10 }; tot = r2(Math.round(tot * 0.9 * 20) / 20); }
         var mode = rnd() < 0.55 ? 'cash' : 'bancontact', pay = { mode: mode, cash: mode === 'cash' ? tot : 0, bancontact: mode === 'cash' ? 0 : tot };
         var id = pl.id + '-' + day.replace(/-/g, '') + '-' + String(i + 1).padStart(4, '0');
+        var fac = (i === 8 || i === 20) && pi === 0 ? { societe: i === 8 ? 'Jardin SA' : 'Événements Plus SRL', adresse: i === 8 ? 'Rue Haute 1, 5000 Namur' : 'Boulevard Central 20, 1000 Bruxelles', tva: i === 8 ? 'BE 0123.456.789' : 'BE 0987.654.321', email: i === 8 ? 'compta@jardin.be' : 'factures@evenements-plus.be', payee: i === 8, horodatage: hor } : null;
+        if (fac && !fac.payee) pay = { mode: 'a-facturer', cash: 0, bancontact: 0 };
         var v = { id: id, horodatage: hor, pointDeVente: { id: pl.id, nom: pl.nom }, lignes: lignes, sousTotal: r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remiseTicket: remT, total: tot, paiement: pay };
+        if (withLiv) v.livraison = { nom: cli[0], adresse: cli[1], telephone: cli[2] };
+        if (fac) v.facture = fac;
         if (i === 9 && di === 0) v.annulation = { horodatage: hor.slice(0, 14) + '59:00', motif: 'Erreur de saisie' };
         else { cash += pay.cash; banc += pay.bancontact; }
-        if (mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
+        if (pay.mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
         ventes.push(v);
       }
       tir.push({ horodatage: day + 'T14:05:00', motif: 'Faire de la monnaie', venteId: null });
       var valid = ventes.filter(function (v) { return !v.annulation; });
+      var nonPaye = r2(valid.filter(function (v) { return v.paiement.mode === 'a-facturer'; }).reduce(function (a, v) { return a + v.total; }, 0));
       var file = { format: 'agri-garden-caisse/ventes', formatVersion: 1, date: day, pointDeVente: { id: pl.id, nom: pl.nom }, catalogueVersion: 1,
         miseAJour: day + 'T' + String(last).padStart(2, '0') + ':30:00', nombreVentes: valid.length, nombreAnnulations: ventes.length - valid.length,
-        totalJournee: r2(cash + banc), totalCash: r2(cash), totalBancontact: r2(banc), ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
+        totalJournee: r2(cash + banc + nonPaye), totalCash: r2(cash), totalBancontact: r2(banc), totalNonPaye: nonPaye, nombreAFacturer: valid.filter(function (v) { return v.facture; }).length, ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
       demoPut(db, DEMO_SALES_REPO, 'sapin/' + day + '_' + pl.id + '_' + pl.nom.toLowerCase().replace(/\s+/g, '-') + '_demo.json', JSON.stringify(file, null, 1) + '\n');
       /* fichier de caisse : fond, retrait, et comptage la veille */
       var fond = 150, ent = {
@@ -482,6 +491,21 @@ function demoSeed() {
       demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
     });
   });
+  /* Commandes de clients (année en cours) */
+  var yr = String(today.getFullYear()), cmd = { format: 'agri-garden-caisse/commandes', formatVersion: 1, annee: yr, majLe: days[1] + 'T18:00:00', commandes: {} };
+  function cmdAdd(n, nom, tel, mode, lieu, dj, lignes, paye, st, note) {
+    var d = new Date(today); d.setDate(today.getDate() + dj); var dt = demoIso(d), id = 'c' + n;
+    var L = lignes.map(function (x) { var p = PROD.filter(function (q) { return q.id === x[0]; })[0]; return { produitId: p.id, libelle: p.libelle, prixUnitaire: p.prix, quantite: x[1], total: r2(p.prix * x[1]) }; });
+    var tot = r2(L.reduce(function (a, l) { return a + l.total; }, 0));
+    cmd.commandes[id] = { id: id, numero: n, creeLe: days[0] + 'T10:0' + n + ':00', source: 'admin', client: { nom: nom, tel: tel, email: '' }, mode: mode,
+      livraison: mode === 'livraison' ? { adresse: lieu, date: dt, creneau: '14h-16h' } : null, retrait: mode === 'retrait' ? { stand: { id: lieu, nom: lieu === 'pdv1' ? PDV[0].nom : PDV[1].nom }, date: dt } : null,
+      lignes: L, total: tot, paye: { montant: paye, mode: paye > 0 ? 'bancontact' : '' }, statut: st, note: note || '', historique: [{ statut: st, le: days[0] + 'T10:00:00' }] };
+  }
+  cmdAdd(1, 'Lambert Julie', '0472 10 20 30', 'livraison', 'Rue de la Gare 8, 1300 Wavre', 1, [['tshirt', 4], ['casquette', 2]], 0, 'a-preparer', 'Sonner deux fois');
+  cmdAdd(2, 'Club de foot Les Aigles', '0478 55 66 77', 'retrait', 'pdv1', 0, [['biere', 48], ['soft', 24], ['chips', 30]], 100, 'prete');
+  cmdAdd(3, 'Renard Thomas', '0499 01 02 03', 'livraison', 'Place communale 2, 5190 Spy', 2, [['gobelet', 50], ['vin', 12]], 98, 'a-preparer');
+  cmdAdd(4, 'Mercier Anne', '0470 44 33 22', 'retrait', 'pdv2', -1, [['gaufre', 10]], 35, 'livree');
+  demoPut(db, DEMO_SALES_REPO, 'sapin/commandes/' + yr + '.json', JSON.stringify(cmd, null, 1) + '\n');
   /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
   var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
   demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
@@ -510,9 +534,14 @@ var FEATURES = [
     { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
     { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
     { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
-    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
-    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'Bouton « Remise ticket » dans le panier.' },
+    { id: 'codePatron', nom: 'Remise ticket avec code patron', desc: 'Menu ⋮ › Remise ticket, protégée par un code à 4 chiffres (1234 dans la démo).', off: true },
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
+    { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
+    { id: 'livraison', nom: 'Livraison à domicile', desc: 'Bouton Livraison sur la caisse avec nom, adresse et téléphone, ticket vendeur ; aussi après coup depuis l’Historique.' },
+    { id: 'gestionLivraisons', nom: 'Gestion des livraisons', desc: 'Liste des livraisons à faire, statut À livrer / Livrée, liste pour le livreur (Admin).', req: 'livraison' },
+    { id: 'facture', nom: 'Gestion des factures', desc: 'Bouton « À facturer » sur la caisse (payé ou non), encaissement plus tard ; onglet Factures de l’Admin (établie, payée par virement).' } ] },
   { id: 'paiement', nom: 'Paiement', items: [
     { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
     { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },

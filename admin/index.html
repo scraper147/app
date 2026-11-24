@@ -217,6 +217,32 @@ td>.sub{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .kitem{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 .kitem .kt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .kitem input{max-width:320px}
+.cocard{border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:var(--surface)}
+.cocard p{margin:6px 0 0}.cocard .row-between{gap:8px;flex-wrap:wrap}
+.cocard.st-prete{border-left-color:var(--green)}.cocard.st-livree{border-left-color:var(--line);opacity:.8}.cocard.st-annulee{border-left-color:var(--red);opacity:.65}
+.cocard.danger{border-color:var(--red)}.cocard .cbtns{margin-top:10px;align-items:center}
+.cocard .x{border:none;background:none;color:var(--red);font-weight:700;padding:2px 6px;font-size:14px}
+.costat{font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--gold);color:#1A1408;white-space:nowrap}
+.costat.st-prete{background:var(--green);color:#fff}.costat.st-livree{background:var(--line);color:inherit}.costat.st-annulee{background:var(--red);color:#fff}
+.coart{font-size:15px}.codate{margin:16px 0 8px;font-size:15px}.codate.cap::first-letter{text-transform:uppercase}.cocard a{color:inherit}
+.cosearch{width:100%;max-width:520px;margin:0 0 12px}
+.pick.sm2{height:38px;padding:0 14px;font-size:14px}
+.cogrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 10px}.cogrid>div{min-width:0}.cogrid input,.cogrid select{width:100%}
+.cogrid .wide{grid-column:1/-1}.coform .rsel{margin:4px 0 10px}.cototal{font-size:18px;margin:10px 0}
+.facard{border:1px solid var(--line);border-left:5px solid var(--green);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:var(--surface)}
+.facard.st-np{border-left-color:#C9785F}.facard p{margin:6px 0 0}.facard .row-between{gap:8px;flex-wrap:wrap}
+.fastat{font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--green);color:#fff}.fastat.st-np{background:#C9785F}
+.fainfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px;margin-top:8px}.fainfo>div{min-width:0;overflow-wrap:anywhere}.facard a{color:inherit}
+.fasuivi{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--soft)}
+.fasuivi .chk{display:inline-flex;gap:6px;align-items:center;font-weight:600;cursor:pointer}.fasuivi .chk input{width:20px;height:20px}.fanum{max-width:200px}
+.fagrp{margin:0 0 8px}.fagrp .rsel{margin-top:4px}.fadates{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:4px}.fasum{margin:10px 0 12px}
+.livtab td{vertical-align:top;overflow-wrap:anywhere}.livtab a{color:inherit}.hsfac{display:block;color:var(--muted);font-size:13px}
+.lvcard{border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:var(--surface)}
+.lvcard.done{border-left-color:var(--green)}.lvcard p{margin:6px 0 0;overflow-wrap:anywhere}.lvcard .row-between{gap:8px;flex-wrap:wrap}.lvcard a{color:inherit}
+.lvstat{font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--gold);color:#1A1408}.lvstat.done{background:var(--green);color:#fff}
+.lvnote{flex:1 1 200px;max-width:420px}
+@media print{body.printliv .lvcard{break-inside:avoid;border-color:#999}body.printliv .lvnote:placeholder-shown{display:none}}
+.req{color:var(--red);font-weight:700}.reqnote{margin:8px 0 0;font-size:13px;color:var(--muted)}.coform form>.cbtns{margin-top:18px}
 .cbadges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .cbadge{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:6px;background:var(--soft);color:var(--muted);white-space:nowrap}
 .cbadge.warn{background:var(--gold-soft);color:var(--ink)}
@@ -452,6 +478,8 @@ form.stkform .cbtns{margin-top:10px}
   body{background:#fff;color:#000}.band{background:#fff;color:#000;padding:0 0 10px}
   .big,.drop h2,.hero h2,.facts strong{color:#000}.facts{color:#333}
   section{break-inside:avoid;border-color:#ccc}main{display:block}section{margin-bottom:14px}
+  body.printliv .band,body.printliv .subnav,body.printliv main>*:not(.livlist){display:none!important}
+  body.printliv .livlist{break-inside:auto}body.printliv .livtab tr{break-inside:avoid}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .featgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}.featg{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}.featg h4{margin:0 0 6px;font-size:15px}.featit{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--soft);cursor:pointer}.featit:first-of-type{border-top:0}.featit input{width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--green)}.featit span{display:flex;flex-direction:column;gap:2px;min-width:0}.featit small{color:var(--muted);font-size:13px;line-height:1.35}.featit.dep{opacity:.55;cursor:default}.featit .warnt{color:var(--red)}.featsel{margin-top:6px;max-width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
@@ -577,7 +605,8 @@ function demoSeed() {
   var CATS = [
     { id: 'boissons', nom: 'Boissons', produits: [['eau', 'Eau', 2], ['soft', 'Soft', 2.5], ['biere', 'Bière', 3], ['vin', 'Verre de vin', 4]] },
     { id: 'snacks', nom: 'Snacks', produits: [['chips', 'Chips', 2], ['hotdog', 'Hot-dog', 4.5], ['gaufre', 'Gaufre', 3.5]] },
-    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] }
+    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] },
+    { id: 'services', nom: 'Services', produits: [['livraison', 'Livraison', 10]] }
   ];
   var cat = { format: 'agri-garden-caisse/catalogue', formatVersion: 1, version: 1, date: demoIso(start),
     pointsDeVente: PDV.map(function (p) { return { id: p.id, nom: p.nom, actif: true }; }),
@@ -585,7 +614,7 @@ function demoSeed() {
       produits: k.produits.map(function (p, j) { return { id: p[0], libelle: p[1], prix: p[2], ordre: j + 1, actif: true }; }) }; }) };
   var db = {};
   demoPut(db, DEMO_CAT_REPO, 'catalogue.json', JSON.stringify(cat, null, 1) + '\n');
-  var PROD = []; CATS.forEach(function (k) { k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
+  var PROD = [], LIV = { id: 'livraison', libelle: 'Livraison', prix: 10, cat: 'Services' }; CATS.forEach(function (k) { if (k.id !== 'services') k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
   /* Stock : livraison au début, un transfert entre stands */
   var arts = {}; PROD.forEach(function (p) { arts[p.id] = { libelle: p.libelle, categorie: p.cat }; });
   var liv1 = {}, liv2 = {}, tr = {};
@@ -613,21 +642,29 @@ function demoSeed() {
           var q = p.prix >= 10 ? 1 : 1 + Math.floor(rnd() * 3);
           lignes.push({ produitId: p.id, categorie: p.cat, libelle: p.libelle, articleLibre: false, prixUnitaire: p.prix, quantite: q, remise: null, total: r2(p.prix * q) });
         }
+        var CLI = [['Dupont Marie', 'Rue des Lilas 12, 1000 Bruxelles', '0471 23 45 67'], ['Martin Paul', 'Avenue du Parc 3, 5000 Namur', '0485 11 22 33'], ['Leroy Sophie', 'Chaussée de Wavre 140, 1050 Ixelles', '0496 98 76 54']];
+        var withLiv = pi === 0 && (i === 4 || i === 15 || i === 27), cli = CLI[(i + di) % 3];
+        if (withLiv) lignes.push({ produitId: LIV.id, categorie: LIV.cat, libelle: LIV.libelle, articleLibre: false, prixUnitaire: LIV.prix, quantite: 1, remise: null, total: LIV.prix });
         var tot = r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remT = null;
         if (i % 17 === 5) { remT = { type: 'pourcentage', valeur: 10 }; tot = r2(Math.round(tot * 0.9 * 20) / 20); }
         var mode = rnd() < 0.55 ? 'cash' : 'bancontact', pay = { mode: mode, cash: mode === 'cash' ? tot : 0, bancontact: mode === 'cash' ? 0 : tot };
         var id = pl.id + '-' + day.replace(/-/g, '') + '-' + String(i + 1).padStart(4, '0');
+        var fac = (i === 8 || i === 20) && pi === 0 ? { societe: i === 8 ? 'Jardin SA' : 'Événements Plus SRL', adresse: i === 8 ? 'Rue Haute 1, 5000 Namur' : 'Boulevard Central 20, 1000 Bruxelles', tva: i === 8 ? 'BE 0123.456.789' : 'BE 0987.654.321', email: i === 8 ? 'compta@jardin.be' : 'factures@evenements-plus.be', payee: i === 8, horodatage: hor } : null;
+        if (fac && !fac.payee) pay = { mode: 'a-facturer', cash: 0, bancontact: 0 };
         var v = { id: id, horodatage: hor, pointDeVente: { id: pl.id, nom: pl.nom }, lignes: lignes, sousTotal: r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remiseTicket: remT, total: tot, paiement: pay };
+        if (withLiv) v.livraison = { nom: cli[0], adresse: cli[1], telephone: cli[2] };
+        if (fac) v.facture = fac;
         if (i === 9 && di === 0) v.annulation = { horodatage: hor.slice(0, 14) + '59:00', motif: 'Erreur de saisie' };
         else { cash += pay.cash; banc += pay.bancontact; }
-        if (mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
+        if (pay.mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
         ventes.push(v);
       }
       tir.push({ horodatage: day + 'T14:05:00', motif: 'Faire de la monnaie', venteId: null });
       var valid = ventes.filter(function (v) { return !v.annulation; });
+      var nonPaye = r2(valid.filter(function (v) { return v.paiement.mode === 'a-facturer'; }).reduce(function (a, v) { return a + v.total; }, 0));
       var file = { format: 'agri-garden-caisse/ventes', formatVersion: 1, date: day, pointDeVente: { id: pl.id, nom: pl.nom }, catalogueVersion: 1,
         miseAJour: day + 'T' + String(last).padStart(2, '0') + ':30:00', nombreVentes: valid.length, nombreAnnulations: ventes.length - valid.length,
-        totalJournee: r2(cash + banc), totalCash: r2(cash), totalBancontact: r2(banc), ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
+        totalJournee: r2(cash + banc + nonPaye), totalCash: r2(cash), totalBancontact: r2(banc), totalNonPaye: nonPaye, nombreAFacturer: valid.filter(function (v) { return v.facture; }).length, ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
       demoPut(db, DEMO_SALES_REPO, 'sapin/' + day + '_' + pl.id + '_' + pl.nom.toLowerCase().replace(/\s+/g, '-') + '_demo.json', JSON.stringify(file, null, 1) + '\n');
       /* fichier de caisse : fond, retrait, et comptage la veille */
       var fond = 150, ent = {
@@ -642,6 +679,21 @@ function demoSeed() {
       demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
     });
   });
+  /* Commandes de clients (année en cours) */
+  var yr = String(today.getFullYear()), cmd = { format: 'agri-garden-caisse/commandes', formatVersion: 1, annee: yr, majLe: days[1] + 'T18:00:00', commandes: {} };
+  function cmdAdd(n, nom, tel, mode, lieu, dj, lignes, paye, st, note) {
+    var d = new Date(today); d.setDate(today.getDate() + dj); var dt = demoIso(d), id = 'c' + n;
+    var L = lignes.map(function (x) { var p = PROD.filter(function (q) { return q.id === x[0]; })[0]; return { produitId: p.id, libelle: p.libelle, prixUnitaire: p.prix, quantite: x[1], total: r2(p.prix * x[1]) }; });
+    var tot = r2(L.reduce(function (a, l) { return a + l.total; }, 0));
+    cmd.commandes[id] = { id: id, numero: n, creeLe: days[0] + 'T10:0' + n + ':00', source: 'admin', client: { nom: nom, tel: tel, email: '' }, mode: mode,
+      livraison: mode === 'livraison' ? { adresse: lieu, date: dt, creneau: '14h-16h' } : null, retrait: mode === 'retrait' ? { stand: { id: lieu, nom: lieu === 'pdv1' ? PDV[0].nom : PDV[1].nom }, date: dt } : null,
+      lignes: L, total: tot, paye: { montant: paye, mode: paye > 0 ? 'bancontact' : '' }, statut: st, note: note || '', historique: [{ statut: st, le: days[0] + 'T10:00:00' }] };
+  }
+  cmdAdd(1, 'Lambert Julie', '0472 10 20 30', 'livraison', 'Rue de la Gare 8, 1300 Wavre', 1, [['tshirt', 4], ['casquette', 2]], 0, 'a-preparer', 'Sonner deux fois');
+  cmdAdd(2, 'Club de foot Les Aigles', '0478 55 66 77', 'retrait', 'pdv1', 0, [['biere', 48], ['soft', 24], ['chips', 30]], 100, 'prete');
+  cmdAdd(3, 'Renard Thomas', '0499 01 02 03', 'livraison', 'Place communale 2, 5190 Spy', 2, [['gobelet', 50], ['vin', 12]], 98, 'a-preparer');
+  cmdAdd(4, 'Mercier Anne', '0470 44 33 22', 'retrait', 'pdv2', -1, [['gaufre', 10]], 35, 'livree');
+  demoPut(db, DEMO_SALES_REPO, 'sapin/commandes/' + yr + '.json', JSON.stringify(cmd, null, 1) + '\n');
   /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
   var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
   demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
@@ -670,9 +722,14 @@ var FEATURES = [
     { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
     { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
     { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
-    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
-    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'Bouton « Remise ticket » dans le panier.' },
+    { id: 'codePatron', nom: 'Remise ticket avec code patron', desc: 'Menu ⋮ › Remise ticket, protégée par un code à 4 chiffres (1234 dans la démo).', off: true },
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
+    { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
+    { id: 'livraison', nom: 'Livraison à domicile', desc: 'Bouton Livraison sur la caisse avec nom, adresse et téléphone, ticket vendeur ; aussi après coup depuis l’Historique.' },
+    { id: 'gestionLivraisons', nom: 'Gestion des livraisons', desc: 'Liste des livraisons à faire, statut À livrer / Livrée, liste pour le livreur (Admin).', req: 'livraison' },
+    { id: 'facture', nom: 'Gestion des factures', desc: 'Bouton « À facturer » sur la caisse (payé ou non), encaissement plus tard ; onglet Factures de l’Admin (établie, payée par virement).' } ] },
   { id: 'paiement', nom: 'Paiement', items: [
     { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
     { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },
@@ -730,6 +787,8 @@ var CAISSES_BILAN = { 'caisse-bar/ventes': 'bar', 'agri-garden-caisse/ventes': '
 var CAISSE_LABEL = { bar: 'Caisse Bar', sapin: 'Caisse', soiree: 'Caisse Soirée' };
 /* Article « Livraison » (ou « Frais de livraison ») : service, jamais déduit du stock, montré à part du chiffre d'affaires */
 var LIV_RE = /(^|\s)(frais de )?livraison$/i;
+/* Vente « à facturer » non payée (Caisse v36) : reste dû = total − cash − Bancontact ; 0 pour tout autre cas (anciens fichiers, mode inconnu) */
+function vNonPaye(v) { if (!v) return 0; var p = v.paiement || {}, f = v.facture; if (!((f && typeof f === 'object' && f.payee === false) || p.mode === 'a-facturer')) return 0; var r = (+v.total || 0) - (+p.cash || 0) - (+p.bancontact || 0); return r > 0.004 ? Math.round(r * 100) / 100 : 0; }
 function isLivLine(l) { return !!l && LIV_RE.test(String(l.libelle || '').trim()); }
 function isLivProduct(p) { return !!p && /^(frais de )?livraison$/i.test(String(p.libelle || '').trim()); }
 var CAISSE_OPEN = {};
@@ -842,13 +901,17 @@ function filtered() {
 /* ---------- Calculs ---------- */
 function stats(list) {
   var ok = list.filter(function (s) { return !s.v.annulation; }), ann = list.filter(function (s) { return s.v.annulation; });
-  var S = { remRows: {}, liv: { n: 0, m: 0, na: 0, ma: 0, rows: {} }, n: ok.length, total: 0, cash: 0, bc: 0, mixte: 0, ann: ann, art: {}, cats: {}, hours: {}, perBar: {}, remLig: 0, nRemLig: 0, remTic: 0, nRemTic: 0, lignes: 0 };
+  var S = { np: 0, vir: 0, nFact: 0, pay: {}, remRows: {}, liv: { n: 0, m: 0, na: 0, ma: 0, rows: {} }, n: ok.length, total: 0, cash: 0, bc: 0, mixte: 0, ann: ann, art: {}, cats: {}, hours: {}, perBar: {}, remLig: 0, nRemLig: 0, remTic: 0, nRemTic: 0, lignes: 0 };
   ok.forEach(function (s) {
     var v = s.v, p = v.paiement || { cash: 0, bancontact: 0 };
     var vt = +v.total || 0;
     S.total += vt; S.cash += p.cash || 0; S.bc += p.bancontact || 0; if (p.mode === 'mixte') S.mixte++;
     var b = S.perBar[s.barId] || (S.perBar[s.barId] = { nom: s.bar, n: 0, total: 0, cash: 0, bc: 0 });
     b.n++; b.total += vt; b.cash += p.cash || 0; b.bc += p.bancontact || 0;
+    var np = vNonPaye(v), vir = 0; if (np && fsGet(v.id, s.soiree).virement) { vir = np; np = 0; }
+    S.np += np; S.vir += vir; b.np = (b.np || 0) + np; b.vir = (b.vir || 0) + vir; if (v.facture && typeof v.facture === 'object') S.nFact++;
+    var pk = s.soiree + '|' + s.barId, pr = S.pay[pk] || (S.pay[pk] = { day: s.soiree, bar: s.bar, cash: 0, bc: 0, np: 0, vir: 0, total: 0, nFact: 0 });
+    pr.cash += +p.cash || 0; pr.bc += +p.bancontact || 0; pr.np += np; pr.vir += vir; pr.total += vt; if (v.facture && typeof v.facture === 'object') pr.nFact++;
     var h = slot(v.horodatage), hb = S.hours[h] || (S.hours[h] = {});
     hb[s.barId] = (hb[s.barId] || 0) + vt;
     var rk = s.soiree + '|' + s.barId, rr = function () { return S.remRows[rk] || (S.remRows[rk] = { day: s.soiree, barId: s.barId, bar: s.bar, lig: 0, nLig: 0, tic: 0, nTic: 0 }); };
@@ -899,9 +962,10 @@ function renderBilanInner() {
   var app = document.getElementById('mod');
   if (!activeFiles().length) { app.innerHTML = vBand(null) + (FILES.length || BGH.open ? '<main>' + vGhPanel() + vAlerts() + '</main>' : '') + vToast(); bindDrop(); return; }
   if (F.caisse === 'soiree') { var R = soirStats(soirFiltered()); app.innerHTML = vSoirBand(R) + vFilters() + '<main>' + vGhPanel() + vAlerts() + vSoirRecette(R) + vSoirEntrees(R) + vSoirCases(R) + vSoirBoissons(R) + vSoirHours(R) + vSoirApp(R) + vSoirAnn(R) + vFiles() + '</main>' + vToast(); bindDrop(); return; }
+  if (F.caisse === 'sapin') { var yrs = {}; activeFiles().forEach(function (f) { if (f.data.date) yrs[f.data.date.slice(0, 4)] = 1; }); Object.keys(yrs).forEach(fsEnsure); }
   var list = filtered(), S = stats(list);
   var CR = caisseRows();
-  app.innerHTML = vBand(S) + vFilters() + '<main>' + vGhPanel() + vAlerts() + vBars(S) + vHours(S) + (F.caisse !== 'sapin' || FEAT('fond') ? vCaisse(CR) : '') + (F.caisse !== 'sapin' || FEAT('livraison') ? vLivraisons(S) : '') + (F.caisse !== 'sapin' || FEAT('tiroir') ? vTiroir(CR) : '') + vArticles(S) + vAdjust(S) + vFiles() + '</main>' + vToast();
+  app.innerHTML = vBand(S) + vFilters() + '<main>' + vGhPanel() + vAlerts() + vBars(S) + vHours(S) + vPaiements(S) + (F.caisse !== 'sapin' || FEAT('fond') ? vCaisse(CR) : '') + (F.caisse !== 'sapin' || FEAT('livraison') ? vLivraisons(S) : '') + (F.caisse !== 'sapin' || FEAT('tiroir') ? vTiroir(CR) : '') + vArticles(S) + vAdjust(S) + vFiles() + '</main>' + vToast();
   bindDrop();
 }
 function vToast() { return toastMsg ? '<div class="toast" role="status">' + esc(toastMsg) + '</div>' : ''; }
@@ -920,14 +984,15 @@ function vBand(S) {
   }
   var title = (caisses().length > 1 ? CAISSE_LABEL[F.caisse] + ' · ' : '') + (F.soiree === 'all' ? T().toutes : T().du + ' ' + longDate(F.soiree));
   if (F.bar !== 'all') { var b = bars().filter(function (x) { return x.id === F.bar; })[0]; if (b) title += ', ' + b.nom; }
-  var tot = S.total || 0, pc = tot ? S.cash / tot * 100 : 0;
+  var tot = S.total || 0, pc = tot ? S.cash / tot * 100 : 0, pn = tot ? (S.np + S.vir) / tot * 100 : 0, pb = Math.max(0, 100 - pc - pn);
   return '<div class="band">' + top + '<div class="hero"><h2>' + esc(title) + '</h2>' +
     '<div class="big num">' + money(tot).replace(/\u00a0€$/, '') + '<small>€</small></div>' +
-    '<div class="split" role="img" aria-label="Cash ' + Math.round(pc) + ' %, Bancontact ' + Math.round(100 - pc) + ' %"><i style="width:' + pc + '%;background:var(--gold)"></i><i style="width:' + (tot ? 100 - pc : 0) + '%;background:#5E8F4E"></i></div>' +
+    '<div class="split" role="img" aria-label="Cash ' + Math.round(pc) + ' %, Bancontact ' + Math.round(100 - pc) + ' %"><i style="width:' + pc + '%;background:var(--gold)"></i><i style="width:' + (tot ? pb : 0) + '%;background:#5E8F4E"></i>' + (pn ? '<i style="width:' + pn + '%;background:#C9785F"></i>' : '') + '</div>' +
     '<div class="split-legend num"><span><span class="dot" style="background:var(--gold)"></span>Cash <b>' + money(S.cash) + '</b> (' + Math.round(pc) + ' %)</span>' +
-    '<span><span class="dot" style="background:#5E8F4E"></span>Bancontact <b>' + money(S.bc) + '</b> (' + Math.round(tot ? 100 - pc : 0) + ' %)</span></div>' +
+    '<span><span class="dot" style="background:#5E8F4E"></span>Bancontact <b>' + money(S.bc) + '</b> (' + Math.round(tot ? pb : 0) + ' %)</span>' +
+      (S.np ? '<span><span class="dot" style="background:#C9785F"></span>À facturer (non payé) <b>' + money(S.np) + '</b></span>' : '') + (S.vir ? '<span><span class="dot" style="background:#C9785F"></span>Payé par virement <b>' + money(S.vir) + '</b></span>' : '') + '</div>' +
     '<div class="facts num"><strong>' + S.n + '</strong> vente' + (S.n > 1 ? 's' : '') + ', panier moyen <strong>' + money(S.n ? S.total / S.n : 0) + '</strong>' +
-    (S.mixte ? ', dont ' + S.mixte + ' en paiement mixte (réparti ci-dessus)' : '') +
+    (S.mixte ? ', dont ' + S.mixte + ' en paiement mixte (réparti ci-dessus)' : '') + (S.nFact ? ', <strong>' + S.nFact + '</strong> facture' + (S.nFact > 1 ? 's' : '') + ' demandée' + (S.nFact > 1 ? 's' : '') : '') +
     (S.ann.length ? '. ' + S.ann.length + ' vente' + (S.ann.length > 1 ? 's' : '') + ' annulée' + (S.ann.length > 1 ? 's' : '') + ', non comptée' + (S.ann.length > 1 ? 's' : '') : '') + '.</div>' +
     (S.liv.m ? '<div class="facts num">' + (F.caisse === 'sapin' ? 'Sapins et accessoires' : 'Articles') + ' <strong>' + money(tot - S.liv.m) + '</strong> · <strong>' + S.liv.n + '</strong> livraison' + (S.liv.n > 1 ? 's' : '') + '</div>' : '') + '</div></div>';
 }
@@ -953,10 +1018,11 @@ function vAlerts() {
 function vBars(S) {
   var ids = Object.keys(S.perBar).sort(function (a, b) { return S.perBar[b].total - S.perBar[a].total; });
   var max = Math.max.apply(null, ids.map(function (i) { return S.perBar[i].total; }).concat([1]));
+  var npc = S.np > 0 || S.vir > 0;
   var rows = ids.map(function (i) { var b = S.perBar[i];
-    return '<tr><td class="bname"><strong>' + esc(b.nom) + '</strong><span class="sub num">' + b.n + ' vente' + (b.n > 1 ? 's' : '') + (S.total ? ', ' + Math.round(b.total / S.total * 100) + ' %' : '') + '</span><span class="share" style="width:' + Math.max(6, b.total / max * 100) + '%"></span></td><td class="r num">' + money(b.cash) + '</td><td class="r num">' + money(b.bc) + '</td><td class="r num"><strong>' + money(b.total) + '</strong></td></tr>'; }).join('');
-  return '<section class="half"><h3>' + T().par + '</h3><p class="lead">Le paiement mixte est réparti entre cash et Bancontact.</p><div class="scroll"><table><thead><tr><th>' + T().pdv + '</th><th class="r">Cash</th><th class="r">Bancontact</th><th class="r">Total</th></tr></thead><tbody>' + rows +
-    (ids.length > 1 ? '<tr class="tot"><td>Total</td><td class="r num">' + money(S.cash) + '</td><td class="r num">' + money(S.bc) + '</td><td class="r num">' + money(S.total) + '</td></tr>' : '') + '</tbody></table></div></section>';
+    return '<tr><td class="bname"><strong>' + esc(b.nom) + '</strong><span class="sub num">' + b.n + ' vente' + (b.n > 1 ? 's' : '') + (S.total ? ', ' + Math.round(b.total / S.total * 100) + ' %' : '') + '</span><span class="share" style="width:' + Math.max(6, b.total / max * 100) + '%"></span></td><td class="r num">' + money(b.cash) + '</td><td class="r num">' + money(b.bc) + '</td>' + (npc ? '<td class="r num">' + money((b.np || 0) + (b.vir || 0)) + '</td>' : '') + '<td class="r num"><strong>' + money(b.total) + '</strong></td></tr>'; }).join('');
+  return '<section class="half"><h3>' + T().par + '</h3><p class="lead">Le paiement mixte est réparti entre cash et Bancontact.</p><div class="scroll"><table><thead><tr><th>' + T().pdv + '</th><th class="r">Cash</th><th class="r">Bancontact</th>' + (npc ? '<th class="r">À facturer</th>' : '') + '<th class="r">Total</th></tr></thead><tbody>' + rows +
+    (ids.length > 1 ? '<tr class="tot"><td>Total</td><td class="r num">' + money(S.cash) + '</td><td class="r num">' + money(S.bc) + '</td>' + (npc ? '<td class="r num">' + money(S.np + S.vir) + '</td>' : '') + '<td class="r num">' + money(S.total) + '</td></tr>' : '') + '</tbody></table></div></section>';
 }
 function vHours(S) {
   var slots = Object.keys(S.hours).map(Number); if (!slots.length) return '<section class="half"><h3>Heure par heure</h3><p class="empty">Aucune vente.</p></section>';
@@ -1366,6 +1432,10 @@ function exportCsv() {
     var lm = (v.lignes || []).reduce(function (a, l) { return a + (isLivLine(l) ? +l.total || 0 : 0); }, 0);
     vs.push([s.soiree, s.bar, v.horodatage.slice(0, 16).replace('T', ' '), v.id, (v.lignes || []).map(function (l) { return l.quantite + ' x ' + l.libelle; }).join(', '), v.total, p.cash, p.bancontact, p.mode, v.annulation ? 'oui' : '', v.annulation ? v.annulation.motif : '', lm || '', lm && (v.livraisonAjoutee || v.venteLiee) ? 'oui' : '']); });
   vs[0].push('Livraison (€)', 'Livraison après paiement');
+  if (F.caisse === 'sapin') { vs[0].push('livraison_nom', 'livraison_adresse', 'livraison_telephone', 'facture_societe', 'facture_tva', 'facture_email', 'facture_payee', 'reste_du', 'facture_suivi');
+    list.forEach(function (s, i) { var v = s.v, c = v.livraison || {}, f = v.facture && typeof v.facture === 'object' ? v.facture : null, np = vNonPaye(v), sv = f ? fsGet(v.id, s.soiree) : {};
+      var row = vs[i + 1]; while (row.length < 13) row.push('');
+      row.push(c.nom || '', c.adresse || '', c.telephone || '', f ? f.societe || '' : '', f ? f.tva || '' : '', f ? f.email || '' : '', f ? (f.payee === false ? 'non' : 'oui') : '', np && !sv.virement ? np : '', f ? [sv.etablie ? 'établie' + (sv.numero ? ' ' + sv.numero : '') : 'à établir', sv.virement ? 'payée par virement' : ''].filter(Boolean).join(', ') : ''); }); }
   setTimeout(function () { download('bilan-ventes_' + tag + '.csv', vs); }, 400);
   var CR = caisseRows();
   if (CR.length) {
@@ -1456,7 +1526,7 @@ var MOD = 'accueil';
 var SUBS = {
   bar: [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }],
   chloro: [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'stock', nom: 'Stock', render: function () { renderStock(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }],
-  sapin: [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'stock', nom: 'Stock', render: function () { renderSapStock(); } }, { id: 'caisse', nom: 'Caisse', render: function () { renderSapCaisse(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }, { id: 'hist', nom: 'Historique de vente', render: function () { renderSapHist(); } }]
+  sapin: [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'stock', nom: 'Stock', render: function () { renderSapStock(); } }, { id: 'caisse', nom: 'Caisse', render: function () { renderSapCaisse(); } }, { id: 'commandes', nom: 'Commandes', render: function () { renderSapCommandes(); } }, { id: 'factures', nom: 'Factures', render: function () { renderSapFactures(); } }, { id: 'livraisons', nom: 'Livraisons', render: function () { renderSapLivraisons(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }, { id: 'hist', nom: 'Historique de vente', render: function () { renderSapHist(); } }]
 };
 var SUB = { bar: 'catalogue', chloro: 'catalogue', sapin: 'catalogue' };
 /* Anciennes adresses (#bilan, #catalogue, #stock) : renvoyées vers le nouveau menu */
@@ -1465,7 +1535,7 @@ SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { render
 var SUBS_SAPIN_ALL = SUBS.sapin.slice(), MODULES_ALL = MODULES.slice();
 /* Menus selon Admin › Paramètres › Fonctionnalités */
 function featApply() {
-  var want = { catalogue: 1, stock: FEAT('stock'), stockevt: FEAT('stockEvenement'), caisse: FEAT('fond'), bilan: 1, hist: FEAT('historiqueAdmin') };
+  var want = { catalogue: 1, stock: FEAT('stock'), stockevt: FEAT('stockEvenement'), caisse: FEAT('fond'), commandes: FEAT('commandes'), factures: FEAT('facture'), livraisons: FEAT('gestionLivraisons'), bilan: 1, hist: FEAT('historiqueAdmin') };
   SUBS.sapin = SUBS_SAPIN_ALL.filter(function (x) { return want[x.id]; });
   if (!SUBS.sapin.some(function (x) { return x.id === SUB.sapin; })) SUB.sapin = 'catalogue';
   MODULES = MODULES_ALL.filter(function (m) { return m.id !== 'chloro' || FEAT('soiree'); });
@@ -1722,7 +1792,7 @@ function svLoad() {
   var tok = getToken(); if (!tok || SV.loading) return;
   SV.loading = true; SV.err = null; render();
   ghFetch('/repos/' + SALES_REPO + '/git/trees/HEAD?recursive=1', {}, tok).then(function (t) {
-    var files = (t.tree || []).filter(function (x) { return x.type === 'blob' && /^sapin\//.test(x.path) && !/^sapin\/(stock|caisse)\//.test(x.path) && /\.json$/i.test(x.path); });
+    var files = (t.tree || []).filter(function (x) { return x.type === 'blob' && /^sapin\//.test(x.path) && !/^sapin\/(stock|caisse|commandes|factures|livraisons)\//.test(x.path) && /\.json$/i.test(x.path); });
     var cache = svCache(), todo = files.filter(function (f) { return !cache[f.sha]; });
     return Promise.all(todo.map(function (f) { return bghRaw(f.path, tok).then(function (txt) { var s; try { s = svSummary(JSON.parse(txt)); } catch (e) { s = { ok: false }; } cache[f.sha] = s; }); })).then(function () {
       var keep = {}; files.forEach(function (f) { keep[f.sha] = cache[f.sha]; }); SV.cache = keep;
@@ -2094,7 +2164,7 @@ function hsList() {
   var tok = getToken(); if (!tok || HS.loading) return;
   HS.loading = true; HS.err = null; render();
   ghFetch('/repos/' + SALES_REPO + '/git/trees/HEAD?recursive=1', {}, tok).then(function (t) {
-    HS.files = (t.tree || []).filter(function (x) { return x.type === 'blob' && /^sapin\//.test(x.path) && !/^sapin\/(stock|caisse)\//.test(x.path) && /\.json$/i.test(x.path); })
+    HS.files = (t.tree || []).filter(function (x) { return x.type === 'blob' && /^sapin\//.test(x.path) && !/^sapin\/(stock|caisse|commandes|factures|livraisons)\//.test(x.path) && /\.json$/i.test(x.path); })
       .map(function (x) { return hsParse(x); }).sort(function (a, b) { return (b.date || '') < (a.date || '') ? -1 : (b.date || '') > (a.date || '') ? 1 : a.stand.localeCompare(b.stand); });
     HS.loading = false;
     if (!HS.sel && !HS.data && HS.files.length) hsOpen(HS.files[0].path); else render();
@@ -2124,7 +2194,7 @@ function hsLocal(file) {
 }
 function hsDisc(r) { if (!r) return ''; return r.type === 'pourcentage' ? '−' + String(r.valeur).replace('.', ',') + ' %' : '−' + money(+r.valeur || 0); }
 function hsNum(id) { var m = /-(\d+)$/.exec(id || ''); return m ? String(+m[1]) : (id || '?'); }
-function hsPay(p) { p = p || {}; return p.mode === 'cash' ? 'Cash' : p.mode === 'bancontact' ? 'Bancontact' : p.mode === 'mixte' ? 'Mixte · cash ' + money(+p.cash || 0) + ' + Bancontact ' + money(+p.bancontact || 0) : esc(p.mode || ''); }
+function hsPay(p) { p = p || {}; return p.mode === 'a-facturer' ? 'À facturer' : p.mode === 'cash' ? 'Cash' : p.mode === 'bancontact' ? 'Bancontact' : p.mode === 'mixte' ? 'Mixte · cash ' + money(+p.cash || 0) + ' + Bancontact ' + money(+p.bancontact || 0) : esc(p.mode || ''); }
 function hsDm(iso) { return iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) : ''; }
 function renderSapHist() {
   var el = document.getElementById('mod');
@@ -2155,6 +2225,7 @@ function vSapHist(d) {
   var ok = all.filter(function (v) { return !v.annulation; }), nAnn = all.length - ok.length, tot = ok.reduce(function (s, v) { return s + (+v.total || 0); }, 0);
   var cash = ok.reduce(function (s, v) { return s + (+(v.paiement || {}).cash || 0); }, 0), bc = ok.reduce(function (s, v) { return s + (+(v.paiement || {}).bancontact || 0); }, 0);
   var day = d.date || (all[0] && all[0].horodatage.slice(0, 10)) || '', pv = d.pointDeVente || {};
+  if (day) fsEnsure(day.slice(0, 4));
   var h = '<section class="hsec"><div class="row-between"><h3>Ventes du ' + esc(day ? dmy(day) : '?') + (pv.nom ? ' · ' + esc(pv.nom) : '') + '</h3>' +
     (d.miseAJour ? '<span class="faint">Fichier mis à jour le ' + esc(hsDm(d.miseAJour)) + ' à ' + esc(String(d.miseAJour).slice(11, 16)) + '</span>' : '') + '</div>' +
     '<div class="hsum2"><strong>' + ok.length + ' vente' + (ok.length > 1 ? 's' : '') + ' · ' + money(tot) + '</strong><span class="faint">Cash ' + money(cash) + ' · Bancontact ' + money(bc) + '</span>' +
@@ -2168,6 +2239,8 @@ function vSapHist(d) {
     if (la) notes.push('<span class="hsliv">Livraison ajoutée le ' + esc(hsDm(la.horodatage)) + ' à ' + esc(String(la.horodatage || '').slice(11, 16)) + ' · ' + money(+la.montant || 0) + (la.paiement ? ' (' + hsPay(la.paiement) + ')' : '') + '</span>');
     if (v.venteLiee) notes.push('<span class="hsliv">Livraison de la vente n° ' + esc(hsNum(v.venteLiee)) + (ids[v.venteLiee] ? ' (' + esc(ids[v.venteLiee].horodatage.slice(11, 16)) + ')' : '') + '</span>');
     all.forEach(function (o) { if (o.venteLiee === v.id && !o.annulation) notes.push('<span class="hsliv">Livraison payée à part : vente n° ' + esc(hsNum(o.id)) + ' (' + esc(o.horodatage.slice(11, 16)) + ')</span>'); });
+    if (v.livraison && typeof v.livraison === 'object') notes.push('<span class="hsliv">Livrer à ' + esc([v.livraison.nom, v.livraison.adresse, v.livraison.telephone].filter(Boolean).join(' · ')) + '</span>');
+    if (v.facture && typeof v.facture === 'object') { var fst = faStatus(v, day); notes.push('<span class="hsfac">Facture : ' + esc([v.facture.societe, v.facture.tva].filter(Boolean).join(' · ') || 'données incomplètes') + ' · ' + esc(fst.t) + (v.facture.modifieeLe ? ' · corrigée le ' + esc(hsDm(v.facture.modifieeLe)) : '') + '</span>'); }
     if (an) notes.push('<span class="hsann">Annulée à ' + esc(String(an.horodatage || '').slice(11, 16)) + (an.horodatage && an.horodatage.slice(0, 10) !== day ? ' le ' + esc(hsDm(an.horodatage)) : '') + (an.motif ? ' · ' + esc(an.motif) : '') + '</span>');
     return '<div class="hsale' + (an ? ' cancelled' : '') + '"><span class="hh"><b>' + esc(v.horodatage.slice(11, 16)) + '</b><small>n° ' + esc(hsNum(v.id)) + '</small></span>' +
       '<div class="hl">' + lines.join('') + notes.join('') + '</div><span class="hpm">' + hsPay(v.paiement) + '</span><span class="htt">' + money(+v.total || 0) + '</span></div>';
@@ -2453,6 +2526,549 @@ function ctxHomeStatus(c, def) {
   var n = st ? st.FILES.filter(function (f) { return f.status === 'ok'; }).length : 0;
   return n ? n + ' fichier' + (n > 1 ? 's' : '') + ' de ventes chargé' + (n > 1 ? 's' : '') : def;
 }
+/* ================= Gestion d’événement › Commandes (commandes de clients) =================
+   Un fichier par année dans le dépôt privé des ventes : sapin/commandes/<AAAA>.json.
+   Les commandes sont rangées par identifiant (objet « commandes ») ; chaque appareil relit le fichier,
+   applique ses modifications et réécrit avec le sha (comme le stock) : la Caisse pourra s'y ajouter plus tard. */
+var CO_FMT = 'agri-garden-caisse/commandes', CO_DIR = 'sapin/commandes';
+var CO_STATUTS = [{ id: 'a-preparer', nom: 'À préparer' }, { id: 'prete', nom: 'Prête' }, { id: 'livree', nom: 'Livrée / retirée' }, { id: 'annulee', nom: 'Annulée' }];
+var CO_PAY = [{ id: '', nom: 'Pas encore payé' }, { id: 'cash', nom: 'Cash' }, { id: 'bancontact', nom: 'Bancontact' }, { id: 'virement', nom: 'Virement' }];
+var CO = { year: null, years: null, cat: null, catErr: null, catLoading: false, path: null, doc: null, ops: [], loading: false, saving: false, err: null, filter: 'actives', q: '', form: null, confirm: null };
+function coPath(y) { return CO_DIR + '/' + y + '.json'; }
+function coKey(path) { return 'demo-admin-commandes:' + path; }
+function coNorm(d) { d = d && typeof d === 'object' ? d : {}; if (!d.commandes || typeof d.commandes !== 'object' || Array.isArray(d.commandes)) d.commandes = {}; return d; }
+function coApply(doc, op) { if (op.t === 'set') doc.commandes[op.id] = op.v; else if (op.t === 'del') delete doc.commandes[op.id]; return doc; }
+function coDoc() { var d = coNorm(clone(CO.doc || {})); CO.ops.forEach(function (o) { coApply(d, o); }); return d; }
+function coNextNum(doc) { var m = 0; Object.keys(doc.commandes).forEach(function (k) { var c = doc.commandes[k]; if (c && +c.numero > m) m = +c.numero; }); return m + 1; }
+function coStatut(id) { return (CO_STATUTS.filter(function (s) { return s.id === id; })[0] || CO_STATUTS[0]).nom; }
+function coPersist() { lsSet(coKey(CO.path), CO.ops.length ? JSON.stringify({ doc: CO.doc, ops: CO.ops }) : null); }
+function coLoadCat() {
+  if (CO.catLoading) return; CO.catLoading = true;
+  ghGetCatalogue(SAPIN_REPO, getToken()).then(function (r) { CO.cat = r.json ? normalizeCat(r.json) : null; CO.catErr = r.json ? null : 'Le catalogue de la Caisse n’est pas encore publié.'; CO.catLoading = false; render(); },
+    function (e) { CO.catLoading = false; CO.catErr = ghErrText(e, 'de lire'); render(); });
+}
+function coYears() {
+  if (!getToken() || CO.years) return;
+  CO.years = [];
+  ghFetch('/repos/' + SALES_REPO + '/contents/' + CO_DIR, {}, getToken()).then(function (l) {
+    CO.years = (Array.isArray(l) ? l : []).map(function (f) { var m = /^(\d{4})\.json$/.exec(f.name); return m ? m[1] : null; }).filter(Boolean); render();
+  }, function () {});
+}
+function coOpen() {
+  var path = coPath(CO.year), loc = null;
+  CO.path = path; CO.doc = null; CO.err = null; CO.form = null; CO.confirm = null;
+  try { loc = JSON.parse(lsGet(coKey(path)) || 'null'); } catch (e) {}
+  CO.ops = loc && Array.isArray(loc.ops) ? loc.ops : [];
+  if (!getToken()) { CO.doc = loc && loc.doc || null; render(); return; }
+  CO.loading = true; render();
+  ssGet(path).then(function (r) {
+    if (CO.path !== path) return;
+    CO.loading = false; CO.doc = r ? coNorm(r.json) : (loc && loc.doc) || null; render();
+    if (CO.ops.length) coSave();
+  }, function (e) { if (CO.path !== path) return; CO.loading = false; CO.doc = loc && loc.doc || null; CO.err = ssErrText(e); render(); });
+}
+function coSave(tries) {
+  if (!CO.path || CO.saving || !CO.ops.length) return;
+  if (!getToken()) { CO.err = 'Appareil verrouillé : les commandes sont gardées sur cet appareil. Déverrouillez-le dans Paramètres pour les enregistrer sur le serveur.'; coPersist(); render(); return; }
+  var path = CO.path, ops = CO.ops.slice(), year = CO.year;
+  CO.saving = true; CO.err = null; render();
+  ssGet(path).then(function (r) {
+    var base = r ? coNorm(r.json) : coNorm({ format: CO_FMT, formatVersion: 1, annee: +year, creeLe: new Date().toISOString() });
+    ops.forEach(function (o) { if (o.t === 'set' && o.v && !o.v.numero) { o.v.numero = coNextNum(base); } coApply(base, o); });
+    base.majLe = new Date().toISOString(); base.majPar = 'admin';
+    return ssPut(path, base, r && r.sha, 'Commandes ' + year + ' (Admin)').then(function () { return base; });
+  }).then(function (doc) {
+    if (CO.path !== path) { CO.saving = false; return; }
+    CO.saving = false; CO.doc = doc; CO.ops = CO.ops.slice(ops.length); coPersist(); render(); if (CO.ops.length) coSave();
+  }, function (e) {
+    CO.saving = false;
+    if ((e.status === 409 || e.status === 422) && (tries || 0) < 2) { coSave((tries || 0) + 1); return; }
+    CO.err = ssErrText(e); coPersist(); render();
+  });
+}
+function coOp(op) { CO.ops.push(op); coPersist(); coSave(); }
+window.addEventListener('online', function () { if (CO.ops.length) coSave(); });
+function coList(doc) {
+  return Object.keys(doc.commandes).map(function (id) { var c = doc.commandes[id]; return c ? Object.assign({ id: id }, c) : null; }).filter(Boolean);
+}
+function coDate(c) { return c.mode === 'retrait' ? (c.retrait && c.retrait.date) || '' : (c.livraison && c.livraison.date) || ''; }
+function coReste(c) { return Math.round(((+c.total || 0) - (c.paye && +c.paye.montant || 0)) * 100) / 100; }
+function coProducts() {
+  var out = []; if (!CO.cat) return out;
+  CO.cat.categories.forEach(function (k) { if (k.actif === false) return; var items = k.produits.filter(function (p) { return p.actif !== false; }).map(function (p) { return { id: p.id, libelle: (k.prefixe === false || isLivProduct(p) ? '' : k.nom + ' ') + p.libelle, prix: +p.prix || 0, cat: k.nom }; }); if (items.length) out.push({ nom: k.nom, items: items }); });
+  return out;
+}
+
+/* ---------- Rendu ---------- */
+function renderSapCommandes() {
+  var el = document.getElementById('mod');
+  if (!CO.year) CO.year = String(new Date().getFullYear());
+  if (!CO.cat && !CO.catErr && getToken()) coLoadCat();
+  coYears();
+  if (CO.path !== coPath(CO.year) && !CO.loading) { coOpen(); return; }
+  var years = (CO.years || []).concat([CO.year, String(new Date().getFullYear())]).filter(function (y, i, a) { return a.indexOf(y) === i; }).sort().reverse();
+  var doc = coDoc(), all = coList(doc);
+  var stat = CO.saving ? '<span class="sv">Enregistrement…</span>' : CO.ops.length ? '<span class="sv warn">' + CO.ops.length + ' modification' + (CO.ops.length > 1 ? 's' : '') + ' pas encore sur le serveur</span>' : doc.majLe ? '<span class="sv ok">Enregistré sur le serveur</span>' : '';
+  var band = '<div class="band"><div class="band-top"><h1>Commandes</h1></div>' +
+    '<div class="rsel ssbar" role="group" aria-label="Année">' + years.map(function (y) { return '<button class="rchip' + (y === CO.year ? ' on' : '') + '" data-co="year" data-v="' + esc(y) + '">' + esc(y) + '</button>'; }).join('') + '<button class="rchip" data-co="reload">Actualiser</button></div>' +
+    (stat ? '<p class="soon-lead">' + stat + '</p>' : '') + '</div>';
+  var alerts = [];
+  if (!getToken()) alerts.push('<div class="alert">Appareil verrouillé : les commandes enregistrées sur le serveur ne peuvent pas être lues. <button class="btn sm" data-a="go" data-v="parametres">Déverrouiller</button></div>');
+  if (CO.catErr) alerts.push('<div class="alert err">' + CO.catErr + '</div>');
+  if (CO.err) alerts.push('<div class="alert err">' + CO.err + ' <button class="btn sm" data-co="retry">Réessayer</button></div>');
+  var main = alerts.length ? '<div class="alerts">' + alerts.join('') + '</div>' : '';
+  if (CO.loading) { el.innerHTML = band + '<main>' + main + '<section><p class="empty">Chargement des commandes…</p></section></main>' + vToast(); return; }
+  if (CO.form) { el.innerHTML = band + '<main>' + main + vCoForm() + '</main>' + vToast(); coAfter(); return; }
+  var cnt = { actives: 0, 'a-preparer': 0, prete: 0, livree: 0, annulee: 0, toutes: all.length };
+  all.forEach(function (c) { cnt[c.statut || 'a-preparer']++; if (c.statut !== 'livree' && c.statut !== 'annulee') cnt.actives++; });
+  var F0 = [['actives', 'À traiter'], ['a-preparer', 'À préparer'], ['prete', 'Prêtes'], ['livree', 'Livrées / retirées'], ['annulee', 'Annulées'], ['toutes', 'Toutes']];
+  var q = (CO.q || '').trim().toLowerCase();
+  var list = all.filter(function (c) {
+    var st = c.statut || 'a-preparer';
+    if (CO.filter === 'actives' && (st === 'livree' || st === 'annulee')) return false;
+    if (CO.filter !== 'actives' && CO.filter !== 'toutes' && st !== CO.filter) return false;
+    if (q) { var hay = [c.numero, c.client && c.client.nom, c.client && c.client.tel, c.client && c.client.email, c.livraison && c.livraison.adresse].join(' ').toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+    return true;
+  }).sort(function (a, b) { var da = coDate(a) || '9999', db = coDate(b) || '9999'; return da < db ? -1 : da > db ? 1 : (a.numero || 0) - (b.numero || 0); });
+  var h = '<section><div class="row-between"><h3>Commandes ' + esc(CO.year) + '</h3><div class="cbtns"><button class="pick" data-co="new">+ Nouvelle commande</button><button class="btn" data-co="csv"' + (all.length ? '' : ' disabled') + '>Exporter pour Excel</button></div></div>' +
+    '<div class="rsel sschips" role="group" aria-label="Statut">' + F0.map(function (f) { return '<button class="chip' + (CO.filter === f[0] ? ' on' : '') + '" data-co="filter" data-v="' + f[0] + '">' + f[1] + ' <span class="num">(' + cnt[f[0]] + ')</span></button>'; }).join('') + '</div>' +
+    '<input type="text" class="cosearch" data-co-q placeholder="Rechercher : nom, téléphone, n°, adresse…" value="' + esc(CO.q) + '" autocomplete="off">';
+  if (!list.length) h += '<p class="empty">' + (all.length ? 'Aucune commande ne correspond.' : 'Aucune commande pour ' + esc(CO.year) + '.') + '</p>';
+  var lastD = null;
+  list.forEach(function (c) {
+    var d = coDate(c) || '';
+    if (d !== lastD) { h += '<h4 class="codate' + (d ? ' cap' : '') + '">' + (d ? esc(longDate(d)) + ' ' + esc(d.slice(0, 4)) : 'Sans date') + '</h4>'; lastD = d; }
+    h += vCoCard(c);
+  });
+  el.innerHTML = band + '<main>' + main + h + '</section></main>' + vToast();
+}
+function vCoCard(c) {
+  var st = c.statut || 'a-preparer', cl = c.client || {}, reste = coReste(c), conf = CO.confirm && CO.confirm.id === c.id ? CO.confirm.kind : null;
+  var where = c.mode === 'retrait' ? 'Retrait à <strong>' + esc((c.retrait && c.retrait.stand && c.retrait.stand.nom) || '?') + '</strong>' : 'Livraison : <strong>' + esc((c.livraison && c.livraison.adresse) || '?') + '</strong>' + (c.livraison && c.livraison.creneau ? ' · ' + esc(c.livraison.creneau) : '');
+  var next = st === 'a-preparer' ? ['prete', 'Marquer prête'] : st === 'prete' ? ['livree', c.mode === 'retrait' ? 'Marquer retirée' : 'Marquer livrée'] : null;
+  return '<div class="cocard st-' + st + (conf ? ' danger' : '') + '"><div class="row-between"><span><strong>n° ' + esc(c.numero || '…') + ' · ' + esc(cl.nom || '?') + '</strong>' + (cl.tel ? ' · <a href="tel:' + esc(cl.tel.replace(/\s/g, '')) + '">' + esc(cl.tel) + '</a>' : '') + (cl.email ? ' · <a href="mailto:' + esc(cl.email) + '">' + esc(cl.email) + '</a>' : '') + '</span>' +
+    '<span class="costat st-' + st + '">' + esc(c.mode === 'retrait' && st === 'livree' ? 'Retirée' : st === 'livree' ? 'Livrée' : coStatut(st)) + '</span></div>' +
+    '<p>' + where + '</p>' +
+    '<p class="coart">' + (c.lignes || []).map(function (l) { return esc(l.quantite + ' × ' + l.libelle); }).join(' · ') + '</p>' +
+    '<p class="num"><strong>' + money(+c.total || 0) + '</strong>' + (c.paye && +c.paye.montant ? ' · payé ' + money(+c.paye.montant) + (c.paye.mode ? ' (' + esc((CO_PAY.filter(function (x) { return x.id === c.paye.mode; })[0] || {}).nom || c.paye.mode) + ')' : '') : '') + (reste > 0.004 ? ' · <span class="bad">reste ' + money(reste) + '</span>' : reste < -0.004 ? ' · <span class="warnt">trop payé ' + money(-reste) + '</span>' : ' · <span class="good">payé</span>') + '</p>' +
+    (c.note ? '<p class="faint">' + esc(c.note) + '</p>' : '') +
+    (conf ? '<div class="cbtns"><span>' + (conf === 'del' ? 'Supprimer définitivement cette commande ?' : 'Annuler cette commande ?') + '</span><button class="btn danger sm" data-co="' + (conf === 'del' ? 'del' : 'cancelOrder') + '" data-v="' + esc(c.id) + '">' + (conf === 'del' ? 'Supprimer' : 'Annuler la commande') + '</button><button class="btn sm" data-co="noconf">Non</button></div>'
+      : '<div class="cbtns">' + (next ? '<button class="pick sm2" data-co="status" data-v="' + esc(c.id) + '" data-s="' + next[0] + '">' + next[1] + '</button>' : '') + '<button class="btn sm" data-co="edit" data-v="' + esc(c.id) + '">Modifier</button>' +
+        (st !== 'annulee' && st !== 'livree' ? '<button class="btn sm" data-co="askCancel" data-v="' + esc(c.id) + '">Annuler</button>' : '<button class="btn sm" data-co="status" data-v="' + esc(c.id) + '" data-s="a-preparer">Remettre à préparer</button>') +
+        '<button class="x" data-co="askDel" data-v="' + esc(c.id) + '">Supprimer</button></div>') + '</div>';
+}
+function coTotal(f) { var t = 0; Object.keys(f.q).forEach(function (pid) { var n = parseQ(f.q[pid]); var p = f.prix[pid]; if (n > 0 && p != null) t += n * p; }); return Math.round(t * 100) / 100; }
+function vCoForm() {
+  var f = CO.form, prods = coProducts(), stands = CO.cat ? CO.cat.pointsDeVente.filter(function (p) { return p.actif !== false; }) : [];
+  var rows = prods.map(function (g) { return '<tr class="ssgrp"><td colspan="3">' + esc(g.nom) + '</td></tr>' + g.items.map(function (it) {
+    f.prix[it.id] = f.prix[it.id] != null ? f.prix[it.id] : it.prix; f.lib[it.id] = f.lib[it.id] || it.libelle;
+    return '<tr><td><label for="coq-' + esc(it.id) + '">' + esc(it.libelle) + '</label></td><td class="r num">' + money(f.prix[it.id]) + '</td><td class="r"><input type="text" inputmode="numeric" class="qty num" id="coq-' + esc(it.id) + '" data-coq="' + esc(it.id) + '" value="' + esc(f.q[it.id] || '') + '" placeholder="0" autocomplete="off"></td></tr>'; }).join(''); }).join('');
+  /* articles d'une commande existante qui ne sont plus dans le catalogue */
+  Object.keys(f.q).forEach(function (pid) { if (!prods.some(function (g) { return g.items.some(function (i) { return i.id === pid; }); })) rows += '<tr><td>' + esc(f.lib[pid] || pid) + ' <span class="faint">(plus au catalogue)</span></td><td class="r num">' + money(f.prix[pid] || 0) + '</td><td class="r"><input type="text" inputmode="numeric" class="qty num" data-coq="' + esc(pid) + '" value="' + esc(f.q[pid] || '') + '"></td></tr>'; });
+  return '<section class="coform"><h3>' + (f.id ? 'Modifier la commande n° ' + esc(f.numero || '') : 'Nouvelle commande') + '</h3><form data-co-form="1">' +
+    '<div class="cogrid"><div><label class="fl" for="coNom">Nom du client<span class="req" aria-hidden="true"> *</span></label><input type="text" id="coNom" data-cof="nom" value="' + esc(f.nom) + '" required autocomplete="off"></div>' +
+    '<div><label class="fl" for="coTel">Téléphone</label><input type="text" inputmode="tel" id="coTel" data-cof="tel" value="' + esc(f.tel) + '" autocomplete="off"></div>' +
+    '<div><label class="fl" for="coMail">E-mail</label><input type="text" inputmode="email" id="coMail" data-cof="email" value="' + esc(f.email) + '" autocomplete="off"></div></div>' +
+    '<span class="fl">Remise au client</span><div class="rsel"><button type="button" class="chip' + (f.mode === 'livraison' ? ' on' : '') + '" data-co="mode" data-v="livraison">Livraison</button><button type="button" class="chip' + (f.mode === 'retrait' ? ' on' : '') + '" data-co="mode" data-v="retrait">Retrait sur un stand</button></div>' +
+    (f.mode === 'livraison'
+      ? '<div class="cogrid"><div class="wide"><label class="fl" for="coAdr">Adresse de livraison<span class="req" aria-hidden="true"> *</span></label><input type="text" id="coAdr" data-cof="adresse" aria-required="true" value="' + esc(f.adresse) + '" autocomplete="off"></div><div><label class="fl" for="coDate">Date de livraison</label><input type="date" id="coDate" data-cof="date" value="' + esc(f.date) + '"></div><div><label class="fl" for="coCren">Créneau</label><input type="text" id="coCren" data-cof="creneau" value="' + esc(f.creneau) + '" placeholder="Ex. 14h–16h" autocomplete="off"></div></div>'
+      : '<div class="cogrid"><div><label class="fl" for="coStand">Stand</label><select id="coStand" data-cof="stand">' + stands.map(function (p) { return '<option value="' + esc(p.id) + '"' + (f.stand === p.id ? ' selected' : '') + '>' + esc(p.nom) + '</option>'; }).join('') + '</select></div><div><label class="fl" for="coDate">Date de retrait</label><input type="date" id="coDate" data-cof="date" value="' + esc(f.date) + '"></div></div>') +
+    '<span class="fl">Articles<span class="req" aria-hidden="true"> *</span> <span class="faint">(au moins un)</span></span>' + (rows ? '<div class="scroll"><table class="stab bil sstab"><thead><tr><th>Article</th><th class="r">Prix</th><th class="r">Quantité</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="empty">Catalogue de la Caisse indisponible.</p>') +
+    '<p class="num cototal" id="coTot">Total : <strong>' + money(coTotal(f)) + '</strong></p>' +
+    '<div class="cogrid"><div><label class="fl" for="coPaye">Déjà payé (€)</label><input type="text" inputmode="decimal" id="coPaye" data-cof="paye" value="' + esc(f.paye) + '" placeholder="0,00" autocomplete="off"></div>' +
+    '<div><label class="fl" for="coPm">Paiement</label><select id="coPm" data-cof="pmode">' + CO_PAY.map(function (p) { return '<option value="' + p.id + '"' + (f.pmode === p.id ? ' selected' : '') + '>' + esc(p.nom) + '</option>'; }).join('') + '</select></div>' +
+    (f.id ? '<div><label class="fl" for="coSt">Statut</label><select id="coSt" data-cof="statut">' + CO_STATUTS.map(function (s) { return '<option value="' + s.id + '"' + (f.statut === s.id ? ' selected' : '') + '>' + esc(s.nom) + '</option>'; }).join('') + '</select></div>' : '') + '</div>' +
+    '<label class="fl" for="coNote">Remarque</label><input type="text" id="coNote" data-cof="note" value="' + esc(f.note) + '" maxlength="200" autocomplete="off" placeholder="Ex. sonner deux fois"><p class="reqnote"><span class="req">*</span> champ obligatoire</p>' +
+    '<div class="cbtns"><button class="pick" type="submit">' + (f.id ? 'Enregistrer les modifications' : 'Enregistrer la commande') + '</button><button class="btn" type="button" data-co="cancelForm">Annuler</button></div></form></section>';
+}
+function coAfter() { var f = CO.form; if (f && f.focus) { var i = document.getElementById(f.focus); f.focus = null; if (i) i.focus(); } }
+function coSubmit() {
+  var f = CO.form, nom = (f.nom || '').trim();
+  if (!nom) { toast('Indiquez le nom du client'); return; }
+  var lignes = [], bad = false;
+  Object.keys(f.q).forEach(function (pid) { var n = parseQ(f.q[pid]); if (n == null || n === 0) return; if (isNaN(n) || n < 0 || Math.round(n) !== n) { bad = true; return; } var pu = +f.prix[pid] || 0; lignes.push({ produitId: pid, libelle: f.lib[pid] || pid, prixUnitaire: pu, quantite: n, total: Math.round(pu * n * 100) / 100 }); });
+  if (bad) { toast('Quantités : nombres entiers'); return; }
+  if (!lignes.length) { toast('Ajoutez au moins un article'); return; }
+  if (f.mode === 'livraison' && !(f.adresse || '').trim()) { toast('Indiquez l’adresse de livraison'); return; }
+  var paye = String(f.paye || '').trim() === '' ? 0 : parsePrice(f.paye);
+  if (isNaN(paye) || paye < 0) { toast('Montant payé invalide'); return; }
+  var old = f.id ? coDoc().commandes[f.id] : null, now = new Date().toISOString(), stand = (CO.cat ? CO.cat.pointsDeVente : []).filter(function (p) { return p.id === f.stand; })[0];
+  var st = f.id ? f.statut : 'a-preparer';
+  var v = { numero: old ? old.numero : null, creeLe: old ? old.creeLe : now, source: old ? old.source || 'admin' : 'admin',
+    client: { nom: nom, tel: (f.tel || '').trim(), email: (f.email || '').trim() }, mode: f.mode,
+    livraison: f.mode === 'livraison' ? { adresse: f.adresse.trim(), date: f.date || '', creneau: (f.creneau || '').trim() } : null,
+    retrait: f.mode === 'retrait' ? { stand: stand ? { id: stand.id, nom: stand.nom } : { id: f.stand, nom: f.stand }, date: f.date || '' } : null,
+    lignes: lignes, total: Math.round(lignes.reduce(function (s, l) { return s + l.total; }, 0) * 100) / 100,
+    paye: { montant: Math.round(paye * 100) / 100, mode: paye > 0 ? f.pmode || '' : '' }, statut: st, note: (f.note || '').trim(),
+    historique: (old && old.historique ? old.historique.slice() : []).concat(!old ? [{ statut: st, le: now }] : old.statut !== st ? [{ statut: st, le: now }] : []) };
+  if (old) v.modifieLe = now;
+  var id = f.id || 'cmd-' + now.replace(/\D/g, '').slice(0, 14) + '-' + Math.random().toString(36).slice(2, 6);
+  CO.form = null; coOp({ t: 'set', id: id, v: v });
+  toast(old ? 'Commande modifiée' : 'Commande enregistrée');
+}
+function coSetStatus(id, s) {
+  var c = coDoc().commandes[id]; if (!c) return;
+  var v = clone(c), now = new Date().toISOString(); v.statut = s; v.modifieLe = now; v.historique = (v.historique || []).concat([{ statut: s, le: now }]);
+  coOp({ t: 'set', id: id, v: v });
+}
+function coCsv() {
+  var rows = [['N°', 'Statut', 'Client', 'Téléphone', 'E-mail', 'Mode', 'Adresse / stand', 'Date', 'Créneau', 'Articles', 'Total (€)', 'Payé (€)', 'Paiement', 'Reste (€)', 'Remarque']];
+  coList(coDoc()).sort(function (a, b) { return (a.numero || 0) - (b.numero || 0); }).forEach(function (c) {
+    var cl = c.client || {};
+    rows.push([c.numero || '', coStatut(c.statut), cl.nom || '', cl.tel || '', cl.email || '', c.mode === 'retrait' ? 'Retrait' : 'Livraison', c.mode === 'retrait' ? (c.retrait && c.retrait.stand && c.retrait.stand.nom) || '' : (c.livraison && c.livraison.adresse) || '', coDate(c), c.livraison && c.livraison.creneau || '', (c.lignes || []).map(function (l) { return l.quantite + ' x ' + l.libelle; }).join(', '), +c.total || 0, c.paye && +c.paye.montant || 0, c.paye && c.paye.mode || '', coReste(c), c.note || '']);
+  });
+  download('commandes-sapins_' + CO.year + '.csv', rows); toast('Fichier pour Excel téléchargé');
+}
+function coFormFrom(c) {
+  var f = { id: c ? c.id : null, numero: c ? c.numero : null, nom: '', tel: '', email: '', mode: 'livraison', adresse: '', date: '', creneau: '', stand: '', q: {}, prix: {}, lib: {}, paye: '', pmode: '', statut: 'a-preparer', note: '', focus: 'coNom' };
+  var st = CO.cat ? CO.cat.pointsDeVente.filter(function (p) { return p.actif !== false; }) : [];
+  f.stand = (st.filter(function (p) { return /spy/i.test(p.nom); })[0] || st[0] || {}).id || '';
+  if (c) {
+    var cl = c.client || {}; f.nom = cl.nom || ''; f.tel = cl.tel || ''; f.email = cl.email || ''; f.mode = c.mode || 'livraison';
+    if (c.livraison) { f.adresse = c.livraison.adresse || ''; f.date = c.livraison.date || ''; f.creneau = c.livraison.creneau || ''; }
+    if (c.retrait) { f.stand = c.retrait.stand && c.retrait.stand.id || f.stand; f.date = c.retrait.date || ''; }
+    (c.lignes || []).forEach(function (l) { f.q[l.produitId] = String(l.quantite); f.prix[l.produitId] = +l.prixUnitaire || 0; f.lib[l.produitId] = l.libelle; });
+    f.paye = c.paye && +c.paye.montant ? String(c.paye.montant).replace('.', ',') : ''; f.pmode = c.paye && c.paye.mode || ''; f.statut = c.statut || 'a-preparer'; f.note = c.note || '';
+  }
+  return f;
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-co]'); if (!b || b.disabled || b.tagName === 'INPUT') return;
+  var a = b.getAttribute('data-co'), v = b.getAttribute('data-v');
+  if (a === 'year') { CO.year = v; CO.path = null; render(); }
+  else if (a === 'reload') { CO.years = null; CO.cat = null; CO.catErr = null; CO.path = null; render(); }
+  else if (a === 'retry') coSave();
+  else if (a === 'filter') { CO.filter = v; render(); }
+  else if (a === 'new') { CO.form = coFormFrom(null); render(); window.scrollTo(0, 0); }
+  else if (a === 'edit') { var c = coDoc().commandes[v]; if (c) { CO.form = coFormFrom(Object.assign({ id: v }, c)); render(); window.scrollTo(0, 0); } }
+  else if (a === 'cancelForm') { CO.form = null; render(); }
+  else if (a === 'mode') { CO.form.mode = v; render(); }
+  else if (a === 'status') { coSetStatus(v, b.getAttribute('data-s')); toast(coStatut(b.getAttribute('data-s'))); }
+  else if (a === 'askCancel') { CO.confirm = { id: v, kind: 'cancel' }; render(); }
+  else if (a === 'askDel') { CO.confirm = { id: v, kind: 'del' }; render(); }
+  else if (a === 'noconf') { CO.confirm = null; render(); }
+  else if (a === 'cancelOrder') { CO.confirm = null; coSetStatus(v, 'annulee'); toast('Commande annulée'); }
+  else if (a === 'del') { CO.confirm = null; coOp({ t: 'del', id: v }); toast('Commande supprimée'); }
+  else if (a === 'csv') coCsv();
+});
+document.addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.hasAttribute && t.hasAttribute('data-co-q')) { CO.q = t.value; var pos = t.selectionStart; render(); var i = document.querySelector('[data-co-q]'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (er) {} } return; }
+  if (!CO.form) return;
+  if (t.hasAttribute('data-cof')) CO.form[t.getAttribute('data-cof')] = t.value;
+  else if (t.hasAttribute('data-coq')) { CO.form.q[t.getAttribute('data-coq')] = t.value; var el = document.getElementById('coTot'); if (el) el.innerHTML = 'Total : <strong>' + money(coTotal(CO.form)) + '</strong>'; }
+});
+document.addEventListener('change', function (e) { var t = e.target; if (CO.form && t.hasAttribute && t.hasAttribute('data-cof') && t.tagName === 'SELECT') CO.form[t.getAttribute('data-cof')] = t.value; });
+document.addEventListener('submit', function (e) { if (!e.target.closest('[data-co-form]')) return; e.preventDefault(); coSubmit(); });
+document.addEventListener('keydown', function (e) {
+  var t = e.target; if (e.key !== 'Enter' || !t.hasAttribute || !t.hasAttribute('data-coq')) return;
+  e.preventDefault(); var all = Array.prototype.slice.call(document.querySelectorAll('[data-coq]')), i = all.indexOf(t); if (all[i + 1]) all[i + 1].focus(); else t.blur();
+});
+
+/* ================= Factures (Caisse v36) et suivi par le patron =================
+   Les données de facturation viennent des fichiers de ventes (vente.facture) ; le suivi (facture établie, payée par virement)
+   est gardé à part dans sapin/factures/<AAAA>.json, jamais dans les fichiers de ventes (la tablette les réécrit en entier). */
+/* ================= Suivis tenus par l'Admin (factures, livraisons) =================
+   Un fichier par année dans le dépôt ventes, indexé par id de vente, jamais dans les fichiers de ventes (la tablette les réécrit).
+   Opérations champ par champ fusionnées sur la dernière version (relecture + PUT avec sha, 3 réessais), file d'attente hors ligne. */
+function mkSuivi(dir, fmt, label, lsPrefix) {
+  var M = { years: {} };
+  function path(y) { return dir + '/' + y + '.json'; }
+  function key(y) { return lsPrefix + path(y); }
+  function norm(d) { d = d && typeof d === 'object' ? d : {}; if (!d.suivi || typeof d.suivi !== 'object' || Array.isArray(d.suivi)) d.suivi = {}; return d; }
+  function apply(doc, op) { doc.suivi[op.id] = Object.assign({}, doc.suivi[op.id] || {}, op.champs, { modifieLe: op.le }); return doc; }
+  M.state = function (y) {
+    y = String(y); if (M.years[y]) return M.years[y];
+    var st = M.years[y] = { doc: null, ops: [], loading: false, saving: false, err: null, loaded: false }, loc = null;
+    try { loc = JSON.parse(lsGet(key(y)) || 'null'); } catch (e) {}
+    if (loc) { st.doc = loc.doc || null; st.ops = Array.isArray(loc.ops) ? loc.ops : []; }
+    return st;
+  };
+  function persist(y) { var st = M.state(y); lsSet(key(y), st.ops.length ? JSON.stringify({ doc: st.doc, ops: st.ops }) : null); }
+  M.ensure = function (y) {
+    var st = M.state(y); if (st.loaded || st.loading || !getToken()) return st;
+    st.loading = true;
+    ssGet(path(y)).then(function (r) { st.loading = false; st.loaded = true; st.doc = r ? norm(r.json) : st.doc; render(); if (st.ops.length) M.save(y); },
+      function (e) { st.loading = false; st.loaded = true; st.err = ssErrText(e); render(); });
+    return st;
+  };
+  M.doc = function (y) { var st = M.state(y), d = norm(clone(st.doc || {})); st.ops.forEach(function (o) { apply(d, o); }); return d; };
+  M.get = function (id, day) { if (!id || !day) return {}; return M.doc(String(day).slice(0, 4)).suivi[id] || {}; };
+  M.save = function (y, tries) {
+    var st = M.state(y); if (st.saving || !st.ops.length) return;
+    if (!getToken()) { st.err = 'Appareil verrouillé : le suivi est gardé sur cet appareil. Déverrouillez-le dans Paramètres pour l’enregistrer sur le serveur.'; persist(y); render(); return; }
+    var ops = st.ops.slice(); st.saving = true; st.err = null; render();
+    ssGet(path(y)).then(function (r) {
+      var base = r ? norm(r.json) : norm({ format: fmt, formatVersion: 1, annee: +y, creeLe: new Date().toISOString() });
+      ops.forEach(function (o) { apply(base, o); });
+      base.majLe = new Date().toISOString(); base.majPar = 'admin';
+      return ssPut(path(y), base, r && r.sha, label + ' ' + y + ' (Admin)').then(function () { return base; });
+    }).then(function (doc) {
+      st.saving = false; st.doc = doc; st.loaded = true; st.ops = st.ops.slice(ops.length); persist(y); render(); if (st.ops.length) M.save(y);
+    }, function (e) {
+      st.saving = false;
+      if ((e.status === 409 || e.status === 422) && (tries || 0) < 3) { M.save(y, (tries || 0) + 1); return; }
+      st.err = ssErrText(e); persist(y); render();
+    });
+  };
+  M.op = function (id, day, champs) { var y = String(day).slice(0, 4), st = M.state(y); st.ops.push({ id: id, champs: champs, le: new Date().toISOString() }); persist(y); M.save(y); };
+  window.addEventListener('online', function () { Object.keys(M.years).forEach(function (y) { if (M.years[y].ops.length) M.save(y); }); });
+  return M;
+}
+var FSUIVI = mkSuivi('sapin/factures', 'agri-garden-caisse/factures-suivi', 'Suivi des factures', 'demo-admin-factsuivi:');
+var LSUIVI = mkSuivi('sapin/livraisons', 'agri-garden-caisse/livraisons-suivi', 'Suivi des livraisons', 'demo-admin-livsuivi:');
+function fsState(y) { return FSUIVI.state(y); }
+function fsEnsure(y) { return FSUIVI.ensure(y); }
+function fsGet(id, day) { return FSUIVI.get(id, day); }
+function fsSave(y) { FSUIVI.save(y); }
+function fsOp(id, day, champs) { FSUIVI.op(id, day, champs); }
+function faStatus(v, day) {
+  var f = v.facture || {}, np = vNonPaye(v), sv = fsGet(v.id, day);
+  if (np > 0 && sv.virement) return { k: 'vir', t: 'Payée (virement)', np: 0, vir: np };
+  if (np > 0) return { k: 'np', t: 'Non payée · reste ' + money(np), np: np };
+  if (f.paiement) return { k: 'later', t: 'Payée au stand le ' + hsDm(f.paiement.horodatage) + (f.paiement.mode ? ' (' + hsPayTxt(f.paiement) + ')' : ''), np: 0 };
+  return { k: 'ok', t: 'Payée au stand', np: 0 };
+}
+function hsPayTxt(p) { p = p || {}; return p.mode === 'cash' ? 'cash' : p.mode === 'bancontact' ? 'Bancontact' : p.mode === 'mixte' ? 'cash ' + money(+p.cash || 0) + ' + Bancontact ' + money(+p.bancontact || 0) : p.mode === 'a-facturer' ? 'à facturer' : String(p.mode || ''); }
+
+/* ---------- Gestion d’événement › Factures ---------- */
+var FA = { year: null, files: null, data: {}, loading: false, err: null, at: null, f: { stand: 'all', pay: 'all', est: 'all', from: '', to: '' }, open: null };
+function faExtract(d) {
+  if (!d || d.format !== 'agri-garden-caisse/ventes' || !Array.isArray(d.ventes)) return { ok: false };
+  var fp = d.pointDeVente || {}, out = { ok: true, key: (fp.id || '?') + '|' + (d.date || ''), maj: d.miseAJour || '', ventes: [] };
+  d.ventes.forEach(function (v) { if (v && !v.annulation && typeof v.horodatage === 'string' && ((v.facture && typeof v.facture === 'object') || (v.lignes || []).some(isLivLine))) out.ventes.push({ v: v, pv: v.pointDeVente || fp }); });
+  return out; // en mémoire seulement : noms, adresses et e-mails ne sont pas gardés dans le navigateur
+}
+function faLoad() {
+  var tok = getToken(); if (!tok || FA.loading) return;
+  FA.loading = true; FA.err = null; render();
+  ghFetch('/repos/' + SALES_REPO + '/git/trees/HEAD?recursive=1', {}, tok).then(function (t) { return t; }, function (e) { if (e.status === 409) return { tree: [] }; throw e; }).then(function (t) {
+    var files = (t.tree || []).filter(function (x) { return x.type === 'blob' && /^sapin\//.test(x.path) && !/^sapin\/(stock|caisse|commandes|factures|livraisons)\//.test(x.path) && /\.json$/i.test(x.path); });
+    var todo = files.filter(function (f) { return !FA.data[f.sha]; }), i = 0;
+    function next() {
+      if (i >= todo.length) return Promise.resolve();
+      var f = todo[i++];
+      return bghRaw(f.path, tok).then(function (txt) { var s; try { s = faExtract(JSON.parse(txt)); } catch (e) { s = { ok: false }; } FA.data[f.sha] = s; }, function () {}).then(next);
+    }
+    return Promise.all([next(), next(), next(), next(), next(), next()]).then(function () { FA.files = files; FA.loading = false; FA.at = new Date(); render(); });
+  }).catch(function (e) { FA.loading = false; FA.files = FA.files || []; FA.err = bghErr(e); render(); });
+}
+function faAll() {
+  var best = {};
+  (FA.files || []).forEach(function (f) { var s = FA.data[f.sha]; if (!s || !s.ok) return; if (!best[s.key] || s.maj > best[s.key].maj) best[s.key] = s; });
+  var seen = {}, out = [];
+  Object.keys(best).forEach(function (k) { best[k].ventes.forEach(function (x) { if (!x.v.facture || typeof x.v.facture !== 'object' || seen[x.v.id]) return; seen[x.v.id] = 1; out.push({ v: x.v, day: x.v.horodatage.slice(0, 10), pvId: x.pv.id || '?', pvNom: x.pv.nom || x.pv.id || '?' }); }); });
+  return out.sort(function (a, b) { return a.v.horodatage < b.v.horodatage ? -1 : a.v.horodatage > b.v.horodatage ? 1 : 0; });
+}
+function faLines(v) { return (v.lignes || []).map(function (l) { return (+l.quantite || 0) + ' × ' + (l.libelle || ''); }); }
+function faCopyText(x) {
+  var v = x.v, f = v.facture || {}, st = faStatus(v, x.day), sv = fsGet(v.id, x.day);
+  var t = ['Société : ' + (f.societe || ''), 'Adresse : ' + (f.adresse || ''), 'TVA : ' + (f.tva || ''), 'E-mail : ' + (f.email || ''), '',
+    'Vente du ' + dmy(x.day) + ' à ' + v.horodatage.slice(11, 16) + ' · ' + x.pvNom + ' · n° ' + hsNum(v.id) + ' (' + v.id + ')', 'Articles :'];
+  (v.lignes || []).forEach(function (l) { t.push('  ' + (+l.quantite || 0) + ' × ' + (l.libelle || '') + ' à ' + money(+l.prixUnitaire || 0) + ' = ' + money(+l.total || 0)); });
+  t.push('Total : ' + money(+v.total || 0), 'Paiement : ' + st.t);
+  if (sv.numero) t.push('N° de facture : ' + sv.numero);
+  return t.join('\n').replace(/ /g, ' ');
+}
+function faCopy(txt) {
+  function fb() { var ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); toast(ok ? 'Copié : collez-le dans le logiciel de facturation' : 'Copie impossible sur cet appareil'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast('Copié : collez-le dans le logiciel de facturation'); }, fb); else fb();
+}
+function faFiltered(all) {
+  var f = FA.f;
+  return all.filter(function (x) {
+    if (x.day.slice(0, 4) !== FA.year) return false;
+    if (f.from && x.day < f.from) return false; if (f.to && x.day > f.to) return false;
+    if (f.stand !== 'all' && x.pvId !== f.stand) return false;
+    var st = faStatus(x.v, x.day), sv = fsGet(x.v.id, x.day);
+    if (f.pay === 'np' && st.k !== 'np') return false; if (f.pay === 'ok' && st.k === 'np') return false;
+    if (f.est === 'non' && sv.etablie) return false; if (f.est === 'oui' && !sv.etablie) return false;
+    return true;
+  });
+}
+function renderSapFactures() {
+  var el = document.getElementById('mod');
+  if (FA.files === null && !FA.loading && getToken()) { faLoad(); return; }
+  var all = faAll(), years = {};
+  all.forEach(function (x) { years[x.day.slice(0, 4)] = 1; });
+  var yl = Object.keys(years).sort().reverse(); if (!FA.year) FA.year = yl[0] || String(new Date().getFullYear()); if (yl.indexOf(FA.year) < 0) yl.unshift(FA.year);
+  var st = fsEnsure(FA.year), f = FA.f;
+  var stat = st.saving ? '<span class="sv">Enregistrement du suivi…</span>' : st.ops.length ? '<span class="sv warn">' + st.ops.length + ' modification' + (st.ops.length > 1 ? 's' : '') + ' du suivi pas encore sur le serveur</span>' : '';
+  var band = '<div class="band"><div class="band-top"><h1>Factures à établir</h1></div>' +
+    '<div class="rsel ssbar" role="group" aria-label="Saison">' + yl.map(function (y) { return '<button class="rchip' + (y === FA.year ? ' on' : '') + '" data-fa="year" data-v="' + esc(y) + '">' + esc(y) + '</button>'; }).join('') +
+    '<button class="rchip" data-fa="reload"' + (FA.loading ? ' disabled' : '') + '>' + (FA.loading ? 'Lecture des ventes…' : 'Relire les ventes') + '</button></div>' +
+    '<p class="soon-lead">' + (FA.at ? 'Ventes lues à ' + String(FA.at.getHours()).padStart(2, '0') + ':' + String(FA.at.getMinutes()).padStart(2, '0') + '. ' : '') + stat + '</p></div>';
+  var alerts = [];
+  if (!getToken()) alerts.push('<div class="alert">Appareil verrouillé : les fichiers de ventes ne peuvent pas être lus. <button class="btn sm" data-a="go" data-v="parametres">Déverrouiller</button></div>');
+  if (FA.err) alerts.push('<div class="alert err">' + FA.err + '</div>');
+  if (st.err) alerts.push('<div class="alert err">Suivi des factures : ' + st.err + ' <button class="btn sm" data-fa="retry">Réessayer</button></div>');
+  var main = alerts.length ? '<div class="alerts">' + alerts.join('') + '</div>' : '';
+  if (FA.loading && !FA.files) { el.innerHTML = band + '<main>' + main + '<section><p class="empty">Lecture des fichiers de ventes de la Caisse…</p></section></main>' + vToast(); return; }
+  var ofYear = all.filter(function (x) { return x.day.slice(0, 4) === FA.year; }), stands = {};
+  ofYear.forEach(function (x) { stands[x.pvId] = x.pvNom; });
+  var list = faFiltered(all), np = 0, nEt = 0;
+  list.forEach(function (x) { np += faStatus(x.v, x.day).np; if (!fsGet(x.v.id, x.day).etablie) nEt++; });
+  function chips(key, opts) { return opts.map(function (o) { return '<button class="chip' + (f[key] === o[0] ? ' on' : '') + '" data-fa="f" data-k="' + key + '" data-v="' + esc(o[0]) + '">' + esc(o[1]) + '</button>'; }).join(''); }
+  var sk = Object.keys(stands).sort(function (a, b) { return String(a).localeCompare(String(b), undefined, { numeric: true }); });
+  var h = '<section><div class="row-between"><h3>Factures demandées ' + esc(FA.year) + '</h3><div class="cbtns"><button class="btn" data-fa="csv"' + (list.length ? '' : ' disabled') + '>Exporter pour Excel</button></div></div>' +
+    '<div class="fagrp"><span class="fl">Période</span><div class="fadates"><input type="date" data-fa-d="from" value="' + esc(f.from) + '" aria-label="Du"><span>au</span><input type="date" data-fa-d="to" value="' + esc(f.to) + '" aria-label="Au">' + (f.from || f.to ? '<button class="btn sm" data-fa="nodates">Toute la saison</button>' : '') + '</div></div>' +
+    (sk.length > 1 ? '<div class="fagrp"><span class="fl">Stand</span><div class="rsel">' + chips('stand', [['all', 'Tous']].concat(sk.map(function (k) { return [k, stands[k]]; }))) + '</div></div>' : '') +
+    '<div class="fagrp"><span class="fl">Paiement</span><div class="rsel">' + chips('pay', [['all', 'Toutes'], ['np', 'Non payées'], ['ok', 'Payées']]) + '</div></div>' +
+    '<div class="fagrp"><span class="fl">Facture</span><div class="rsel">' + chips('est', [['all', 'Toutes'], ['non', 'Pas encore établies'], ['oui', 'Établies']]) + '</div></div>' +
+    '<p class="num fasum"><strong>' + list.length + '</strong> facture' + (list.length > 1 ? 's' : '') + ' · <strong>' + nEt + '</strong> à établir · non payé <strong>' + money(np) + '</strong></p>';
+  if (!list.length) h += '<p class="empty">' + (ofYear.length ? 'Aucune facture ne correspond aux filtres.' : 'Aucune facture demandée en ' + esc(FA.year) + ' dans les fichiers de la Caisse.') + '</p>';
+  h += list.map(vFaCard).join('');
+  el.innerHTML = band + '<main>' + main + h + '</section></main>' + vToast();
+}
+function vFaCard(x) {
+  var v = x.v, f = v.facture || {}, st = faStatus(v, x.day), sv = fsGet(v.id, x.day), id = esc(v.id);
+  return '<div class="facard st-' + st.k + '"><div class="row-between"><span><strong>' + esc(shortDate(x.day)) + ' ' + esc(v.horodatage.slice(11, 16)) + '</strong> · ' + esc(x.pvNom) + ' · vente n° ' + esc(hsNum(v.id)) + '</span><span class="fastat st-' + st.k + '">' + esc(st.t) + '</span></div>' +
+    '<div class="fainfo"><div><strong>' + esc(f.societe || '(société non indiquée)') + '</strong>' + (f.adresse ? '<br>' + esc(f.adresse) : '') + '</div><div>' + (f.tva ? 'TVA ' + esc(f.tva) : '<span class="faint">TVA non indiquée</span>') + (f.email ? '<br><a href="mailto:' + esc(f.email) + '">' + esc(f.email) + '</a>' : '') + '</div></div>' +
+    '<p class="coart">' + faLines(v).map(esc).join(' · ') + '</p>' +
+    '<p class="num"><strong>' + money(+v.total || 0) + '</strong>' + (f.horodatage ? ' <span class="faint">· données encodées le ' + esc(hsDm(f.horodatage)) + ' à ' + esc(String(f.horodatage).slice(11, 16)) + (f.modifieeLe ? ', corrigées le ' + esc(hsDm(f.modifieeLe)) + ' à ' + esc(String(f.modifieeLe).slice(11, 16)) : '') + '</span>' : '') + '</p>' +
+    '<div class="fasuivi"><label class="chk"><input type="checkbox" data-fa-c="etablie" data-id="' + id + '" data-day="' + esc(x.day) + '"' + (sv.etablie ? ' checked' : '') + '> Facture établie</label>' +
+    (sv.etablie ? '<input type="text" class="fanum" placeholder="N° de facture (facultatif)" data-fa-n="1" data-id="' + id + '" data-day="' + esc(x.day) + '" value="' + esc(sv.numero || '') + '" autocomplete="off" aria-label="N° de facture">' : '') +
+    (vNonPaye(v) > 0 ? '<label class="chk"><input type="checkbox" data-fa-c="virement" data-id="' + id + '" data-day="' + esc(x.day) + '"' + (sv.virement ? ' checked' : '') + '> Payée par virement</label>' : '') +
+    '<button class="btn sm" data-fa="copy" data-id="' + id + '">Copier</button></div></div>';
+}
+function faCsv() {
+  var rows = [['Date', 'Heure', 'Stand', 'N° vente', 'ID vente', 'Société', 'Adresse', 'TVA', 'E-mail', 'Articles', 'Total (€)', 'Payée au stand', 'Reste dû (€)', 'Statut', 'Facture établie', 'N° de facture', 'Payée par virement', 'Encodée le', 'Corrigée le']];
+  faFiltered(faAll()).forEach(function (x) {
+    var v = x.v, f = v.facture || {}, st = faStatus(v, x.day), sv = fsGet(v.id, x.day);
+    rows.push([x.day, v.horodatage.slice(11, 16), x.pvNom, hsNum(v.id), v.id, f.societe || '', f.adresse || '', f.tva || '', f.email || '', faLines(v).join(', '), +v.total || 0, f.payee === false ? 'non' : 'oui', vNonPaye(v), st.t.replace(/ /g, ' '), sv.etablie ? 'oui' : '', sv.numero || '', sv.virement ? 'oui' : '', f.horodatage || '', f.modifieeLe || '']);
+  });
+  download('factures-sapins_' + FA.year + (FA.f.from || FA.f.to ? '_' + (FA.f.from || 'debut') + '_' + (FA.f.to || 'fin') : '') + '.csv', rows); toast('Fichier pour Excel téléchargé');
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-fa]'); if (!b || b.disabled) return;
+  var a = b.getAttribute('data-fa');
+  if (a === 'year') { FA.year = b.getAttribute('data-v'); FA.f.stand = 'all'; render(); }
+  else if (a === 'reload') { FA.files === null ? faLoad() : (FA.loading || faLoad()); }
+  else if (a === 'retry') fsSave(FA.year);
+  else if (a === 'f') { FA.f[b.getAttribute('data-k')] = b.getAttribute('data-v'); render(); }
+  else if (a === 'nodates') { FA.f.from = ''; FA.f.to = ''; render(); }
+  else if (a === 'csv') faCsv();
+  else if (a === 'copy') { var x = faAll().filter(function (y) { return y.v.id === b.getAttribute('data-id'); })[0]; if (x) faCopy(faCopyText(x)); }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t.getAttribute) return;
+  if (t.hasAttribute('data-fa-d')) { FA.f[t.getAttribute('data-fa-d')] = t.value; render(); }
+  else if (t.hasAttribute('data-fa-c')) {
+    var k = t.getAttribute('data-fa-c'), ch = {}; ch[k] = t.checked; ch[k + 'Le'] = t.checked ? new Date().toISOString() : null;
+    fsOp(t.getAttribute('data-id'), t.getAttribute('data-day'), ch); toast(k === 'etablie' ? (t.checked ? 'Facture marquée établie' : 'Facture remise « à établir »') : (t.checked ? 'Marquée payée par virement' : 'Virement retiré'));
+  }
+  else if (t.hasAttribute('data-fa-n')) { var cur = fsGet(t.getAttribute('data-id'), t.getAttribute('data-day')); if ((cur.numero || '') !== t.value.trim()) { fsOp(t.getAttribute('data-id'), t.getAttribute('data-day'), { numero: t.value.trim() }); toast('N° de facture enregistré'); } }
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.hasAttribute && e.target.hasAttribute('data-fa-n')) e.target.blur(); });
+
+/* Bilan des ventes : paiements par stand et par jour (cash, Bancontact, à facturer) */
+function vPaiements(S) {
+  if (F.caisse !== 'sapin' || !(S.nFact || S.np || S.vir)) return '';
+  var rows = Object.keys(S.pay).map(function (k) { return S.pay[k]; }).sort(function (a, b) { return a.day < b.day ? 1 : a.day > b.day ? -1 : a.bar.localeCompare(b.bar); });
+  var vir = S.vir > 0;
+  function tr(r, cls, lab) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + lab + '</td><td class="r num">' + money(r.cash) + '</td><td class="r num">' + money(r.bc) + '</td><td class="r num">' + (r.np ? '<strong class="bad">' + money(r.np) + '</strong>' : money(0)) + '</td>' + (vir ? '<td class="r num">' + money(r.vir) + '</td>' : '') + '<td class="r num"><strong>' + money(r.total) + '</strong></td><td class="r num">' + (r.nFact || '—') + '</td></tr>'; }
+  return '<section><h3>Paiements par stand et par jour</h3><p class="lead">Une vente « à facturer » compte dans le total du jour de la vente, mais ni en cash ni en Bancontact tant qu’elle n’est pas payée. Payée plus tard au stand, son paiement est repris ici au jour de la vente (la caisse du jour du paiement le compte dans ses ventes cash).</p>' +
+    '<div class="scroll"><table class="stab bil"><thead><tr><th>Jour</th><th class="r">Cash</th><th class="r">Bancontact</th><th class="r">À facturer (non payé)</th>' + (vir ? '<th class="r">Virement</th>' : '') + '<th class="r">Total</th><th class="r">Factures</th></tr></thead><tbody>' +
+    rows.map(function (r) { return tr(r, '', esc(shortDate(r.day)) + '<span class="sub">' + esc(r.bar) + '</span>'); }).join('') + (rows.length > 1 ? tr({ cash: S.cash, bc: S.bc, np: S.np, vir: S.vir, total: S.total, nFact: S.nFact }, 'tot', 'Total') : '') + '</tbody></table></div></section>';
+}
+
+/* ---------- Gestion d’événement › Livraisons : toutes les livraisons de la saison, avec leur statut ---------- */
+var LV = { year: null, f: { stand: 'all', st: 'all', from: '', to: '', q: '' } };
+function lvAll() {
+  var best = {};
+  (FA.files || []).forEach(function (f) { var s = FA.data[f.sha]; if (!s || !s.ok) return; if (!best[s.key] || s.maj > best[s.key].maj) best[s.key] = s; });
+  var seen = {}, out = [];
+  Object.keys(best).forEach(function (k) { best[k].ventes.forEach(function (x) { if (!(x.v.lignes || []).some(isLivLine) || seen[x.v.id]) return; seen[x.v.id] = 1; out.push({ v: x.v, day: x.v.horodatage.slice(0, 10), pvId: x.pv.id || '?', pvNom: x.pv.nom || x.pv.id || '?' }); }); });
+  return out.sort(function (a, b) { return a.v.horodatage < b.v.horodatage ? -1 : a.v.horodatage > b.v.horodatage ? 1 : 0; });
+}
+function lvArts(v) { return (v.lignes || []).filter(function (l) { return !isLivLine(l); }).map(function (l) { return (+l.quantite || 0) + ' × ' + (l.libelle || ''); }); }
+function lvPay(x) { var np = vNonPaye(x.v); if (!np) return { k: 'ok', t: 'Payée' }; if (x.v.facture && fsGet(x.v.id, x.day).virement) return { k: 'ok', t: 'Payée (virement)' }; return { k: 'np', t: 'Reste à payer ' + money(np) }; }
+function lvFiltered(all) {
+  var f = LV.f, q = (f.q || '').trim().toLowerCase();
+  return all.filter(function (x) {
+    if (x.day.slice(0, 4) !== LV.year) return false;
+    if (f.from && x.day < f.from) return false; if (f.to && x.day > f.to) return false;
+    if (f.stand !== 'all' && x.pvId !== f.stand) return false;
+    var done = !!LSUIVI.get(x.v.id, x.day).livree;
+    if (f.st === 'todo' && done) return false; if (f.st === 'done' && !done) return false;
+    if (q) { var c = x.v.livraison || {}, hay = [c.nom, c.adresse, c.telephone, hsNum(x.v.id), x.pvNom].join(' ').toLowerCase(); if (hay.indexOf(q) < 0) return false; }
+    return true;
+  });
+}
+function renderSapLivraisons() {
+  var el = document.getElementById('mod');
+  if (FA.files === null && !FA.loading && getToken()) { faLoad(); return; }
+  var all = lvAll(), years = {};
+  all.forEach(function (x) { years[x.day.slice(0, 4)] = 1; });
+  var yl = Object.keys(years).sort().reverse(); if (!LV.year) LV.year = yl[0] || String(new Date().getFullYear()); if (yl.indexOf(LV.year) < 0) yl.unshift(LV.year);
+  var st = LSUIVI.ensure(LV.year); fsEnsure(LV.year);
+  var f = LV.f;
+  var stat = st.saving ? '<span class="sv">Enregistrement…</span>' : st.ops.length ? '<span class="sv warn">' + st.ops.length + ' modification' + (st.ops.length > 1 ? 's' : '') + ' pas encore sur le serveur</span>' : '';
+  var band = '<div class="band"><div class="band-top"><h1>Livraisons</h1></div>' +
+    '<div class="rsel ssbar" role="group" aria-label="Saison">' + yl.map(function (y) { return '<button class="rchip' + (y === LV.year ? ' on' : '') + '" data-lv="year" data-v="' + esc(y) + '">' + esc(y) + '</button>'; }).join('') +
+    '<button class="rchip" data-lv="reload"' + (FA.loading ? ' disabled' : '') + '>' + (FA.loading ? 'Lecture des ventes…' : 'Relire les ventes') + '</button></div>' +
+    '<p class="soon-lead">' + (FA.at ? 'Ventes lues à ' + String(FA.at.getHours()).padStart(2, '0') + ':' + String(FA.at.getMinutes()).padStart(2, '0') + '. ' : '') + stat + '</p></div>';
+  var alerts = [];
+  if (!getToken()) alerts.push('<div class="alert">Appareil verrouillé : les fichiers de ventes ne peuvent pas être lus. <button class="btn sm" data-a="go" data-v="parametres">Déverrouiller</button></div>');
+  if (FA.err) alerts.push('<div class="alert err">' + FA.err + '</div>');
+  if (st.err) alerts.push('<div class="alert err">Suivi des livraisons : ' + st.err + ' <button class="btn sm" data-lv="retry">Réessayer</button></div>');
+  var main = alerts.length ? '<div class="alerts">' + alerts.join('') + '</div>' : '';
+  if (FA.loading && !FA.files) { el.innerHTML = band + '<main>' + main + '<section><p class="empty">Lecture des fichiers de ventes de la Caisse…</p></section></main>' + vToast(); return; }
+  var ofYear = all.filter(function (x) { return x.day.slice(0, 4) === LV.year; }), stands = {}, cnt = { all: 0, todo: 0, done: 0 };
+  ofYear.forEach(function (x) { stands[x.pvId] = x.pvNom; });
+  var f0 = LV.f.st; LV.f.st = 'all'; lvFiltered(all).forEach(function (x) { cnt.all++; LSUIVI.get(x.v.id, x.day).livree ? cnt.done++ : cnt.todo++; }); LV.f.st = f0;
+  var list = lvFiltered(all);
+  function chips(key, opts) { return opts.map(function (o) { return '<button class="chip' + (f[key] === o[0] ? ' on' : '') + '" data-lv="f" data-k="' + key + '" data-v="' + esc(o[0]) + '">' + o[1] + '</button>'; }).join(''); }
+  var sk = Object.keys(stands).sort(function (a, b) { return String(a).localeCompare(String(b), undefined, { numeric: true }); });
+  var h = '<section class="livlist"><div class="row-between"><h3>Livraisons ' + esc(LV.year) + '</h3><div class="cbtns noprint"><button class="btn" data-lv="print"' + (list.length ? '' : ' disabled') + '>Imprimer la liste</button><button class="btn" data-lv="csv"' + (list.length ? '' : ' disabled') + '>Exporter pour le livreur</button></div></div>' +
+    '<div class="noprint"><div class="fagrp"><span class="fl">Période</span><div class="fadates"><input type="date" data-lv-d="from" value="' + esc(f.from) + '" aria-label="Du"><span>au</span><input type="date" data-lv-d="to" value="' + esc(f.to) + '" aria-label="Au">' + (f.from || f.to ? '<button class="btn sm" data-lv="nodates">Toute la saison</button>' : '') + '</div></div>' +
+    (sk.length > 1 ? '<div class="fagrp"><span class="fl">Stand</span><div class="rsel">' + chips('stand', [['all', 'Tous']].concat(sk.map(function (k) { return [k, esc(stands[k])]; }))) + '</div></div>' : '') +
+    '<div class="fagrp"><span class="fl">Statut</span><div class="rsel">' + chips('st', [['all', 'Toutes <span class="num">(' + cnt.all + ')</span>'], ['todo', 'À livrer <span class="num">(' + cnt.todo + ')</span>'], ['done', 'Livrées <span class="num">(' + cnt.done + ')</span>']]) + '</div></div>' +
+    '<input type="text" class="cosearch" data-lv-q placeholder="Rechercher : nom, adresse, téléphone, n° de vente…" value="' + esc(f.q) + '" autocomplete="off"></div>';
+  if (!list.length) h += '<p class="empty">' + (ofYear.length ? 'Aucune livraison ne correspond aux filtres.' : 'Aucune livraison en ' + esc(LV.year) + ' dans les fichiers de la Caisse.') + '</p>';
+  var last = null;
+  list.forEach(function (x) { if (x.day !== last) { var n = list.filter(function (y) { return y.day === x.day; }).length; h += '<h4 class="codate cap">' + esc(longDate(x.day)) + ' ' + esc(x.day.slice(0, 4)) + ' <span class="faint num">· ' + n + ' livraison' + (n > 1 ? 's' : '') + '</span></h4>'; last = x.day; } h += vLvCard(x); });
+  el.innerHTML = band + '<main>' + main + h + '</section></main>' + vToast();
+}
+function vLvCard(x) {
+  var v = x.v, c = v.livraison && typeof v.livraison === 'object' ? v.livraison : null, sv = LSUIVI.get(v.id, x.day), done = !!sv.livree, pay = lvPay(x), id = esc(v.id), dd = esc(x.day);
+  return '<div class="lvcard' + (done ? ' done' : '') + '"><div class="row-between"><span><strong>' + esc(v.horodatage.slice(11, 16)) + '</strong> · ' + esc(x.pvNom) + ' · vente n° ' + esc(hsNum(v.id)) + '</span>' +
+    '<span class="lvstat' + (done ? ' done' : '') + '">' + (done ? 'Livrée' + (sv.livreeLe ? ' le ' + esc(hsDm(sv.livreeLe)) : '') : 'À livrer') + '</span></div>' +
+    '<p>' + (c ? '<strong>' + esc(c.nom || '(nom non indiqué)') + '</strong>' + (c.adresse ? ' · ' + esc(c.adresse) : '') + (c.telephone ? ' · <a href="tel:' + esc(String(c.telephone).replace(/\s/g, '')) + '">' + esc(c.telephone) + '</a>' : '') : '<span class="faint">Coordonnées non enregistrées (ancienne version de la caisse)</span>') + '</p>' +
+    '<p class="coart">' + (lvArts(v).map(esc).join(' · ') || '—') + '</p>' +
+    '<p class="num"><span class="' + (pay.k === 'np' ? 'bad' : 'good') + '">' + esc(pay.t) + '</span>' + (v.livraisonAjoutee ? ' · <span class="faint">livraison ajoutée le ' + esc(hsDm(v.livraisonAjoutee.horodatage)) + '</span>' : '') + (v.facture ? ' · <span class="faint">facture ' + esc(v.facture.societe || '') + '</span>' : '') + '</p>' +
+    '<div class="fasuivi"><label class="chk"><input type="checkbox" data-lv-c="1" data-id="' + id + '" data-day="' + dd + '"' + (done ? ' checked' : '') + '> Livrée</label>' +
+    '<input type="text" class="lvnote" placeholder="Remarque (facultatif)" data-lv-n="1" data-id="' + id + '" data-day="' + dd + '" value="' + esc(sv.note || '') + '" maxlength="200" autocomplete="off" aria-label="Remarque"></div></div>';
+}
+function lvCsv() {
+  var rows = [['Jour', 'Heure', 'Stand', 'N° vente', 'Nom', 'Adresse', 'Téléphone', 'Articles à livrer', 'Paiement', 'Reste à payer (€)', 'Livraison ajoutée après coup', 'Statut', 'Livrée le', 'Remarque']];
+  lvFiltered(lvAll()).forEach(function (x) { var v = x.v, c = v.livraison || {}, sv = LSUIVI.get(v.id, x.day), pay = lvPay(x);
+    rows.push([x.day, v.horodatage.slice(11, 16), x.pvNom, hsNum(v.id), c.nom || '', c.adresse || '', c.telephone || '', lvArts(v).join(', '), pay.t.replace(/ /g, ' '), pay.k === 'np' ? vNonPaye(v) : '', v.livraisonAjoutee ? 'oui' : '', sv.livree ? 'Livrée' : 'À livrer', sv.livreeLe ? String(sv.livreeLe).slice(0, 10) : '', sv.note || '']); });
+  download('livraisons-sapins_' + LV.year + (LV.f.from || LV.f.to ? '_' + (LV.f.from || 'debut') + '_' + (LV.f.to || 'fin') : '') + '.csv', rows); toast('Liste des livraisons téléchargée');
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-lv]'); if (!b || b.disabled) return;
+  var a = b.getAttribute('data-lv');
+  if (a === 'year') { LV.year = b.getAttribute('data-v'); LV.f.stand = 'all'; render(); }
+  else if (a === 'reload') { if (!FA.loading) faLoad(); }
+  else if (a === 'retry') LSUIVI.save(LV.year);
+  else if (a === 'f') { LV.f[b.getAttribute('data-k')] = b.getAttribute('data-v'); render(); }
+  else if (a === 'nodates') { LV.f.from = ''; LV.f.to = ''; render(); }
+  else if (a === 'csv') lvCsv();
+  else if (a === 'print') { document.body.classList.add('printliv'); window.print(); setTimeout(function () { document.body.classList.remove('printliv'); }, 500); }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t.getAttribute) return;
+  if (t.hasAttribute('data-lv-d')) { LV.f[t.getAttribute('data-lv-d')] = t.value; render(); }
+  else if (t.hasAttribute('data-lv-c')) { LSUIVI.op(t.getAttribute('data-id'), t.getAttribute('data-day'), { livree: t.checked, livreeLe: t.checked ? new Date().toISOString() : null }); toast(t.checked ? 'Livraison marquée livrée' : 'Livraison remise « à livrer »'); }
+  else if (t.hasAttribute('data-lv-n')) { var cur = LSUIVI.get(t.getAttribute('data-id'), t.getAttribute('data-day')); if ((cur.note || '') !== t.value.trim()) { LSUIVI.op(t.getAttribute('data-id'), t.getAttribute('data-day'), { note: t.value.trim() }); toast('Remarque enregistrée'); } }
+});
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!t.hasAttribute || !t.hasAttribute('data-lv-q')) return;
+  LV.f.q = t.value; var pos = t.selectionStart; render(); var i = document.querySelector('[data-lv-q]'); if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (er) {} }
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.hasAttribute && e.target.hasAttribute('data-lv-n')) e.target.blur(); });
+
 function sapHomeStatus() {
   var st = BIL_CUR === 'sapin' ? { FILES: FILES } : BIL_ST.sapin;
   var n = st ? st.FILES.filter(function (f) { return f.status === 'ok'; }).length : 0;
@@ -3550,7 +4166,7 @@ function bghOpen() {
   B.loading = true; render();
   ghFetch('/repos/' + SALES_REPO + '/git/trees/HEAD?recursive=1', {}, token).then(function (t) {
     BGH.cxFiles = (t.tree || []).filter(function (x) { return x.type === 'blob' && /^sapin\/caisse\/.+\.json$/i.test(x.path); }).map(function (x) { return { path: x.path, sha: x.sha }; });
-    return (t.tree || []).filter(function (x) { return x.type === 'blob' && /\.json$/i.test(x.path) && !/^(sapin\/)?(stock|caisse)\//.test(x.path); }).map(function (x) { var p = bghParse(x.path); p.sha = x.sha; return p; });
+    return (t.tree || []).filter(function (x) { return x.type === 'blob' && /\.json$/i.test(x.path) && !/^(sapin\/)?(stock|caisse|commandes|factures|livraisons)\//.test(x.path); }).map(function (x) { var p = bghParse(x.path); p.sha = x.sha; return p; });
   }, function (e) { if (e.status === 409) return []; throw e; }).then(function (l) {
     B.loading = false; B.files = l.sort(function (a, b) { return (a.date || '') < (b.date || '') ? 1 : (a.date || '') > (b.date || '') ? -1 : a.label.localeCompare(b.label); }); render();
   }, function (e) { B.loading = false; B.err = bghErr(e); B.files = []; render(); });
@@ -3885,7 +4501,8 @@ function demoSeed() {
   var CATS = [
     { id: 'boissons', nom: 'Boissons', produits: [['eau', 'Eau', 2], ['soft', 'Soft', 2.5], ['biere', 'Bière', 3], ['vin', 'Verre de vin', 4]] },
     { id: 'snacks', nom: 'Snacks', produits: [['chips', 'Chips', 2], ['hotdog', 'Hot-dog', 4.5], ['gaufre', 'Gaufre', 3.5]] },
-    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] }
+    { id: 'goodies', nom: 'Goodies', produits: [['tshirt', 'T-shirt', 15], ['casquette', 'Casquette', 12], ['gobelet', 'Gobelet réutilisable', 1]] },
+    { id: 'services', nom: 'Services', produits: [['livraison', 'Livraison', 10]] }
   ];
   var cat = { format: 'agri-garden-caisse/catalogue', formatVersion: 1, version: 1, date: demoIso(start),
     pointsDeVente: PDV.map(function (p) { return { id: p.id, nom: p.nom, actif: true }; }),
@@ -3893,7 +4510,7 @@ function demoSeed() {
       produits: k.produits.map(function (p, j) { return { id: p[0], libelle: p[1], prix: p[2], ordre: j + 1, actif: true }; }) }; }) };
   var db = {};
   demoPut(db, DEMO_CAT_REPO, 'catalogue.json', JSON.stringify(cat, null, 1) + '\n');
-  var PROD = []; CATS.forEach(function (k) { k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
+  var PROD = [], LIV = { id: 'livraison', libelle: 'Livraison', prix: 10, cat: 'Services' }; CATS.forEach(function (k) { if (k.id !== 'services') k.produits.forEach(function (p) { PROD.push({ id: p[0], libelle: p[1], prix: p[2], cat: k.nom }); }); });
   /* Stock : livraison au début, un transfert entre stands */
   var arts = {}; PROD.forEach(function (p) { arts[p.id] = { libelle: p.libelle, categorie: p.cat }; });
   var liv1 = {}, liv2 = {}, tr = {};
@@ -3921,21 +4538,29 @@ function demoSeed() {
           var q = p.prix >= 10 ? 1 : 1 + Math.floor(rnd() * 3);
           lignes.push({ produitId: p.id, categorie: p.cat, libelle: p.libelle, articleLibre: false, prixUnitaire: p.prix, quantite: q, remise: null, total: r2(p.prix * q) });
         }
+        var CLI = [['Dupont Marie', 'Rue des Lilas 12, 1000 Bruxelles', '0471 23 45 67'], ['Martin Paul', 'Avenue du Parc 3, 5000 Namur', '0485 11 22 33'], ['Leroy Sophie', 'Chaussée de Wavre 140, 1050 Ixelles', '0496 98 76 54']];
+        var withLiv = pi === 0 && (i === 4 || i === 15 || i === 27), cli = CLI[(i + di) % 3];
+        if (withLiv) lignes.push({ produitId: LIV.id, categorie: LIV.cat, libelle: LIV.libelle, articleLibre: false, prixUnitaire: LIV.prix, quantite: 1, remise: null, total: LIV.prix });
         var tot = r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remT = null;
         if (i % 17 === 5) { remT = { type: 'pourcentage', valeur: 10 }; tot = r2(Math.round(tot * 0.9 * 20) / 20); }
         var mode = rnd() < 0.55 ? 'cash' : 'bancontact', pay = { mode: mode, cash: mode === 'cash' ? tot : 0, bancontact: mode === 'cash' ? 0 : tot };
         var id = pl.id + '-' + day.replace(/-/g, '') + '-' + String(i + 1).padStart(4, '0');
+        var fac = (i === 8 || i === 20) && pi === 0 ? { societe: i === 8 ? 'Jardin SA' : 'Événements Plus SRL', adresse: i === 8 ? 'Rue Haute 1, 5000 Namur' : 'Boulevard Central 20, 1000 Bruxelles', tva: i === 8 ? 'BE 0123.456.789' : 'BE 0987.654.321', email: i === 8 ? 'compta@jardin.be' : 'factures@evenements-plus.be', payee: i === 8, horodatage: hor } : null;
+        if (fac && !fac.payee) pay = { mode: 'a-facturer', cash: 0, bancontact: 0 };
         var v = { id: id, horodatage: hor, pointDeVente: { id: pl.id, nom: pl.nom }, lignes: lignes, sousTotal: r2(lignes.reduce(function (a, l) { return a + l.total; }, 0)), remiseTicket: remT, total: tot, paiement: pay };
+        if (withLiv) v.livraison = { nom: cli[0], adresse: cli[1], telephone: cli[2] };
+        if (fac) v.facture = fac;
         if (i === 9 && di === 0) v.annulation = { horodatage: hor.slice(0, 14) + '59:00', motif: 'Erreur de saisie' };
         else { cash += pay.cash; banc += pay.bancontact; }
-        if (mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
+        if (pay.mode === 'cash') tir.push({ horodatage: hor, motif: 'Vente', venteId: id });
         ventes.push(v);
       }
       tir.push({ horodatage: day + 'T14:05:00', motif: 'Faire de la monnaie', venteId: null });
       var valid = ventes.filter(function (v) { return !v.annulation; });
+      var nonPaye = r2(valid.filter(function (v) { return v.paiement.mode === 'a-facturer'; }).reduce(function (a, v) { return a + v.total; }, 0));
       var file = { format: 'agri-garden-caisse/ventes', formatVersion: 1, date: day, pointDeVente: { id: pl.id, nom: pl.nom }, catalogueVersion: 1,
         miseAJour: day + 'T' + String(last).padStart(2, '0') + ':30:00', nombreVentes: valid.length, nombreAnnulations: ventes.length - valid.length,
-        totalJournee: r2(cash + banc), totalCash: r2(cash), totalBancontact: r2(banc), ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
+        totalJournee: r2(cash + banc + nonPaye), totalCash: r2(cash), totalBancontact: r2(banc), totalNonPaye: nonPaye, nombreAFacturer: valid.filter(function (v) { return v.facture; }).length, ouverturesTiroir: tir, nombreOuverturesSansVente: 1, caisse: null, ventes: ventes };
       demoPut(db, DEMO_SALES_REPO, 'sapin/' + day + '_' + pl.id + '_' + pl.nom.toLowerCase().replace(/\s+/g, '-') + '_demo.json', JSON.stringify(file, null, 1) + '\n');
       /* fichier de caisse : fond, retrait, et comptage la veille */
       var fond = 150, ent = {
@@ -3950,6 +4575,21 @@ function demoSeed() {
       demoPut(db, DEMO_SALES_REPO, 'sapin/caisse/' + day + '_' + pl.id + '.json', JSON.stringify(cx, null, 1) + '\n');
     });
   });
+  /* Commandes de clients (année en cours) */
+  var yr = String(today.getFullYear()), cmd = { format: 'agri-garden-caisse/commandes', formatVersion: 1, annee: yr, majLe: days[1] + 'T18:00:00', commandes: {} };
+  function cmdAdd(n, nom, tel, mode, lieu, dj, lignes, paye, st, note) {
+    var d = new Date(today); d.setDate(today.getDate() + dj); var dt = demoIso(d), id = 'c' + n;
+    var L = lignes.map(function (x) { var p = PROD.filter(function (q) { return q.id === x[0]; })[0]; return { produitId: p.id, libelle: p.libelle, prixUnitaire: p.prix, quantite: x[1], total: r2(p.prix * x[1]) }; });
+    var tot = r2(L.reduce(function (a, l) { return a + l.total; }, 0));
+    cmd.commandes[id] = { id: id, numero: n, creeLe: days[0] + 'T10:0' + n + ':00', source: 'admin', client: { nom: nom, tel: tel, email: '' }, mode: mode,
+      livraison: mode === 'livraison' ? { adresse: lieu, date: dt, creneau: '14h-16h' } : null, retrait: mode === 'retrait' ? { stand: { id: lieu, nom: lieu === 'pdv1' ? PDV[0].nom : PDV[1].nom }, date: dt } : null,
+      lignes: L, total: tot, paye: { montant: paye, mode: paye > 0 ? 'bancontact' : '' }, statut: st, note: note || '', historique: [{ statut: st, le: days[0] + 'T10:00:00' }] };
+  }
+  cmdAdd(1, 'Lambert Julie', '0472 10 20 30', 'livraison', 'Rue de la Gare 8, 1300 Wavre', 1, [['tshirt', 4], ['casquette', 2]], 0, 'a-preparer', 'Sonner deux fois');
+  cmdAdd(2, 'Club de foot Les Aigles', '0478 55 66 77', 'retrait', 'pdv1', 0, [['biere', 48], ['soft', 24], ['chips', 30]], 100, 'prete');
+  cmdAdd(3, 'Renard Thomas', '0499 01 02 03', 'livraison', 'Place communale 2, 5190 Spy', 2, [['gobelet', 50], ['vin', 12]], 98, 'a-preparer');
+  cmdAdd(4, 'Mercier Anne', '0470 44 33 22', 'retrait', 'pdv2', -1, [['gaufre', 10]], 35, 'livree');
+  demoPut(db, DEMO_SALES_REPO, 'sapin/commandes/' + yr + '.json', JSON.stringify(cmd, null, 1) + '\n');
   /* Soirée à tickets : catalogue et liste de préventes pour ce soir */
   var sc = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); sc.date = demoIso(today);
   demoPut(db, 'demo/soiree', 'catalogue.json', JSON.stringify(sc, null, 1) + '\n');
@@ -3978,9 +4618,14 @@ var FEATURES = [
     { id: 'articleLibre', nom: 'Article libre', desc: 'Libellé et prix tapés à la main sur la caisse.' },
     { id: 'raccourci', nom: 'Raccourci vers un article', desc: 'Bouton à côté des catégories ; « Article libre » passe alors dans le menu ⋮.', off: true },
     { id: 'remiseLigne', nom: 'Remise sur une ligne', desc: 'En % ou en € sur un article du panier.' },
-    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'En % ou en € sur toute la vente.' },
-    { id: 'livraison', nom: 'Livraison', desc: 'Article « Livraison » du catalogue, ajouté à la vente ou après coup depuis l’Historique.', off: true },
+    { id: 'remiseTicket', nom: 'Remise sur le ticket', desc: 'Bouton « Remise ticket » dans le panier.' },
+    { id: 'codePatron', nom: 'Remise ticket avec code patron', desc: 'Menu ⋮ › Remise ticket, protégée par un code à 4 chiffres (1234 dans la démo).', off: true },
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
+  { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
+    { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
+    { id: 'livraison', nom: 'Livraison à domicile', desc: 'Bouton Livraison sur la caisse avec nom, adresse et téléphone, ticket vendeur ; aussi après coup depuis l’Historique.' },
+    { id: 'gestionLivraisons', nom: 'Gestion des livraisons', desc: 'Liste des livraisons à faire, statut À livrer / Livrée, liste pour le livreur (Admin).', req: 'livraison' },
+    { id: 'facture', nom: 'Gestion des factures', desc: 'Bouton « À facturer » sur la caisse (payé ou non), encaissement plus tard ; onglet Factures de l’Admin (établie, payée par virement).' } ] },
   { id: 'paiement', nom: 'Paiement', items: [
     { id: 'bancontact', nom: 'Bancontact', desc: 'Sinon, paiement en cash uniquement.' },
     { id: 'mixte', nom: 'Paiement mixte', desc: 'Une partie en cash, le reste en Bancontact.', req: 'bancontact' } ] },
