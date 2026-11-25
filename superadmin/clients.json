@@ -1,0 +1,8 @@
+{
+ "format": "caisse/clients",
+ "formatVersion": 1,
+ "chiffre": "AES-GCM, clé tirée de la phrase de passe SuperAdmin",
+ "majLe": "2026-11-25T08:03:10.445Z",
+ "iv": "D/Q/3Nb3Pb+hoALG",
+ "data": "ISYI/ZVZZiN5WpYrGqgGHLDbKmTwbXDOImy0C99ykA7TwEay0CDT8ezJRD5oIhytihvTUHEWpHXioCsvYdpv+2yLQ+di2/ZqAjvfH+dBC6Aw302fG5Khq2KwH+u1VEW9RQa0cme6A1WSX4zndwFMIAWyjvrYi8pPqxgazsaSnWJibTDmfkFtiQN9DwZ4f4d5lbc2DzeCwtYShjzx760kQhoewXuo2w=="
+}
