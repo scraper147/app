@@ -45,6 +45,6 @@ Les dossiers d’amis **ne dépendent pas de la version** : une mise à jour ne 
 
 ## Admin › Paramètres
 
-Apparence (theme.json) · Fonctionnalités (config.json) · Sécurité (accès, clé, données de démonstration).
+Apparence de l’app et Apparence du ticket (theme.json) · Fonctionnalités (config.json) · Sécurité (code de remise, accès, clé, données de démonstration).
 
 Remise ticket sécurisée (option) : code 1234 par défaut, à changer dans Admin › Paramètres › Sécurité (empreinte publiée dans config.json).

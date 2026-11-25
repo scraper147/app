@@ -1,4 +1,4 @@
-/* caisse · admin · v5 — code commun à tous les amis */
+/* caisse · admin · v6 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -1240,7 +1240,7 @@ var SUBS = {
 };
 var SUB = { bar: 'catalogue', chloro: 'catalogue', sapin: 'catalogue' };
 /* Anciennes adresses (#bilan, #catalogue, #stock) : renvoyées vers le nouveau menu */
-SUBS.parametres = [{ id: 'apparence', nom: 'Apparence', render: function () { renderParametres(); } }, { id: 'fonctionnalites', nom: 'Fonctionnalités', render: function () { renderParametres(); } }, { id: 'securite', nom: 'Sécurité', render: function () { renderParametres(); } }];
+SUBS.parametres = [{ id: 'apparence', nom: 'Apparence de l’app', render: function () { renderParametres(); } }, { id: 'ticket', nom: 'Apparence du ticket', render: function () { renderParametres(); } }, { id: 'fonctionnalites', nom: 'Fonctionnalités', render: function () { renderParametres(); } }, { id: 'securite', nom: 'Sécurité', render: function () { renderParametres(); } }];
 SUB.parametres = 'apparence';
 SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }];
 (function () { var i = SUBS.sapin.map(function (x) { return x.id; }).indexOf('stock') + 1; SUBS.sapin.splice(i, 0, { id: 'stockevt', nom: 'Comptage du stock', render: function () { renderStock(); } }); })();
@@ -3343,7 +3343,7 @@ function renderParametres() {
   var P = SUB.parametres || 'apparence';
   var db = demoDb(), n = 0; Object.keys(db).forEach(function (r) { n += Object.keys(db[r]).length; });
   var used = 0; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(KP + '') === 0) used += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
-  document.getElementById('mod').innerHTML = '<div class="band"><div class="band-top"><h1>Paramètres</h1></div><p class="soon-lead">Version de démonstration.</p></div><main>' + (P === 'apparence' ? vApparence() : P === 'fonctionnalites' ? vFeatures() : vSecuriteHead() +
+  document.getElementById('mod').innerHTML = '<div class="band"><div class="band-top"><h1>Paramètres</h1></div><p class="soon-lead">Version de démonstration.</p></div><main>' + (P === 'apparence' ? vApparence('app') : P === 'ticket' ? vApparence('ticket') : P === 'fonctionnalites' ? vFeatures() : vSecuriteHead() +
     (CLIENT.donnees === 'github' ? vConnexion() : '<section><h3>Données de démonstration</h3><p class="lead">Tout est rangé dans ce navigateur (aucun compte, aucun serveur). L’app Caisse ouverte sur ce même appareil voit le catalogue publié ici, et ses ventes arrivent dans le Bilan, le Stock et l’Historique.</p>' +
     '<p class="hint">' + n + ' fichier' + (n > 1 ? 's' : '') + ' sur le serveur de démonstration · ' + Math.round(used / 1024) + ' Ko utilisés.</p>' +
     (PAR.demoAsk ? '<div class="alert">' + (PAR.demoAsk === 'seed' ? 'Remplacer toutes les données par l’exemple ?' : 'Effacer toutes les données de démonstration (catalogue, ventes, stock, caisse) ?') + '</div>' : '') +
@@ -3445,28 +3445,31 @@ function thStatus() {
   if (o.version) return '<span class="okt">Publié pour les caisses · version ' + o.version + (o.publieLe ? ' du ' + new Date(o.publieLe).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + '</span>';
   return '<span class="faint">Apparence par défaut (rien de publié)</span>';
 }
-function vApPreview() {
+function vApPreview(part) {
+  part = part || (SUB.parametres === 'ticket' ? 'ticket' : 'app');
   var t = themeGet(), tk = t.ticket, lines = [tk.activite].concat(tk.adresse, [tk.telephone, tk.email, tk.tva ? 'TVA ' + tk.tva : '', tk.site]).filter(Boolean);
-  return '<div class="apbar" style="border-color:' + t.couleur + '"><img src="' + themeLogo('text') + '" alt=""></div>' +
-    '<div class="apbtns"><span class="apb" style="background:' + t.couleur + '">Encaisser</span><span class="apb ghost" style="border-color:' + t.couleur + ';color:' + t.couleur + '">Boissons</span><span class="apb" style="background:' + t.accent + '">Accent</span></div>' +
-    '<div class="aptk"><img src="' + themeLogo('print') + '" alt="">' + lines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('') + '<div class="aptk-sep">…</div>' + (tk.merci ? '<div>' + esc(tk.merci) + '</div>' : '') + (tk.mention ? '<div class="faint">' + esc(tk.mention) + '</div>' : '') + '</div>';
+  if (part === 'app') return '<div class="apbar" style="border-color:' + t.couleur + '"><img src="' + themeLogo('text') + '" alt=""></div>' +
+    '<div class="apbtns"><span class="apb" style="background:' + t.couleur + '">Encaisser</span><span class="apb ghost" style="border-color:' + t.couleur + ';color:' + t.couleur + '">Boissons</span><span class="apb" style="background:' + t.accent + '">Accent</span></div>';
+  return '<div class="aptk"><img src="' + themeLogo('print') + '" alt="">' + lines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('') +
+    '<div class="aptk-sep">------------------------------</div><div class="aptk-row"><span>2 × Article</span><span>7,00</span></div><div class="aptk-row"><b>TOTAL</b><b>7,00 EUR</b></div><div class="aptk-sep">------------------------------</div>' +
+    (tk.merci ? '<div>' + esc(tk.merci) + '</div>' : '') + (tk.mention ? '<div class="faint">' + esc(tk.mention) + '</div>' : '') + '</div>';
 }
-function vApparence() {
+function vApparence(part) {
   var t = themeGet(), d = themeCopy().t || {}, tk = (d.ticket || {}), ad = tk.adresse || [];
   function fld(lab, path, val, ph, type) { return '<label class="fl">' + lab + '</label><input type="' + (type || 'text') + '" data-ap="' + path + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '">'; }
-  return '<section><h3>Apparence</h3><p class="lead">Nom du commerce, couleurs, logo et coordonnées du ticket. Publié dans <span class="mono">theme.json</span>, à côté du catalogue : l’Admin, la Caisse et la Caisse Soirée de ce commerce gardent le même design.</p>' +
-    '<p class="hint" id="apStatus">' + thStatus() + '</p>' +
-    '<div class="apgrid"><div class="apform">' +
-      fld('Nom du commerce', 'nom', d.nom, 'Caisse') +
-      '<div class="aprow"><div><label class="fl">Couleur principale</label><input type="color" data-ap="couleur" value="' + t.couleur + '"></div><div><label class="fl">Couleur d’accent</label><input type="color" data-ap="accent" value="' + t.accent + '"></div></div>' +
-      '<label class="fl">Logo</label><div class="aprow"><input type="file" id="apLogo" accept="image/*">' + (t.logo ? '<button class="btn sm danger" data-p="thLogoDel">Retirer le logo</button>' : '') + '</div><p class="hint">Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).</p>' +
-      '<h4 style="margin:14px 0 4px">Ticket</h4>' +
-      fld('Activité (sous le logo)', 'ticket.activite', tk.activite, 'Ex. Boulangerie, Food truck…') +
+  var form = part === 'ticket'
+    ? fld('Activité (sous le logo)', 'ticket.activite', tk.activite, 'Ex. Boulangerie, Food truck…') +
       fld('Adresse, ligne 1', 'ticket.adr1', ad[0], 'Rue…') + fld('Adresse, ligne 2', 'ticket.adr2', ad[1], 'Code postal et commune') +
       '<div class="aprow"><div>' + fld('Téléphone', 'ticket.telephone', tk.telephone) + '</div><div>' + fld('E-mail', 'ticket.email', tk.email) + '</div></div>' +
       '<div class="aprow"><div>' + fld('N° de TVA', 'ticket.tva', tk.tva, 'BE 0000.000.000') + '</div><div>' + fld('Site', 'ticket.site', tk.site) + '</div></div>' +
       fld('Message de fin', 'ticket.merci', tk.merci != null ? tk.merci : THEME_DEF.ticket.merci) + fld('Mention', 'ticket.mention', tk.mention != null ? tk.mention : THEME_DEF.ticket.mention) +
-    '</div><div class="apprev"><div class="fl">Aperçu</div><div id="apPrev">' + vApPreview() + '</div></div></div></section>';
+      '<p class="hint">Le logo du ticket est celui de l’app (Apparence de l’app), imprimé en noir et blanc.</p>'
+    : fld('Nom du commerce', 'nom', d.nom, 'Caisse') +
+      '<div class="aprow"><div><label class="fl">Couleur principale</label><input type="color" data-ap="couleur" value="' + t.couleur + '"></div><div><label class="fl">Couleur d’accent</label><input type="color" data-ap="accent" value="' + t.accent + '"></div></div>' +
+      '<label class="fl">Logo</label><div class="aprow"><input type="file" id="apLogo" accept="image/*">' + (t.logo ? '<button class="btn sm danger" data-p="thLogoDel">Retirer le logo</button>' : '') + '</div><p class="hint">Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).</p>';
+  return '<section><h3>' + (part === 'ticket' ? 'Apparence du ticket' : 'Apparence de l’app') + '</h3><p class="lead">' + (part === 'ticket' ? 'Coordonnées et messages imprimés sur le ticket de caisse.' : 'Nom du commerce, couleurs et logo de l’Admin, de la Caisse et de la Caisse Soirée.') + ' Publié dans <span class="mono">theme.json</span>, à côté du catalogue.</p>' +
+    '<p class="hint" id="apStatus">' + thStatus() + '</p>' +
+    '<div class="apgrid"><div class="apform">' + form + '</div><div class="apprev"><div class="fl">Aperçu</div><div id="apPrev">' + vApPreview(part) + '</div></div></div></section>';
 }
 document.addEventListener('input', function (e) { var el = e.target; if (el && el.hasAttribute && el.hasAttribute('data-ap')) thSet(el.getAttribute('data-ap'), el.value); });
 document.addEventListener('change', function (e) {

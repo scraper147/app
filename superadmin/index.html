@@ -143,7 +143,7 @@ function vAmis() {
     }).join('') + '</div></section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v5';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v6';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
   $('m').innerHTML = (S.flash ? '<section class="msg ok" style="margin-top:0">' + esc(S.flash) + '</section>' : '') + (S.err ? '<section class="msg err" style="margin-top:0">' + esc(S.err) + '</section>' : '') +
