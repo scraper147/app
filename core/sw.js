@@ -1,6 +1,6 @@
 /* Service worker commun, importé par <ami>/<app>/sw.js (importScripts) : une mise à jour de ce fichier
    met à jour toutes les tablettes. Réseau d'abord (3 s), sinon cache. Préfixe propre à l'ami et à l'app. */
-var CAISSE_VERSION = '6';
+var CAISSE_VERSION = '7';
 var parts = self.location.pathname.split('/'), APPN = parts[parts.length - 2], CID = parts[parts.length - 3];
 var PREFIX = 'caisse-' + CID + '-' + APPN + '-', CACHE = PREFIX + 'v' + CAISSE_VERSION;
 var FILES = ['./', './index.html', './manifest.webmanifest', '../client.js', '../../core/' + APPN + '.js', '../../core/' + APPN + '.css',

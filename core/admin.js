@@ -1,4 +1,4 @@
-/* caisse · admin · v6 — code commun à tous les amis */
+/* caisse · admin · v7 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -177,7 +177,7 @@ if (CLIENT.donnees === 'github') { if (document.body) setTimeout(caisseUnlockScr
   window.fetch = function (input, opts) {
     var url = String(input && input.url ? input.url : input);
     if (url.indexOf('https://api.github.com') === 0) return CLIENT.donnees === 'github' ? ghReal(url.slice(22), opts || {}) : api(url.slice(22), opts || {});
-    var mf = /^(?:\.\/)?(catalogue|config|theme)\.json(\?|$)/.exec(url);
+    var mf = /^(?:\.\/)?(catalogue|config|theme|photos)\.json(\?|$)/.exec(url);
     if (mf && CLIENT.donnees === 'github') {
       var vr = mf[1] === 'catalogue' && APP_ID === 'soiree' ? 'demo/soiree' : DEMO_CAT_REPO;
       return ghReal('/repos/' + vr + '/contents/' + mf[1] + '.json', { headers: { Accept: 'application/vnd.github.raw' } });
@@ -391,7 +391,7 @@ function featCfg() {
   if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
   return _featCfg;
 }
-function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; return c.f[id] != null ? !!c.f[id] : !(d && d.off); }
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; if (id === 'soiree' && CLIENT.type === 'simple') return false; if (c.f[id] != null) return !!c.f[id]; if (id === 'soiree') return CLIENT.type === 'soiree'; return !(d && d.off); }
 function FEAT(id) {
   var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
   if (d && d.req && !FEAT(d.req)) return false;
@@ -417,11 +417,66 @@ function themeCopy() {
   if (raw !== _thRaw || !_thObj) { _thRaw = raw; try { _thObj = JSON.parse(raw) || {}; } catch (e) { _thObj = {}; } }
   return _thObj;
 }
+var TH_FONTS = {
+  systeme: { nom: 'Système', css: 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif' },
+  moderne: { nom: 'Moderne', css: '"Avenir Next",Avenir,Montserrat,"Segoe UI","Helvetica Neue",Arial,sans-serif' },
+  arrondie: { nom: 'Arrondie', css: 'ui-rounded,"SF Pro Rounded",Nunito,"Varela Round","Arial Rounded MT Bold",Quicksand,system-ui,sans-serif' },
+  elegante: { nom: 'Élégante', css: '"Playfair Display",Didot,"Bodoni MT",Georgia,serif' },
+  classique: { nom: 'Classique', css: '"Palatino Linotype","Book Antiqua",Palatino,"Noto Serif",Georgia,serif' },
+  condensee: { nom: 'Condensée', css: '"Roboto Condensed","Arial Narrow","sans-serif-condensed","Helvetica Neue",sans-serif' },
+  machine: { nom: 'Machine à écrire', css: '"Courier Prime","Courier New",ui-monospace,monospace' },
+  manuscrite: { nom: 'Manuscrite', css: '"Segoe Print","Bradley Hand","Dancing Script","Brush Script MT",cursive' },
+  affiche: { nom: 'Affiche', css: 'Impact,Anton,Haettenschweiler,"Arial Black",sans-serif' }
+};
+/* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
+var TH_MODELES = [
+  { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
+  { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
+  { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
+  { id: 'pop', nom: 'Pop coloré', couleur: '#E4405F', accent: '#FFB400', fond: '#FFF6EC', barre: '#E4405F', tuile: '#FFFFFF', police: 'arrondie', policeTitres: 'arrondie', forme: 'pastille', ombre: true },
+  { id: 'minimal', nom: 'Minimal', couleur: '#111111', accent: '#666666', fond: '#FFFFFF', barre: '#FFFFFF', tuile: '#F6F6F6', police: 'systeme', policeTitres: 'moderne', forme: 'carre', ombre: false },
+  { id: 'marche', nom: 'Marché', couleur: '#2E7D32', accent: '#F57C00', fond: '#FBF8EF', barre: '#2E7D32', tuile: '#FFFFFF', police: 'arrondie', policeTitres: 'affiche', forme: 'arrondi', ombre: true },
+  { id: 'ocean', nom: 'Océan', couleur: '#006D77', accent: '#E29578', fond: '#EDF6F9', barre: '#006D77', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'moderne', forme: 'pastille', ombre: false },
+  { id: 'bistrot', nom: 'Bistrot', couleur: '#7B2D26', accent: '#C9A227', fond: '#F7F1E3', barre: '#2B2118', tuile: '#FFFBF2', police: 'classique', policeTitres: 'manuscrite', forme: 'arrondi', ombre: true }
+];
+function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
-  var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {};
-  return { nom: (t.nom || '').trim() || d.nom, couleur: /^#[0-9a-f]{6}$/i.test(t.couleur) ? t.couleur : d.couleur, accent: /^#[0-9a-f]{6}$/i.test(t.accent) ? t.accent : d.accent, logo: t.logo || '',
+  var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
+  return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
+    modele: t.modele || '', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
+    forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
+    fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
+    sombre: { couleur: thHex(sb.couleur, ''), fond: thHex(sb.fond, '') }, categories: t.categories && typeof t.categories === 'object' ? t.categories : {}, photosVersion: +t.photosVersion || 0,
     ticket: { activite: tk.activite || '', adresse: Array.isArray(tk.adresse) ? tk.adresse.filter(function (x) { return x && String(x).trim(); }) : [], telephone: tk.telephone || '', email: tk.email || '', tva: tk.tva || '', site: tk.site || '',
-      merci: tk.merci != null ? tk.merci : d.ticket.merci, mention: tk.mention != null ? tk.mention : d.ticket.mention } };
+      merci: tk.merci != null ? tk.merci : d.ticket.merci, mention: tk.mention != null ? tk.mention : d.ticket.mention,
+      logo: tk.logo || '', logoTaille: ['aucun', 'petit', 'grand'].indexOf(tk.logoTaille) >= 0 ? tk.logoTaille : 'moyen', entete: tk.entete === 'gauche' ? 'gauche' : 'centre', nomGrand: !!tk.nomGrand,
+      separateur: ['-', '.', '=', '*', '~'].indexOf(tk.separateur) >= 0 ? tk.separateur : '-', papier: tk.papier === '58' ? '58' : '80',
+      afficher: { numero: af.numero !== false, date: af.date !== false, pdv: af.pdv !== false, nbArticles: af.nbArticles !== false, paiement: af.paiement !== false, rendu: af.rendu !== false },
+      tauxTVA: Math.max(0, +tk.tauxTVA || 0), messageEntete: tk.messageEntete || '', saison: tk.saison || '', saisonDu: tk.saisonDu || '', saisonAu: tk.saisonAu || '', qr: tk.qr || '', qrTexte: tk.qrTexte || '' } };
+}
+/* Message saisonnier : dates JJ/MM (ou MM-JJ), période qui peut passer le 31/12 */
+function themeSaisonActive(tk, now) {
+  if (!tk.saison) return false; if (!tk.saisonDu || !tk.saisonAu) return true;
+  function md(v) { var m = /^(\d{1,2})[\/.-](\d{1,2})$/.exec(String(v).trim()); return m ? (+m[2]) * 100 + (+m[1]) : null; }
+  var a = md(tk.saisonDu), b = md(tk.saisonAu), d = now || new Date(), x = (d.getMonth() + 1) * 100 + d.getDate(); if (a == null || b == null) return true;
+  return a <= b ? x >= a && x <= b : x >= a || x <= b;
+}
+function thLum(h) { var c = thRgb(h).map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+function thContrast(a, b) { var x = thLum(a), y = thLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); }
+function thInk(bg) { return thContrast(bg, '#ffffff') >= thContrast(bg, '#111111') ? '#ffffff' : '#111111'; }
+function themeCatStyle(cid) { var c = (themeGet().categories || {})[cid] || {}; return /^#[0-9a-f]{6}$/i.test(c.couleur || '') ? c.couleur : ''; }
+function themeCatEmoji(cid) { var c = (themeGet().categories || {})[cid] || {}; return c.emoji ? String(c.emoji).slice(0, 4) + ' ' : ''; }
+/* Photos des articles : photos.json à part (lu seulement quand theme.json annonce une nouvelle version) */
+var PHOTOS_COPY = KP + APP_ID + '-photos', _phRaw = null, _phObj = null;
+function photosCopy() { var raw = null; try { raw = localStorage.getItem(PHOTOS_COPY); } catch (e) {} if (raw !== _phRaw || !_phObj) { _phRaw = raw; try { _phObj = JSON.parse(raw) || {}; } catch (e) { _phObj = {}; } } return _phObj; }
+function photosSaveCopy(o) { try { localStorage.setItem(PHOTOS_COPY, JSON.stringify(o)); } catch (e) { return false; } _phRaw = null; return true; }
+function themePhoto(pid) { var p = (photosCopy().photos || {})[pid]; return p || ''; }
+function photosCheck(onChange) {
+  var want = themeGet().photosVersion; if (APP_ID === 'admin' || !want || want === (photosCopy().version || 0)) return;
+  fetch('photos.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    if (!j || !j.photos) return; photosSaveCopy({ photos: j.photos, version: +j.version || want }); if (onChange) onChange();
+  }).catch(function () {});
 }
 function themeSaveCopy(o) { try { localStorage.setItem(THEME_COPY, JSON.stringify(o)); } catch (e) { return false; } _thRaw = null; return true; }
 function themeFile(t, version) { return { format: THEME_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), apparence: t || {} }; }
@@ -432,9 +487,10 @@ var TH_ICON = '<g fill="none" stroke="{c}" stroke-width="6" stroke-linejoin="rou
 function thSvg(s) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s); }
 /* kind : 'full' (accueil, grand), 'print' (ticket : noir sur blanc), 'text' (barre du haut), 'square' (carré), 'dark' (grand, sur fond sombre) */
 function themeLogo(kind) {
-  var t = themeGet(); if (t.logo) return t.logo;
+  var t = themeGet(); if (kind === 'ticket') { if (t.ticket.logo) return t.ticket.logo; kind = 'print'; } if (t.logo) return t.logo;
   var n = thEsc(t.nom), sub = thEsc(t.ticket.activite || ''), c = kind === 'print' ? '#000' : kind === 'dark' ? thMix(t.couleur, '#ffffff', .35) : t.couleur, ink = kind === 'print' ? '#000' : kind === 'dark' ? '#EEF2F7' : t.couleur;
   if (kind === 'square') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="' + t.couleur + '"/>' + TH_ICON.replace('{c}', '#fff') + '</svg>');
+  if (kind === 'text' && t.barre && thContrast(c, t.barre) < 3) { c = thInk(t.barre); ink = c; }
   if (kind === 'text') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" height="100" width="' + (130 + n.length * 27) + '" viewBox="0 0 ' + (130 + n.length * 27) + ' 100">' + TH_ICON.replace('{c}', c) + '<text x="104" y="66" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="' + ink + '">' + n + '</text></svg>');
   var w = Math.max(900, 300 + n.length * 50);
   return thSvg('<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="220" viewBox="0 0 ' + w + ' 220">' + (kind === 'print' ? '<rect width="' + w + '" height="220" fill="#fff"/>' : '') + '<g transform="translate(40,10) scale(2)">' + TH_ICON.replace('{c}', c) + '</g><text x="270" y="' + (sub ? 128 : 140) + '" font-family="Arial,Helvetica,sans-serif" font-size="84" font-weight="700" fill="' + ink + '">' + n + '</text>' + (sub ? '<text x="274" y="178" font-family="Arial,Helvetica,sans-serif" font-size="34" fill="' + ink + '">' + sub + '</text>' : '') + '</svg>');
@@ -453,6 +509,28 @@ function themeApply() {
   } else {
     css = 'html:root{--gold:' + thMix(c, '#ffffff', .3) + ';--gold-l:' + thMix(c, '#ffffff', .55) + '}';
   }
+  /* couleurs fines, mode sombre personnalisé, polices, formes, fond d'écran */
+  var sb = t.sombre, F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, R = document.documentElement;
+  if (APP_ID === 'caisse') {
+    css += 'html:root{' + (t.fond ? '--ground:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + '}';
+    if (t.barre) css += 'html:root:not([data-theme="dark"]) .header{background:' + t.barre + ';color:' + thInk(t.barre) + '}html:root:not([data-theme="dark"]) .header .sub,html:root:not([data-theme="dark"]) .header small{color:' + thInk(t.barre) + ';opacity:.8}';
+    if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';--on-green:' + thInk(sb.couleur) + ';' : '') + (sb.fond ? '--ground:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
+    css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3,.cat,.prod .m,.tabs button,.mt-l{font-family:' + FT + '}';
+    css += '.prod{position:relative;overflow:hidden}.prod.ph{height:178px;padding-top:0}.prod .pph{width:calc(100% + 32px);margin:0 -16px 6px;height:84px;object-fit:cover;display:block}';
+    if (t.fondImage) css += '#app>.center{background-image:linear-gradient(rgba(255,255,255,' + (t.voile / 100) + '),rgba(255,255,255,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}html[data-theme="dark"] #app>.center{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '")}';
+  } else if (APP_ID === 'admin') {
+    css += 'html:root:not([data-theme="dark"]){' + (t.fond ? '--bg:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + (t.barre ? '--band:' + t.barre + ';--band-ink:' + thInk(t.barre) + ';--band-muted:' + thMix(thInk(t.barre), t.barre, .35) + ';--band-line:' + thMix(t.barre, thInk(t.barre), .18) + ';' : '') + '}';
+    if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';' : '') + (sb.fond ? '--bg:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
+    css += 'html:root{--text:' + F + ';--display:' + FT + '}';
+    if (t.fondImage) css += '.band{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
+  } else {
+    css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
+  }
+  css += 'html.th-carre *:not(.cbadge):not(.dot):not(.sw){border-radius:3px!important}' +
+    'html.th-pastille :is(button,.btn,.cat,.rchip,.small,.free,.apb,select,input[type=text],input[type=password],input[type=search]){border-radius:999px!important}html.th-pastille :is(.prod,.mtile,.mod,section,.card,.modal){border-radius:24px!important}' +
+    'html.th-ombre :is(.prod,.mtile,.mod,section,.cat,.card,.evcard,.modal){box-shadow:0 4px 14px rgba(0,0,0,.10)!important}' + (APP_ID === 'caisse' ? 'html.th-compact body{zoom:.9}' : '');
+  ['th-carre', 'th-pastille', 'th-ombre', 'th-compact'].forEach(function (k) { R.classList.remove(k); });
+  if (t.forme !== 'arrondi') R.classList.add('th-' + t.forme); if (t.ombre) R.classList.add('th-ombre'); if (t.densite === 'compacte') R.classList.add('th-compact');
   var el = document.getElementById('theme-vars');
   if (!el) { el = document.createElement('style'); el.id = 'theme-vars'; document.head.appendChild(el); }
   el.textContent = css;
@@ -3169,6 +3247,7 @@ function renderCatalogue() {
     '<p class="cat-status num" id="catStatus">' + catStatusLine() + '</p>' +
     '<div class="cat-acts"><button class="ghost" data-c="reload"' + (CAT.loading ? ' disabled' : '') + '>Recharger</button>' +
     '<label class="ghost lab">Importer un fichier<input type="file" accept=".json,application/json" data-catfile></label>' +
+    (CAT.data ? '<button class="ghost" data-c="catExport" title="Fichier JSON, réimportable (Importer un fichier)">Exporter</button><button class="ghost" data-c="catCsv">Exporter pour Excel</button>' : '') +
     (unlocked ? '<button class="pick" id="pubBtn" data-c="askPublish"' + (canPub ? '' : ' disabled') + '>Publier la version ' + nextVersion() + '</button>'
       : '<button class="pick" data-a="go" data-v="parametres">Déverrouiller la publication</button>') + '</div></div></div>';
   if (!CAT.data) { el.innerHTML = band + '<main><section><p class="empty">Chargement du catalogue…</p></section></main>' + vToast(); return; }
@@ -3273,9 +3352,20 @@ function publishCat() {
     render();
   });
 }
+function catExportName(ext) { var n = slug(themeGet().nom || 'catalogue') || 'catalogue'; return 'catalogue_' + n + (isSoiree(CAT.data) ? '_soiree' : '') + '_' + todayIso() + '.' + ext; }
+function catExport() { if (!CAT.data) return; saveJson(catExportName('json'), finalizeCat(CAT.data, CAT.data.version || 0)); toast('Catalogue exporté'); }
+function catCsv() {
+  var d = CAT.data; if (!d) return; var so = isSoiree(d), rows = [];
+  if (so) { rows.push(['Type', 'Catégorie', 'Article', 'Format', 'Cases', 'Prix (€)', 'Visible']); (d.entrees || []).forEach(function (e) { rows.push(['Entrée', '', e.libelle, '', '', e.prix, e.actif === false ? 'non' : 'oui']); }); }
+  else { rows.push(['Type', 'Catégorie', 'Article', 'Prix (€)', 'Visible']); (d.pointsDeVente || []).forEach(function (p) { rows.push(['Point de vente', '', p.nom, '', p.actif === false ? 'non' : 'oui']); }); }
+  (d.categories || []).forEach(function (k) { (k.produits || []).forEach(function (p) { rows.push(so ? ['Boisson', k.nom, p.libelle, p.format || '', p.cases || 0, '', (k.actif === false || p.actif === false) ? 'non' : 'oui'] : ['Article', k.nom, p.libelle, p.prix, (k.actif === false || p.actif === false) ? 'non' : 'oui']); }); });
+  download(catExportName('csv'), rows); toast('Catalogue exporté pour Excel');
+}
 function catClick(el) {
   var c = el.getAttribute('data-c'), ci = +el.getAttribute('data-ci'), pi = +el.getAttribute('data-pi'), v = el.getAttribute('data-v'), d = CAT.data;
   function mv(arr, i, j) { var x = arr.splice(i, 1)[0]; arr.splice(j, 0, x); }
+  if (c === 'catExport') { catExport(); return; }
+  if (c === 'catCsv') { catCsv(); return; }
   if (c === 'repo') { if (v !== CAT.repo) loadCatFor(v); return; }
   if (c === 'reload') { if (dirty() && !(CAT.confirm && CAT.confirm.type === 'reload')) { CAT.confirm = { type: 'reload' }; CAT.msg = { t: 'Recharger depuis le serveur remplacera vos modifications non publiées. <span class="cbtns"><button class="btn danger" data-c="reload">Recharger quand même</button><button class="btn" data-c="cancel">Annuler</button></span>' }; render(); return; } loadCatFor(CAT.repo, true); return; }
   if (c === 'cancel') { CAT.confirm = null; if (CAT.msg && /data-c="reload"/.test(CAT.msg.t)) CAT.msg = null; render(); return; }
@@ -3410,8 +3500,17 @@ function parSubmit(form) {
 /* ---------- Paramètres › Apparence : theme.json publié à côté de catalogue.json, lu par toutes les caisses ---------- */
 var TH_PUB = { busy: false, timer: null };
 function thDraft() { var o = themeCopy(); return JSON.parse(JSON.stringify(o.t || {})); }
-function thSet(path, v) { var o = themeCopy(), t = JSON.parse(JSON.stringify(o.t || {})), k = path.split('.'); if (k[0] === 'ticket') { t.ticket = t.ticket || {}; if (k[1] === 'adr1' || k[1] === 'adr2') { var ad = (t.ticket.adresse || []).slice(); ad[k[1] === 'adr1' ? 0 : 1] = v; t.ticket.adresse = [ad[0] || '', ad[1] || '']; } else t.ticket[k[1]] = v; } else t[k[0]] = v;
+function thSet(path, v) {
+  var o = themeCopy(), t = JSON.parse(JSON.stringify(o.t || {})), k = path.split('.');
+  if (k[0] === 'ticket' && (k[1] === 'adr1' || k[1] === 'adr2')) { t.ticket = t.ticket || {}; var ad = (t.ticket.adresse || []).slice(); ad[k[1] === 'adr1' ? 0 : 1] = v; t.ticket.adresse = [ad[0] || '', ad[1] || '']; }
+  else { var cur = t; for (var i = 0; i < k.length - 1; i++) { if (!cur[k[i]] || typeof cur[k[i]] !== 'object') cur[k[i]] = {}; cur = cur[k[i]]; } if (v === '' || v == null) delete cur[k[k.length - 1]]; else cur[k[k.length - 1]] = v; }
+  if (['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].indexOf(k[0]) >= 0) delete t.modele;
   themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); thRefresh(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 1200); }
+function thModele(id) {
+  var m = TH_MODELES.filter(function (x) { return x.id === id; })[0]; if (!m) return; var o = themeCopy(), t = JSON.parse(JSON.stringify(o.t || {}));
+  ['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].forEach(function (k) { t[k] = m[k]; }); t.modele = m.id;
+  themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); render(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 800);
+}
 function thRefresh() { var p = document.getElementById('apPrev'); if (p) p.innerHTML = vApPreview(); var st = document.getElementById('apStatus'); if (st) st.innerHTML = thStatus(); var br = document.querySelector('.shell .brand'); if (br) { var im = br.querySelector('img'); if (im) im.src = themeLogo('square'); var sp = br.querySelector('.name span'); if (sp) sp.textContent = themeGet().nom; } }
 function thPublish() {
   if (TH_PUB.busy) { clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 800); return; }
@@ -3447,42 +3546,124 @@ function thStatus() {
 }
 function vApPreview(part) {
   part = part || (SUB.parametres === 'ticket' ? 'ticket' : 'app');
-  var t = themeGet(), tk = t.ticket, lines = [tk.activite].concat(tk.adresse, [tk.telephone, tk.email, tk.tva ? 'TVA ' + tk.tva : '', tk.site]).filter(Boolean);
-  if (part === 'app') return '<div class="apbar" style="border-color:' + t.couleur + '"><img src="' + themeLogo('text') + '" alt=""></div>' +
-    '<div class="apbtns"><span class="apb" style="background:' + t.couleur + '">Encaisser</span><span class="apb ghost" style="border-color:' + t.couleur + ';color:' + t.couleur + '">Boissons</span><span class="apb" style="background:' + t.accent + '">Accent</span></div>';
-  return '<div class="aptk"><img src="' + themeLogo('print') + '" alt="">' + lines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('') +
-    '<div class="aptk-sep">------------------------------</div><div class="aptk-row"><span>2 × Article</span><span>7,00</span></div><div class="aptk-row"><b>TOTAL</b><b>7,00 EUR</b></div><div class="aptk-sep">------------------------------</div>' +
-    (tk.merci ? '<div>' + esc(tk.merci) + '</div>' : '') + (tk.mention ? '<div class="faint">' + esc(tk.mention) + '</div>' : '') + '</div>';
+  var t = themeGet(), tk = t.ticket;
+  if (part === 'app') {
+    var F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, rad = t.forme === 'carre' ? '3px' : t.forme === 'pastille' ? '999px' : '10px', trad = t.forme === 'carre' ? '3px' : t.forme === 'pastille' ? '20px' : '12px';
+    var sh = t.ombre ? 'box-shadow:0 4px 14px rgba(0,0,0,.12);' : '', bar = t.barre || '#ffffff', fond = t.fond || '#F5F7FA', tuile = t.tuile || '#ffffff';
+    var cats = (thCatList()[0] || { id: '', nom: 'Boissons', produits: [{ id: '', libelle: 'Article', prix: 2.5 }] }), cc = themeCatStyle(cats.id) || t.couleur, pr = (cats.produits || [])[0] || { libelle: 'Article', prix: 2.5 }, ph = pr.id ? thPhotoGet(pr.id) : '';
+    return '<div class="apapp" style="font-family:' + F + ';background:' + fond + (t.fondImage ? ';background-image:linear-gradient(rgba(255,255,255,' + t.voile / 100 + '),rgba(255,255,255,' + t.voile / 100 + ')),url(' + t.fondImage + ');background-size:cover' : '') + '">' +
+      '<div class="apbar" style="background:' + bar + ';border-color:' + t.couleur + '"><img src="' + themeLogo('text') + '" alt=""></div>' +
+      '<div class="apbtns"><span class="apb" style="background:' + cc + ';color:' + thInk(cc) + ';border-radius:' + rad + ';font-family:' + FT + '">' + esc(themeCatEmoji(cats.id) + cats.nom) + '</span><span class="apb ghost" style="border-color:' + t.couleur + ';color:' + t.couleur + ';border-radius:' + rad + '">Historique</span></div>' +
+      '<div class="aptile" style="background:' + tuile + ';border-radius:' + trad + ';' + sh + 'border-top:5px solid ' + cc + '">' + (ph ? '<img src="' + ph + '" alt="">' : '') + '<b style="font-family:' + FT + '">' + esc(pr.libelle) + '</b><span style="color:' + t.couleur + '">' + (Number(pr.prix) || 0).toFixed(2).replace('.', ',') + ' €</span></div>' +
+      '<span class="apb" style="display:block;text-align:center;background:' + t.couleur + ';color:' + thInk(t.couleur) + ';border-radius:' + rad + ';margin-top:12px;font-family:' + FT + '">Encaisser</span></div>';
+  }
+  var W = tk.papier === '58' ? 32 : 48, sep = Array(W + 1).join(tk.separateur), al = tk.entete === 'gauche' ? 'left' : 'center', AF = tk.afficher, lw = { petit: 45, moyen: 66, grand: 88 }[tk.logoTaille];
+  function row(a, b, cls) { return '<div class="aptk-row' + (cls ? ' ' + cls : '') + '"><span>' + esc(a) + '</span><span>' + esc(b) + '</span></div>'; }
+  var lines = [tk.activite].concat(tk.adresse, [tk.telephone, tk.email, tk.tva ? 'TVA ' + tk.tva : '', tk.site]).filter(Boolean);
+  return '<div class="aptk" style="max-width:' + (W === 32 ? 220 : 310) + 'px">' +
+    '<div style="text-align:' + al + '">' + (tk.logoTaille !== 'aucun' ? '<img src="' + themeLogo('ticket') + '" alt="" style="width:' + lw + '%;filter:grayscale(1) contrast(1.6)">' : '') +
+    (tk.logoTaille === 'aucun' || tk.nomGrand ? '<div class="aptk-big">' + esc(t.nom) + '</div>' : '') + lines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('') +
+    (tk.messageEntete ? '<div style="margin-top:6px"><b>' + esc(tk.messageEntete) + '</b></div>' : '') + '</div><br>' +
+    (AF.numero || AF.date ? row(AF.numero ? 'Ticket n° 0042' : '', AF.date ? new Date().toLocaleDateString('fr-BE') + ' 14:32' : '') : '') + (AF.pdv ? '<div style="text-align:left">Point de vente : Stand</div>' : '') +
+    '<div class="aptk-sep">' + Array(W + 1).join('=') + '</div>' + row('Article A', '5,00') + row('2 x Article B', '7,00') + '<div class="aptk-sep">' + sep + '</div>' +
+    row('TOTAL', '12,00 EUR', 'aptk-tot') + (tk.tauxTVA > 0 ? row('dont TVA ' + String(tk.tauxTVA).replace('.', ',') + ' %', (12 - 12 / (1 + tk.tauxTVA / 100)).toFixed(2).replace('.', ',')) : '') + (AF.nbArticles ? '<div style="text-align:left">3 articles</div>' : '') +
+    '<div class="aptk-sep">' + sep + '</div>' + (AF.paiement ? row('Cash', '12,00') : '') + (AF.rendu ? row('Reçu', '20,00') + row('Rendu', '8,00') : '') + '<br>' +
+    (themeSaisonActive(tk) || (tk.saison && SUB.parametres === 'ticket') ? '<div><b>' + esc(tk.saison) + '</b>' + (themeSaisonActive(tk) ? '' : ' <span class="faint">(hors période)</span>') + '</div>' : '') +
+    (tk.merci ? '<div><b>' + esc(tk.merci) + '</b></div>' : '') + (tk.qr ? '<div><span class="aptk-qr">QR</span></div>' + (tk.qrTexte ? '<div>' + esc(tk.qrTexte) + '</div>' : '') : '') +
+    (tk.mention ? '<div class="faint">' + esc(tk.mention) + '</div>' : '') + '</div>';
 }
+/* Catégories et articles du catalogue publié (couleurs, emojis, photos) */
+function thCatList() {
+  try { var cj = JSON.parse((demoDb()[DEMO_CAT_REPO] || {})['catalogue.json'].text); if (cj && cj.categories) return cj.categories.filter(function (k) { return k.actif !== false; }); } catch (e) {}
+  return (typeof CAT !== 'undefined' && CAT && CAT.repo === DEMO_CAT_REPO && CAT.data && CAT.data.categories) ? CAT.data.categories : (TH_CATS || []);
+}
+var TH_CATS = null;
+function thLoadCats() { if (CLIENT.donnees !== 'github' || TH_CATS) return; TH_CATS = []; ghGetCatalogue(DEMO_CAT_REPO, getToken()).then(function (r) { TH_CATS = r.json && r.json.categories ? r.json.categories : []; if (MOD === 'parametres') render(); }, function () {}); }
 function vApparence(part) {
-  var t = themeGet(), d = themeCopy().t || {}, tk = (d.ticket || {}), ad = tk.adresse || [];
-  function fld(lab, path, val, ph, type) { return '<label class="fl">' + lab + '</label><input type="' + (type || 'text') + '" data-ap="' + path + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '">'; }
-  var form = part === 'ticket'
-    ? fld('Activité (sous le logo)', 'ticket.activite', tk.activite, 'Ex. Boulangerie, Food truck…') +
+  var t = themeGet(), d = themeCopy().t || {}, tk = (d.ticket || {}), ad = tk.adresse || [], TT = t.ticket;
+  function fld(lab, path, val, ph, type, extra) { return '<label class="fl">' + lab + '</label><input type="' + (type || 'text') + '" data-ap="' + path + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + esc(ph || '') + '"' + (extra || '') + '>'; }
+  function sel(lab, path, val, opts) { return '<label class="fl">' + lab + '</label><select data-ap="' + path + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === val ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
+  function chk(lab, path, on) { return '<label class="tog"><input type="checkbox" data-ap="' + path + '"' + (on ? ' checked' : '') + '>' + esc(lab) + '</label>'; }
+  function clr(lab, path, val, def) { return '<div><label class="fl">' + lab + '</label><div class="aprow" style="gap:6px;flex-wrap:nowrap"><input type="color" data-ap="' + path + '" value="' + (val || def) + '">' + (val ? '<button class="btn sm" data-p="thClr" data-v="' + path + '" title="Revenir à l’automatique">auto</button>' : '<span class="faint">auto</span>') + '</div></div>'; }
+  function img(lab, id, has, del, hint) { return '<label class="fl">' + lab + '</label><div class="aprow"><input type="file" id="' + id + '" accept="image/*">' + (has ? '<button class="btn sm danger" data-p="' + del + '">Retirer</button>' : '') + '</div>' + (hint ? '<p class="hint">' + hint + '</p>' : ''); }
+  function h(x) { return '<h4 class="aph">' + x + '</h4>'; }
+  var fonts = Object.keys(TH_FONTS).map(function (k) { return [k, TH_FONTS[k].nom]; }), form;
+  if (part === 'ticket') {
+    form = h('Logo et en-tête') + img('Logo du ticket', 'apLogoTk', !!TT.logo, 'thLogoTkDel', 'Sans logo propre : celui de l’app, imprimé en noir et blanc. Préférez un logo noir sur fond blanc, bien contrasté.') +
+      '<div class="aprow"><div>' + sel('Taille du logo', 'ticket.logoTaille', TT.logoTaille, [['aucun', 'Pas de logo'], ['petit', 'Petit'], ['moyen', 'Moyen'], ['grand', 'Grand']]) + '</div><div>' + sel('En-tête', 'ticket.entete', TT.entete, [['centre', 'Centré'], ['gauche', 'À gauche']]) + '</div></div>' +
+      chk('Nom du commerce en grand sous le logo', 'ticket.nomGrand', TT.nomGrand) +
+      h('Coordonnées') + fld('Activité (sous le logo)', 'ticket.activite', tk.activite, 'Ex. Boulangerie, Food truck…') +
       fld('Adresse, ligne 1', 'ticket.adr1', ad[0], 'Rue…') + fld('Adresse, ligne 2', 'ticket.adr2', ad[1], 'Code postal et commune') +
       '<div class="aprow"><div>' + fld('Téléphone', 'ticket.telephone', tk.telephone) + '</div><div>' + fld('E-mail', 'ticket.email', tk.email) + '</div></div>' +
       '<div class="aprow"><div>' + fld('N° de TVA', 'ticket.tva', tk.tva, 'BE 0000.000.000') + '</div><div>' + fld('Site', 'ticket.site', tk.site) + '</div></div>' +
-      fld('Message de fin', 'ticket.merci', tk.merci != null ? tk.merci : THEME_DEF.ticket.merci) + fld('Mention', 'ticket.mention', tk.mention != null ? tk.mention : THEME_DEF.ticket.mention) +
-      '<p class="hint">Le logo du ticket est celui de l’app (Apparence de l’app), imprimé en noir et blanc.</p>'
-    : fld('Nom du commerce', 'nom', d.nom, 'Caisse') +
-      '<div class="aprow"><div><label class="fl">Couleur principale</label><input type="color" data-ap="couleur" value="' + t.couleur + '"></div><div><label class="fl">Couleur d’accent</label><input type="color" data-ap="accent" value="' + t.accent + '"></div></div>' +
-      '<label class="fl">Logo</label><div class="aprow"><input type="file" id="apLogo" accept="image/*">' + (t.logo ? '<button class="btn sm danger" data-p="thLogoDel">Retirer le logo</button>' : '') + '</div><p class="hint">Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).</p>';
-  return '<section><h3>' + (part === 'ticket' ? 'Apparence du ticket' : 'Apparence de l’app') + '</h3><p class="lead">' + (part === 'ticket' ? 'Coordonnées et messages imprimés sur le ticket de caisse.' : 'Nom du commerce, couleurs et logo de l’Admin, de la Caisse et de la Caisse Soirée.') + ' Publié dans <span class="mono">theme.json</span>, à côté du catalogue.</p>' +
+      h('Contenu') + '<div class="apchk">' + chk('N° de ticket', 'ticket.afficher.numero', TT.afficher.numero) + chk('Date et heure', 'ticket.afficher.date', TT.afficher.date) + chk('Point de vente', 'ticket.afficher.pdv', TT.afficher.pdv) +
+      chk('Nombre d’articles', 'ticket.afficher.nbArticles', TT.afficher.nbArticles) + chk('Mode de paiement', 'ticket.afficher.paiement', TT.afficher.paiement) + chk('Montant reçu et rendu', 'ticket.afficher.rendu', TT.afficher.rendu) + '</div>' +
+      '<div class="aprow"><div>' + fld('TVA incluse (%)', 'ticket.tauxTVA', tk.tauxTVA || '', '0 = ne pas afficher', 'number', ' min="0" max="30" step="0.5"') + '</div><div>' + sel('Séparateurs', 'ticket.separateur', TT.separateur, [['-', '- - - tirets'], ['.', '. . . points'], ['=', '= = = doubles'], ['*', '* * * étoiles'], ['~', '~ ~ ~ vagues']]) + '</div></div>' +
+      h('Messages') + fld('Message d’en-tête', 'ticket.messageEntete', tk.messageEntete, 'Ex. Bienvenue chez nous !') +
+      fld('Message de fin', 'ticket.merci', tk.merci != null ? tk.merci : THEME_DEF.ticket.merci) +
+      fld('Message saisonnier', 'ticket.saison', tk.saison, 'Ex. Joyeuses fêtes !') +
+      '<div class="aprow"><div>' + fld('Du (JJ/MM)', 'ticket.saisonDu', tk.saisonDu, '01/12') + '</div><div>' + fld('Au (JJ/MM)', 'ticket.saisonAu', tk.saisonAu, '31/12') + '</div></div>' +
+      fld('Mention', 'ticket.mention', tk.mention != null ? tk.mention : THEME_DEF.ticket.mention) +
+      h('QR code') + fld('Lien du QR code', 'ticket.qr', tk.qr, 'Ex. https://g.page/r/… (avis Google), site, Facebook') + fld('Texte sous le QR code', 'ticket.qrTexte', tk.qrTexte, 'Ex. Donnez-nous votre avis !') +
+      h('Imprimante') + sel('Largeur du papier', 'ticket.papier', TT.papier, [['80', '80 mm (48 caractères)'], ['58', '58 mm (32 caractères)']]) +
+      '<p class="hint">Le QR code est dessiné par l’imprimante (aperçu : un carré « QR »). Le logo et la largeur sont repris par la caisse à sa prochaine relecture de l’apparence.</p>';
+  } else {
+    var cats = thCatList(), ctr = [];
+    if (t.fond && thContrast(t.fond, '#1C2219') < 4.5) ctr.push('le fond est trop foncé pour le texte');
+    if (thContrast(t.couleur, '#ffffff') < 3 && thContrast(t.couleur, '#111111') < 3) ctr.push('la couleur principale contraste peu');
+    if (t.tuile && t.fond && thContrast(t.tuile, t.fond) < 1.05) ctr.push('tuiles et fond presque identiques');
+    form = h('Modèles') + '<div class="apmods">' + TH_MODELES.map(function (m) {
+        return '<button class="apmod' + (t.modele === m.id ? ' on' : '') + '" data-p="thModele" data-v="' + m.id + '" style="font-family:' + TH_FONTS[m.policeTitres].css + '"><span class="sw" style="background:' + (m.barre === '#FFFFFF' ? m.couleur : m.barre) + '"></span><span class="sw" style="background:' + m.couleur + '"></span><span class="sw" style="background:' + m.accent + '"></span><b>' + esc(m.nom) + '</b></button>'; }).join('') + '</div><p class="hint">Un modèle règle couleurs, polices et formes ; logo, nom, ticket, catégories et photos sont gardés.</p>' +
+      h('Identité') + fld('Nom du commerce', 'nom', d.nom, 'Caisse') + img('Logo', 'apLogo', !!t.logo, 'thLogoDel', 'Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).') +
+      h('Couleurs') + '<div class="aprow">' + clr('Principale', 'couleur', d.couleur, t.couleur) + clr('Accent', 'accent', d.accent, t.accent) + clr('Fond', 'fond', t.fond, '#F5F7FA') + clr('Barre du haut', 'barre', t.barre, '#FFFFFF') + clr('Tuiles', 'tuile', t.tuile, '#FFFFFF') + '</div>' +
+      (ctr.length ? '<p class="hint warnt">Lisibilité : ' + ctr.join(' ; ') + '.</p>' : '<p class="hint okt">Contrastes lisibles.</p>') +
+      h('Polices') + '<div class="aprow"><div>' + sel('Titres', 'policeTitres', t.policeTitres, fonts) + '</div><div>' + sel('Texte', 'police', t.police, fonts) + '</div></div><p class="hint">Polices de l’appareil (aucun téléchargement, fonctionne hors ligne) : le rendu peut varier un peu d’une tablette à l’autre.</p>' +
+      h('Formes') + '<div class="aprow"><div>' + sel('Boutons et tuiles', 'forme', t.forme, [['arrondi', 'Arrondis'], ['carre', 'Carrés'], ['pastille', 'Pastilles']]) + '</div><div>' + sel('Densité', 'densite', t.densite, [['normale', 'Normale'], ['compacte', 'Compacte']]) + '</div></div>' + chk('Ombres sous les tuiles et cartes', 'ombre', t.ombre) +
+      h('Fond d’écran') + img('Image (accueil de la caisse, bandeau de l’Admin)', 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
+      h('Mode sombre') + '<div class="aprow">' + clr('Couleur principale', 'sombre.couleur', t.sombre.couleur, thMix(t.couleur, '#ffffff', .45)) + clr('Fond', 'sombre.fond', t.sombre.fond, '#0B0F14') + '</div>' +
+      h('Catégories') + (cats.length ? '<div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
+        return '<div class="apcat"><input type="color" data-ap="categories.' + esc(k.id) + '.couleur" value="' + (c.couleur || t.couleur) + '"><input type="text" maxlength="4" data-ap="categories.' + esc(k.id) + '.emoji" value="' + esc(c.emoji || '') + '" placeholder="🙂" class="apemo"><span>' + esc(k.nom) + '</span>' + (c.couleur ? '<button class="btn sm" data-p="thClr" data-v="categories.' + esc(k.id) + '.couleur">auto</button>' : '') + '</div>'; }).join('') + '</div>' : '<p class="hint">Publiez d’abord un catalogue.</p>') +
+      h('Photos des articles') + (cats.length ? '<div class="apphotos">' + cats.map(function (k) { return (k.produits || []).filter(function (p) { return p.actif !== false && !/^(frais-de-)?livraison$/i.test(slug(p.libelle || '')); }).map(function (p) { var ph = thPhotoGet(p.id);
+        return '<div class="apph">' + (ph ? '<img src="' + ph + '" alt="">' : '<span class="apph0">+</span>') + '<small>' + esc(p.libelle) + '</small><label class="btn sm">' + (ph ? 'Changer' : 'Photo') + '<input type="file" accept="image/*" data-photo="' + esc(p.id) + '" hidden></label>' + (ph ? '<button class="btn sm danger" data-p="thPhotoDel" data-v="' + esc(p.id) + '">Retirer</button>' : '') + '</div>'; }).join(''); }).join('') + '</div><p class="hint" id="phStatus">' + phStatus() + '</p>' : '<p class="hint">Publiez d’abord un catalogue.</p>');
+  }
+  if (part !== 'ticket') thLoadCats();
+  return '<section><h3>' + (part === 'ticket' ? 'Apparence du ticket' : 'Apparence de l’app') + '</h3><p class="lead">' + (part === 'ticket' ? 'Logo, coordonnées, contenu et messages du ticket de caisse.' : 'Nom, couleurs, polices, formes, fond, catégories et photos de l’Admin, de la Caisse et de la Caisse Soirée.') + ' Publié dans <span class="mono">theme.json</span>, à côté du catalogue.</p>' +
     '<p class="hint" id="apStatus">' + thStatus() + '</p>' +
     '<div class="apgrid"><div class="apform">' + form + '</div><div class="apprev"><div class="fl">Aperçu</div><div id="apPrev">' + vApPreview(part) + '</div></div></div></section>';
 }
-document.addEventListener('input', function (e) { var el = e.target; if (el && el.hasAttribute && el.hasAttribute('data-ap')) thSet(el.getAttribute('data-ap'), el.value); });
-document.addEventListener('change', function (e) {
-  if (!e.target || e.target.id !== 'apLogo' || !e.target.files || !e.target.files[0]) return;
+document.addEventListener('input', function (e) { var el = e.target; if (el && el.hasAttribute && el.hasAttribute('data-ap')) { var v = el.type === 'checkbox' ? el.checked : el.type === 'number' || el.type === 'range' ? (el.value === '' ? '' : +el.value) : el.value; thSet(el.getAttribute('data-ap'), v); if (el.type === 'range' && el.previousElementSibling) el.previousElementSibling.textContent = 'Voile pour la lisibilité : ' + el.value + ' %'; } });
+/* Images : redimensionnées sur l'appareil */
+function thImage(file, maxW, maxH, cover, done) {
   var fr = new FileReader(); fr.onload = function () {
-    var img = new Image(); img.onload = function () {
-      var r = Math.min(1, 800 / img.width, 300 / img.height), cv = document.createElement('canvas'); cv.width = Math.round(img.width * r); cv.height = Math.round(img.height * r);
-      var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, cv.width, cv.height); var url = cv.toDataURL('image/png');
-      if (url.length > 250000) { cx.globalCompositeOperation = 'destination-over'; cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); url = cv.toDataURL('image/jpeg', 0.85); }
-      thSet('logo', url); render();
-    }; img.onerror = function () { toast('Image illisible'); }; img.src = fr.result;
-  }; fr.readAsDataURL(e.target.files[0]);
+    var im = new Image(); im.onload = function () {
+      var cv = document.createElement('canvas'), cx = cv.getContext('2d');
+      if (cover) { cv.width = maxW; cv.height = maxH; var r = Math.max(maxW / im.width, maxH / im.height), w = im.width * r, h = im.height * r; cx.fillStyle = '#fff'; cx.fillRect(0, 0, maxW, maxH); cx.drawImage(im, (maxW - w) / 2, (maxH - h) / 2, w, h); done(cv.toDataURL('image/jpeg', 0.72)); return; }
+      var r2 = Math.min(1, maxW / im.width, maxH / im.height); cv.width = Math.round(im.width * r2); cv.height = Math.round(im.height * r2); cx.drawImage(im, 0, 0, cv.width, cv.height);
+      var url = cv.toDataURL('image/png'); if (url.length > 250000) { cx.globalCompositeOperation = 'destination-over'; cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); url = cv.toDataURL('image/jpeg', 0.8); } done(url);
+    }; im.onerror = function () { toast('Image illisible'); }; im.src = fr.result;
+  }; fr.readAsDataURL(file);
+}
+document.addEventListener('change', function (e) {
+  var el = e.target; if (!el || !el.files || !el.files[0]) return;
+  if (el.id === 'apLogo') thImage(el.files[0], 800, 300, false, function (u) { thSet('logo', u); render(); });
+  else if (el.id === 'apLogoTk') thImage(el.files[0], 800, 300, false, function (u) { thSet('ticket.logo', u); render(); });
+  else if (el.id === 'apFond') thImage(el.files[0], 1600, 1000, false, function (u) { thSet('fondImage', u); render(); });
+  else if (el.hasAttribute('data-photo')) { var pid = el.getAttribute('data-photo'); thImage(el.files[0], 240, 240, true, function (u) { thPhotoSet(pid, u); render(); }); }
 });
+/* Photos : photos.json publié à part, puis photosVersion dans theme.json (les caisses ne relisent les photos que si elle change) */
+var PH_PUB = { busy: false, timer: null };
+function thPhotoGet(pid) { return ((photosCopy().photos) || {})[pid] || ''; }
+function thPhotoSet(pid, url) { var o = photosCopy(), ph = Object.assign({}, o.photos || {}); if (url) ph[pid] = url; else delete ph[pid]; photosSaveCopy({ photos: ph, version: o.version || 0, pending: true }); clearTimeout(PH_PUB.timer); PH_PUB.timer = setTimeout(phPublish, 800); }
+function phStatus() { var o = photosCopy(), n = Object.keys(o.photos || {}).length; return n + ' photo' + (n > 1 ? 's' : '') + ' · ' + (PH_PUB.busy ? 'publication…' : o.pending ? '<span class="warnt">pas encore publiées</span> <button class="btn sm" data-p="phPub">Publier</button>' : o.version ? '<span class="okt">publiées (version ' + o.version + ')</span>' : 'aucune publiée'); }
+function phPublish() {
+  var o = photosCopy(); if (!o.pending || PH_PUB.busy) return; PH_PUB.busy = true; var st = document.getElementById('phStatus'); if (st) st.innerHTML = phStatus();
+  var url = '/repos/' + DEMO_CAT_REPO + '/contents/photos.json', snap = JSON.stringify(o.photos || {});
+  ghFetch(url, {}, getToken()).then(function (j) { return { sha: j.sha, v: (JSON.parse(b64utf8(j.content)) || {}).version || 0 }; }, function (e) { if (e.status === 404) return { sha: null, v: 0 }; throw e; })
+    .then(function (r) { var v = Math.max(r.v, o.version || 0) + 1, body = { message: 'Photos des articles v' + v + ' (Admin)', content: utf8b64(JSON.stringify({ format: 'caisse/photos', formatVersion: 1, version: v, photos: o.photos || {} })) }; if (r.sha) body.sha = r.sha;
+      return ghFetch(url, { method: 'PUT', body: JSON.stringify(body) }, getToken()).then(function () { return v; }); })
+    .then(function (v) { PH_PUB.busy = false; var n = photosCopy(), again = JSON.stringify(n.photos || {}) !== snap; photosSaveCopy({ photos: n.photos, version: v, pending: again }); thSet('photosVersion', v); if (again) phPublish(); else if (MOD === 'parametres') { var s2 = document.getElementById('phStatus'); if (s2) s2.innerHTML = phStatus(); } },
+      function () { PH_PUB.busy = false; var s3 = document.getElementById('phStatus'); if (s3) s3.innerHTML = phStatus(); });
+}
 function featCount() { var n = 0, on = 0; FEATURES.forEach(function (g) { g.items.forEach(function (it) { n++; if (FEAT(it.id)) on++; }); }); return on + ' fonctionnalités actives sur ' + n; }
 /* Paramètres › Fonctionnalités : une carte par groupe, un interrupteur par fonctionnalité */
 function vFeatures() {
@@ -3491,7 +3672,7 @@ function vFeatures() {
   return '<section><h3>Fonctionnalités</h3><p class="lead">Choisissez ce que la caisse et l’Admin proposent. Chaque changement est <strong>publié</strong> dans le fichier de réglage <span class="mono">config.json</span>, à côté du catalogue : toutes les caisses le lisent à l’ouverture, toutes les 30 secondes, au retour sur l’app et via ⋮ › Vérifier le catalogue. Une option grisée dépend d’une autre, qui est coupée.</p>' +
     '<p class="hint">' + featPubStatus() + '</p><p class="hint">' + featCount() + ' · <button class="btn sm" data-p="featAll">Tout activer</button> <button class="btn sm" data-p="featDefault">Réglages par défaut</button></p>' +
     '<div class="featgrid">' + FEATURES.map(function (g) {
-      return '<div class="featg"><h4>' + esc(g.nom) + '</h4>' + g.items.map(function (it) {
+      return '<div class="featg"><h4>' + esc(g.nom) + '</h4>' + g.items.filter(function (it) { return !(it.id === 'soiree' && CLIENT.type === 'simple'); }).map(function (it) {
         var own = featOwn(it.id), dep = it.req && !FEAT(it.req), eff = FEAT(it.id);
         var extra = it.id === 'raccourci' && own ? '<select id="featRac" class="featsel"><option value="">— choisir l’article —</option>' + prods.map(function (p) { return '<option value="' + esc(p.id) + '"' + (cfg.raccourciId === p.id ? ' selected' : '') + '>' + esc(p.t) + '</option>'; }).join('') + '</select>' + (prods.length ? '' : '<span class="faint"> (publiez d’abord un catalogue)</span>') : '';
         return '<label class="featit' + (dep ? ' dep' : '') + '"><input type="checkbox" data-p="feat" data-v="' + it.id + '"' + (own ? ' checked' : '') + (dep ? ' disabled' : '') + '><span><b>' + esc(it.nom) + '</b>' +
@@ -3577,6 +3758,12 @@ function demoParClick(act, el) {
   if (act === 'featPub') { featPublish(); return true; }
   if (act === 'thPub') { thPublish(); return true; }
   if (act === 'thLogoDel') { thSet('logo', ''); render(); return true; }
+  if (act === 'thLogoTkDel') { thSet('ticket.logo', ''); render(); return true; }
+  if (act === 'thFondDel') { thSet('fondImage', ''); render(); return true; }
+  if (act === 'thClr') { thSet(el.getAttribute('data-v'), ''); render(); return true; }
+  if (act === 'thModele') { thModele(el.getAttribute('data-v')); return true; }
+  if (act === 'thPhotoDel') { thPhotoSet(el.getAttribute('data-v'), ''); render(); return true; }
+  if (act === 'phPub') { phPublish(); return true; }
   if (act === 'demoSeed') { PAR.demoAsk = 'seed'; render(); return true; }
   if (act === 'demoReset') { PAR.demoAsk = 'reset'; render(); return true; }
   if (act === 'demoNo') { PAR.demoAsk = null; render(); return true; }

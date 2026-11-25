@@ -1,4 +1,4 @@
-/* caisse · caisse · v6 — code commun à tous les amis */
+/* caisse · caisse · v7 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -177,7 +177,7 @@ if (CLIENT.donnees === 'github') { if (document.body) setTimeout(caisseUnlockScr
   window.fetch = function (input, opts) {
     var url = String(input && input.url ? input.url : input);
     if (url.indexOf('https://api.github.com') === 0) return CLIENT.donnees === 'github' ? ghReal(url.slice(22), opts || {}) : api(url.slice(22), opts || {});
-    var mf = /^(?:\.\/)?(catalogue|config|theme)\.json(\?|$)/.exec(url);
+    var mf = /^(?:\.\/)?(catalogue|config|theme|photos)\.json(\?|$)/.exec(url);
     if (mf && CLIENT.donnees === 'github') {
       var vr = mf[1] === 'catalogue' && APP_ID === 'soiree' ? 'demo/soiree' : DEMO_CAT_REPO;
       return ghReal('/repos/' + vr + '/contents/' + mf[1] + '.json', { headers: { Accept: 'application/vnd.github.raw' } });
@@ -391,7 +391,7 @@ function featCfg() {
   if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
   return _featCfg;
 }
-function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; return c.f[id] != null ? !!c.f[id] : !(d && d.off); }
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; if (id === 'soiree' && CLIENT.type === 'simple') return false; if (c.f[id] != null) return !!c.f[id]; if (id === 'soiree') return CLIENT.type === 'soiree'; return !(d && d.off); }
 function FEAT(id) {
   var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
   if (d && d.req && !FEAT(d.req)) return false;
@@ -417,11 +417,66 @@ function themeCopy() {
   if (raw !== _thRaw || !_thObj) { _thRaw = raw; try { _thObj = JSON.parse(raw) || {}; } catch (e) { _thObj = {}; } }
   return _thObj;
 }
+var TH_FONTS = {
+  systeme: { nom: 'Système', css: 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif' },
+  moderne: { nom: 'Moderne', css: '"Avenir Next",Avenir,Montserrat,"Segoe UI","Helvetica Neue",Arial,sans-serif' },
+  arrondie: { nom: 'Arrondie', css: 'ui-rounded,"SF Pro Rounded",Nunito,"Varela Round","Arial Rounded MT Bold",Quicksand,system-ui,sans-serif' },
+  elegante: { nom: 'Élégante', css: '"Playfair Display",Didot,"Bodoni MT",Georgia,serif' },
+  classique: { nom: 'Classique', css: '"Palatino Linotype","Book Antiqua",Palatino,"Noto Serif",Georgia,serif' },
+  condensee: { nom: 'Condensée', css: '"Roboto Condensed","Arial Narrow","sans-serif-condensed","Helvetica Neue",sans-serif' },
+  machine: { nom: 'Machine à écrire', css: '"Courier Prime","Courier New",ui-monospace,monospace' },
+  manuscrite: { nom: 'Manuscrite', css: '"Segoe Print","Bradley Hand","Dancing Script","Brush Script MT",cursive' },
+  affiche: { nom: 'Affiche', css: 'Impact,Anton,Haettenschweiler,"Arial Black",sans-serif' }
+};
+/* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
+var TH_MODELES = [
+  { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
+  { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
+  { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
+  { id: 'pop', nom: 'Pop coloré', couleur: '#E4405F', accent: '#FFB400', fond: '#FFF6EC', barre: '#E4405F', tuile: '#FFFFFF', police: 'arrondie', policeTitres: 'arrondie', forme: 'pastille', ombre: true },
+  { id: 'minimal', nom: 'Minimal', couleur: '#111111', accent: '#666666', fond: '#FFFFFF', barre: '#FFFFFF', tuile: '#F6F6F6', police: 'systeme', policeTitres: 'moderne', forme: 'carre', ombre: false },
+  { id: 'marche', nom: 'Marché', couleur: '#2E7D32', accent: '#F57C00', fond: '#FBF8EF', barre: '#2E7D32', tuile: '#FFFFFF', police: 'arrondie', policeTitres: 'affiche', forme: 'arrondi', ombre: true },
+  { id: 'ocean', nom: 'Océan', couleur: '#006D77', accent: '#E29578', fond: '#EDF6F9', barre: '#006D77', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'moderne', forme: 'pastille', ombre: false },
+  { id: 'bistrot', nom: 'Bistrot', couleur: '#7B2D26', accent: '#C9A227', fond: '#F7F1E3', barre: '#2B2118', tuile: '#FFFBF2', police: 'classique', policeTitres: 'manuscrite', forme: 'arrondi', ombre: true }
+];
+function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
-  var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {};
-  return { nom: (t.nom || '').trim() || d.nom, couleur: /^#[0-9a-f]{6}$/i.test(t.couleur) ? t.couleur : d.couleur, accent: /^#[0-9a-f]{6}$/i.test(t.accent) ? t.accent : d.accent, logo: t.logo || '',
+  var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
+  return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
+    modele: t.modele || '', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
+    forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
+    fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
+    sombre: { couleur: thHex(sb.couleur, ''), fond: thHex(sb.fond, '') }, categories: t.categories && typeof t.categories === 'object' ? t.categories : {}, photosVersion: +t.photosVersion || 0,
     ticket: { activite: tk.activite || '', adresse: Array.isArray(tk.adresse) ? tk.adresse.filter(function (x) { return x && String(x).trim(); }) : [], telephone: tk.telephone || '', email: tk.email || '', tva: tk.tva || '', site: tk.site || '',
-      merci: tk.merci != null ? tk.merci : d.ticket.merci, mention: tk.mention != null ? tk.mention : d.ticket.mention } };
+      merci: tk.merci != null ? tk.merci : d.ticket.merci, mention: tk.mention != null ? tk.mention : d.ticket.mention,
+      logo: tk.logo || '', logoTaille: ['aucun', 'petit', 'grand'].indexOf(tk.logoTaille) >= 0 ? tk.logoTaille : 'moyen', entete: tk.entete === 'gauche' ? 'gauche' : 'centre', nomGrand: !!tk.nomGrand,
+      separateur: ['-', '.', '=', '*', '~'].indexOf(tk.separateur) >= 0 ? tk.separateur : '-', papier: tk.papier === '58' ? '58' : '80',
+      afficher: { numero: af.numero !== false, date: af.date !== false, pdv: af.pdv !== false, nbArticles: af.nbArticles !== false, paiement: af.paiement !== false, rendu: af.rendu !== false },
+      tauxTVA: Math.max(0, +tk.tauxTVA || 0), messageEntete: tk.messageEntete || '', saison: tk.saison || '', saisonDu: tk.saisonDu || '', saisonAu: tk.saisonAu || '', qr: tk.qr || '', qrTexte: tk.qrTexte || '' } };
+}
+/* Message saisonnier : dates JJ/MM (ou MM-JJ), période qui peut passer le 31/12 */
+function themeSaisonActive(tk, now) {
+  if (!tk.saison) return false; if (!tk.saisonDu || !tk.saisonAu) return true;
+  function md(v) { var m = /^(\d{1,2})[\/.-](\d{1,2})$/.exec(String(v).trim()); return m ? (+m[2]) * 100 + (+m[1]) : null; }
+  var a = md(tk.saisonDu), b = md(tk.saisonAu), d = now || new Date(), x = (d.getMonth() + 1) * 100 + d.getDate(); if (a == null || b == null) return true;
+  return a <= b ? x >= a && x <= b : x >= a || x <= b;
+}
+function thLum(h) { var c = thRgb(h).map(function (v) { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
+function thContrast(a, b) { var x = thLum(a), y = thLum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); }
+function thInk(bg) { return thContrast(bg, '#ffffff') >= thContrast(bg, '#111111') ? '#ffffff' : '#111111'; }
+function themeCatStyle(cid) { var c = (themeGet().categories || {})[cid] || {}; return /^#[0-9a-f]{6}$/i.test(c.couleur || '') ? c.couleur : ''; }
+function themeCatEmoji(cid) { var c = (themeGet().categories || {})[cid] || {}; return c.emoji ? String(c.emoji).slice(0, 4) + ' ' : ''; }
+/* Photos des articles : photos.json à part (lu seulement quand theme.json annonce une nouvelle version) */
+var PHOTOS_COPY = KP + APP_ID + '-photos', _phRaw = null, _phObj = null;
+function photosCopy() { var raw = null; try { raw = localStorage.getItem(PHOTOS_COPY); } catch (e) {} if (raw !== _phRaw || !_phObj) { _phRaw = raw; try { _phObj = JSON.parse(raw) || {}; } catch (e) { _phObj = {}; } } return _phObj; }
+function photosSaveCopy(o) { try { localStorage.setItem(PHOTOS_COPY, JSON.stringify(o)); } catch (e) { return false; } _phRaw = null; return true; }
+function themePhoto(pid) { var p = (photosCopy().photos || {})[pid]; return p || ''; }
+function photosCheck(onChange) {
+  var want = themeGet().photosVersion; if (APP_ID === 'admin' || !want || want === (photosCopy().version || 0)) return;
+  fetch('photos.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    if (!j || !j.photos) return; photosSaveCopy({ photos: j.photos, version: +j.version || want }); if (onChange) onChange();
+  }).catch(function () {});
 }
 function themeSaveCopy(o) { try { localStorage.setItem(THEME_COPY, JSON.stringify(o)); } catch (e) { return false; } _thRaw = null; return true; }
 function themeFile(t, version) { return { format: THEME_FMT, formatVersion: 1, version: version, majLe: new Date().toISOString(), apparence: t || {} }; }
@@ -432,9 +487,10 @@ var TH_ICON = '<g fill="none" stroke="{c}" stroke-width="6" stroke-linejoin="rou
 function thSvg(s) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s); }
 /* kind : 'full' (accueil, grand), 'print' (ticket : noir sur blanc), 'text' (barre du haut), 'square' (carré), 'dark' (grand, sur fond sombre) */
 function themeLogo(kind) {
-  var t = themeGet(); if (t.logo) return t.logo;
+  var t = themeGet(); if (kind === 'ticket') { if (t.ticket.logo) return t.ticket.logo; kind = 'print'; } if (t.logo) return t.logo;
   var n = thEsc(t.nom), sub = thEsc(t.ticket.activite || ''), c = kind === 'print' ? '#000' : kind === 'dark' ? thMix(t.couleur, '#ffffff', .35) : t.couleur, ink = kind === 'print' ? '#000' : kind === 'dark' ? '#EEF2F7' : t.couleur;
   if (kind === 'square') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="' + t.couleur + '"/>' + TH_ICON.replace('{c}', '#fff') + '</svg>');
+  if (kind === 'text' && t.barre && thContrast(c, t.barre) < 3) { c = thInk(t.barre); ink = c; }
   if (kind === 'text') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" height="100" width="' + (130 + n.length * 27) + '" viewBox="0 0 ' + (130 + n.length * 27) + ' 100">' + TH_ICON.replace('{c}', c) + '<text x="104" y="66" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="' + ink + '">' + n + '</text></svg>');
   var w = Math.max(900, 300 + n.length * 50);
   return thSvg('<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="220" viewBox="0 0 ' + w + ' 220">' + (kind === 'print' ? '<rect width="' + w + '" height="220" fill="#fff"/>' : '') + '<g transform="translate(40,10) scale(2)">' + TH_ICON.replace('{c}', c) + '</g><text x="270" y="' + (sub ? 128 : 140) + '" font-family="Arial,Helvetica,sans-serif" font-size="84" font-weight="700" fill="' + ink + '">' + n + '</text>' + (sub ? '<text x="274" y="178" font-family="Arial,Helvetica,sans-serif" font-size="34" fill="' + ink + '">' + sub + '</text>' : '') + '</svg>');
@@ -453,6 +509,28 @@ function themeApply() {
   } else {
     css = 'html:root{--gold:' + thMix(c, '#ffffff', .3) + ';--gold-l:' + thMix(c, '#ffffff', .55) + '}';
   }
+  /* couleurs fines, mode sombre personnalisé, polices, formes, fond d'écran */
+  var sb = t.sombre, F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, R = document.documentElement;
+  if (APP_ID === 'caisse') {
+    css += 'html:root{' + (t.fond ? '--ground:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + '}';
+    if (t.barre) css += 'html:root:not([data-theme="dark"]) .header{background:' + t.barre + ';color:' + thInk(t.barre) + '}html:root:not([data-theme="dark"]) .header .sub,html:root:not([data-theme="dark"]) .header small{color:' + thInk(t.barre) + ';opacity:.8}';
+    if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';--on-green:' + thInk(sb.couleur) + ';' : '') + (sb.fond ? '--ground:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
+    css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3,.cat,.prod .m,.tabs button,.mt-l{font-family:' + FT + '}';
+    css += '.prod{position:relative;overflow:hidden}.prod.ph{height:178px;padding-top:0}.prod .pph{width:calc(100% + 32px);margin:0 -16px 6px;height:84px;object-fit:cover;display:block}';
+    if (t.fondImage) css += '#app>.center{background-image:linear-gradient(rgba(255,255,255,' + (t.voile / 100) + '),rgba(255,255,255,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}html[data-theme="dark"] #app>.center{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '")}';
+  } else if (APP_ID === 'admin') {
+    css += 'html:root:not([data-theme="dark"]){' + (t.fond ? '--bg:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + (t.barre ? '--band:' + t.barre + ';--band-ink:' + thInk(t.barre) + ';--band-muted:' + thMix(thInk(t.barre), t.barre, .35) + ';--band-line:' + thMix(t.barre, thInk(t.barre), .18) + ';' : '') + '}';
+    if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';' : '') + (sb.fond ? '--bg:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
+    css += 'html:root{--text:' + F + ';--display:' + FT + '}';
+    if (t.fondImage) css += '.band{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
+  } else {
+    css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
+  }
+  css += 'html.th-carre *:not(.cbadge):not(.dot):not(.sw){border-radius:3px!important}' +
+    'html.th-pastille :is(button,.btn,.cat,.rchip,.small,.free,.apb,select,input[type=text],input[type=password],input[type=search]){border-radius:999px!important}html.th-pastille :is(.prod,.mtile,.mod,section,.card,.modal){border-radius:24px!important}' +
+    'html.th-ombre :is(.prod,.mtile,.mod,section,.cat,.card,.evcard,.modal){box-shadow:0 4px 14px rgba(0,0,0,.10)!important}' + (APP_ID === 'caisse' ? 'html.th-compact body{zoom:.9}' : '');
+  ['th-carre', 'th-pastille', 'th-ombre', 'th-compact'].forEach(function (k) { R.classList.remove(k); });
+  if (t.forme !== 'arrondi') R.classList.add('th-' + t.forme); if (t.ombre) R.classList.add('th-ombre'); if (t.densite === 'compacte') R.classList.add('th-compact');
   var el = document.getElementById('theme-vars');
   if (!el) { el = document.createElement('style'); el.id = 'theme-vars'; document.head.appendChild(el); }
   el.textContent = css;
@@ -483,7 +561,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v6'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v7'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
@@ -1627,7 +1705,9 @@ function logDrawer(motif, venteId) {
 /* ---------- Ticket : contenu et mise en page (proposition 1, à valider avec le gérant) ----------
    Les champs vides ne sont pas imprimés ; dans l'aperçu, ils apparaissent comme « [à compléter] ». */
 var TICKET = {}; themeTicket(TICKET); // coordonnées du commerce : Admin › Paramètres › Apparence (theme.json)
-var TK_W = 48; // caractères par ligne (police A, papier 80 mm)
+var TK_W = 48; // caractères par ligne (police A) : 48 en 80 mm, 32 en 58 mm (Apparence du ticket)
+function tkSync() { TK_W = themeGet().ticket.papier === '58' ? 32 : 48; }
+tkSync();
 /* caractères absents de la page de codes de l'imprimante */
 function tkTxt(s) { return String(s).replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...').replace(/−/g, '-').replace(/ /g, ' '); }
 function tkDiscLabel(r, base) { return r.type === 'pourcentage' ? base + ' ' + String(r.valeur).replace('.', ',') + ' %' : base; }
@@ -1647,11 +1727,12 @@ function tkWrap(s, w) {
 }
 /* Logo en noir et blanc pour l'imprimante (raster 1 bit, 384 points de large ≈ 2/3 du papier). Préparé une fois au démarrage. */
 var LOGO_RASTER = null;
-(function () {
+function tkPrepLogo() {
+  var TT = themeGet().ticket; if (TT.logoTaille === 'aucun') { LOGO_RASTER = null; return; }
   try {
     var img = new Image();
     img.onload = function () {
-      var w = 384, h = Math.round(img.height * w / img.width), c = document.createElement('canvas'); c.width = w; c.height = h;
+      var maxw = TT.papier === '58' ? 384 : 576, w = Math.min(maxw, TT.logoTaille === 'petit' ? 256 : TT.logoTaille === 'grand' ? 512 : 384); w -= w % 8; var h = Math.round(img.height * w / img.width), c = document.createElement('canvas'); c.width = w; c.height = h;
       var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
       var px = g.getImageData(0, 0, w, h).data, bpr = Math.ceil(w / 8), bytes = new Uint8Array(bpr * h);
       for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
@@ -1662,30 +1743,33 @@ var LOGO_RASTER = null;
       LOGO_RASTER = { w: w, h: h, data: btoa(s) };
       if (S.modal === 'tkprev') render();
     };
-    img.src = themeLogo('print');
+    img.src = themeLogo('ticket');
   } catch (e) {}
-})();
+}
+tkPrepLogo();
 function ticketXml(v, opts) {
-  opts = opts || {};
-  var p = v.paiement, x = '<text lang="fr"/>', ap = !!opts.apercu, SEP = Array(TK_W + 1).join('-'), SEP2 = Array(TK_W + 1).join('=');
+  opts = opts || {}; tkSync();
+  var TT = themeGet().ticket, AF = TT.afficher;
+  var p = v.paiement, x = '<text lang="fr"/>', ap = !!opts.apercu, SEP = Array(TK_W + 1).join(TT.separateur), SEP2 = Array(TK_W + 1).join('=');
   function t(s) { x += '<text>' + xmlEsc(tkTxt(s)) + '&#10;</text>'; }
   function st(a) { x += '<text ' + a + '/>'; }
   function opt(val, label) { if (val) t(val); else if (ap) t('[' + label + ' à compléter]'); }
-  st('align="center"');
+  st('align="' + (TT.entete === 'gauche' ? 'left' : 'center') + '"');
   if (opts.duplicata) { st('reverse="true" em="true" dw="true" dh="true"'); t(' DUPLICATA '); st('reverse="false" em="false" dw="false" dh="false"'); x += '<feed line="1"/>'; }
   if (LOGO_RASTER) x += '<image width="' + LOGO_RASTER.w + '" height="' + LOGO_RASTER.h + '" color="color_1" mode="mono">' + LOGO_RASTER.data + '</image>';
-  else { st('dw="true" dh="true" em="true"'); t('Caisse Démo'); st('dw="false" dh="false" em="false"'); }
+  if (!LOGO_RASTER || TT.nomGrand) { st('dw="true" dh="true" em="true"'); tkWrap(themeGet().nom, TK_W / 2).forEach(function (s) { t(s); }); st('dw="false" dh="false" em="false"'); }
   if (TICKET.activite) { st('em="true"'); t(TICKET.activite); st('em="false"'); }
   (TICKET.adresse.length ? TICKET.adresse : ap ? [''] : []).forEach(function (l) { opt(l, 'Adresse'); });
   opt(TICKET.telephone || '', 'Téléphone');
   opt(TICKET.email || '', 'E-mail');
   opt(TICKET.tva ? 'TVA ' + TICKET.tva : '', 'N° TVA');
   if (TICKET.site) t(TICKET.site);
+  if (TT.messageEntete) { x += '<feed line="1"/>'; st('em="true"'); tkWrap(TT.messageEntete).forEach(function (s) { t(s); }); st('em="false"'); }
   x += '<feed line="1"/>';
   st('align="left"');
   var num = v.id.split('-').pop();
-  t(tkLine('Ticket n° ' + num, frDate(v.horodatage) + ' ' + v.horodatage.slice(11, 16)));
-  if (v.pointDeVente) t('Point de vente : ' + v.pointDeVente.nom);
+  if (AF.numero || AF.date) t(tkLine(AF.numero ? 'Ticket n° ' + num : '', AF.date ? frDate(v.horodatage) + ' ' + v.horodatage.slice(11, 16) : ''));
+  if (v.pointDeVente && AF.pdv) t('Point de vente : ' + v.pointDeVente.nom);
   if (v.commande) { st('em="true"'); t('Commande n° ' + cmdNum(v.commande.numero)); st('em="false"'); }
   if (v.livraisonAjoutee) t('Livraison ajoutée le ' + frDate(v.livraisonAjoutee.horodatage).slice(0, 5) + ' à ' + v.livraisonAjoutee.horodatage.slice(11, 16));
   if (v.venteLiee) { var lo = findSale(v.venteLiee); t('Livraison de la vente n° ' + saleNum(v.venteLiee) + (lo ? ' du ' + frDate(lo.date).slice(0, 5) : '')); }
@@ -1708,25 +1792,28 @@ function ticketXml(v, opts) {
     t(tkLine(tkDiscLabel(v.remiseTicket, 'Remise sur le ticket'), '-' + tkMoney(v.sousTotal - v.total)));
   }
   st('em="true" dw="true" dh="true"'); t(tkLine('TOTAL', tkMoney(v.total) + ' EUR', TK_W / 2)); st('em="false" dw="false" dh="false"');
-  t(nb + ' article' + (nb > 1 ? 's' : ''));
+  if (TT.tauxTVA > 0) t(tkLine('dont TVA ' + String(TT.tauxTVA).replace('.', ',') + ' %', tkMoney(v.total - v.total / (1 + TT.tauxTVA / 100))));
+  if (AF.nbArticles) t(nb + ' article' + (nb > 1 ? 's' : ''));
   t(SEP);
   if (v.commande) { t(tkLine('Déjà payé à la commande', tkMoney(v.commande.dejaPaye || 0))); t(tkLine('Encaissé maintenant', tkMoney(p.cash + p.bancontact))); }
-  if (p.cash > 0) t(tkLine('Cash', tkMoney(p.cash)));
-  if (p.bancontact > 0) t(tkLine('Bancontact', tkMoney(p.bancontact)));
-  if (p.mode === 'cash' && opts.recu) { t(tkLine('Reçu', tkMoney(opts.recu))); t(tkLine('Rendu', tkMoney(Math.max(0, opts.recu - v.total)))); }
+  if (p.cash > 0 && AF.paiement) t(tkLine('Cash', tkMoney(p.cash)));
+  if (p.bancontact > 0 && AF.paiement) t(tkLine('Bancontact', tkMoney(p.bancontact)));
+  if (p.mode === 'cash' && opts.recu && AF.rendu) { t(tkLine('Reçu', tkMoney(opts.recu))); t(tkLine('Rendu', tkMoney(Math.max(0, opts.recu - v.total)))); }
   if (unpaid(v)) { st('em="true"'); t(tkLine('A FACTURER - NON PAYÉ', tkMoney(dueOf(v)))); st('em="false"'); }
   if (v.facture) tkWrap('Facture au nom de : ' + v.facture.societe).forEach(function (s) { t(s); });
   if (v.annulation) { x += '<feed line="1"/>'; st('em="true"'); t('VENTE ANNULÉE le ' + frDate(v.annulation.horodatage) + ' à ' + v.annulation.horodatage.slice(11, 16)); st('em="false"'); }
   x += '<feed line="1"/>';
   st('align="center"');
-  if (TICKET.merci) { st('em="true"'); t(TICKET.merci); st('em="false"'); }
-  if (TICKET.mention) t(TICKET.mention);
+  if (themeSaisonActive(TT)) { st('em="true"'); tkWrap(TT.saison).forEach(function (s) { t(s); }); st('em="false"'); }
+  if (TICKET.merci) { st('em="true"'); tkWrap(TICKET.merci).forEach(function (s) { t(s); }); st('em="false"'); }
+  if (TT.qr) { x += '<feed line="1"/><symbol type="qrcode_model_2" level="level_m" width="' + (TK_W === 32 ? 4 : 6) + '" size="0">' + xmlEsc(TT.qr) + '</symbol>'; if (TT.qrTexte) t(TT.qrTexte); }
+  if (TICKET.mention) tkWrap(TICKET.mention).forEach(function (s) { t(s); });
   if (opts.duplicata) { var now = isoLocal(new Date()); t('Duplicata imprimé le ' + frDate(now) + ' à ' + now.slice(11, 16)); }
   return x + '<feed line="3"/><cut type="feed"/>';
 }
 /* Ticket vendeur de livraison, à joindre à la marchandise : coordonnées du client et articles (sans les prix) */
 function ticketLivXml(v) {
-  var x = '<text lang="fr"/>', SEP = Array(TK_W + 1).join('-'), SEP2 = Array(TK_W + 1).join('='), L = v.livraison || {};
+  tkSync(); var x = '<text lang="fr"/>', SEP = Array(TK_W + 1).join(themeGet().ticket.separateur), SEP2 = Array(TK_W + 1).join('='), L = v.livraison || {};
   function t(s) { x += '<text>' + xmlEsc(tkTxt(s)) + '&#10;</text>'; }
   function st(a) { x += '<text ' + a + '/>'; }
   var big = 'em="true" dw="true" dh="true"', nobig = 'em="false" dw="false" dh="false"';
@@ -1753,6 +1840,7 @@ function ticketLivXml(v) {
   return x + '<feed line="3"/><cut type="feed"/>';
 }
 /* Aperçu : rendu en page web du document envoyé à l'imprimante (mêmes données que l'impression) */
+window.caisseTicketApercu = function () { return ticketHtml(ticketXml(sampleSale(), { apercu: true, recu: 20 })); }; // aperçu (tests)
 function ticketHtml(xml) {
   var doc = new DOMParser().parseFromString('<r xmlns="' + EPOS_NS + '">' + xml + '</r>', 'text/xml');
   var stt = { align: 'left', em: false, dw: false, dh: false, reverse: false }, out = '', line = '';
@@ -1773,7 +1861,8 @@ function ticketHtml(xml) {
       var c = document.createElement('canvas'); c.width = w; c.height = h; var g = c.getContext('2d'), id = g.createImageData(w, h);
       for (var y = 0; y < h; y++) for (var xx = 0; xx < w; xx++) { var on = bin.charCodeAt(y * bpr + (xx >> 3)) & (0x80 >> (xx & 7)), j = (y * w + xx) * 4; id.data[j] = id.data[j + 1] = id.data[j + 2] = on ? 20 : 255; id.data[j + 3] = 255; }
       g.putImageData(id, 0, 0);
-      out += '<div style="text-align:' + stt.align + '"><img src="' + c.toDataURL() + '" style="width:' + (w / 576 * 100) + '%;image-rendering:pixelated" alt=""></div>';
+      out += '<div style="text-align:' + stt.align + '"><img src="' + c.toDataURL() + '" style="width:' + (w / (TK_W === 32 ? 384 : 576) * 100) + '%;image-rendering:pixelated" alt=""></div>';
+    } else if (n.localName === 'symbol') { out += '<div style="text-align:' + stt.align + '"><span class="tkqr" title="' + esc(n.textContent) + '">QR</span></div>';
     } else if (n.localName === 'cut') { out += '<div class="tkcut">✂ - - - - - - - - - - - - - - - - - - -</div>'; }
   });
   if (line) flush();
@@ -2366,11 +2455,11 @@ function vCaisse() {
   var CATS = visibleCats();
   var cat = CATS.filter(function (c) { return c.id === S.cat; })[0] || CATS[0] || { nom: '', produits: [] };
   var html = '<div class="body"><div class="catalog"><div class="cats">' +
-    CATS.map(function (c) { return '<button class="cat' + (c.id === cat.id ? ' on' : '') + '" data-a="cat" data-v="' + c.id + '">' + esc(c.nom) + '</button>'; }).join('') +
+    CATS.map(function (c) { var cc = themeCatStyle(c.id); return '<button class="cat' + (c.id === cat.id ? ' on' : '') + '" data-a="cat" data-v="' + c.id + '"' + (cc ? ' style="' + (c.id === cat.id ? 'background:' + cc + ';border-color:' + cc + ';color:' + thInk(cc) : 'border-color:' + cc) + '"' : '') + '>' + esc(themeCatEmoji(c.id)) + esc(c.nom) + '</button>'; }).join('') +
     vShortcut() + '</div><div class="products">' +
     (CATS.length ? '' : '<div class="emptycat">Aucun article dans le catalogue. Ajoutez-les dans l\u2019app Admin (Gestion d\u2019événement › Catalogue), ou utilisez « + Article libre ».' + '</div>') +
     (function () { var st = stockOfPlace(); return cat.produits.map(function (p) {
-      return '<button class="prod" data-a="add" data-v="' + p.id + '"><div style="display:flex;flex-direction:column;gap:2px"><span class="m">' + esc(p.libelle) + '</span><span class="s">' + esc(cat.nom) + '</span></div>' + vRest(st, p.id) + '<span class="p">' + money(p.prix) + '</span></button>';
+      var ph = themePhoto(p.id), cc = themeCatStyle(cat.id); return '<button class="prod' + (ph ? ' ph' : '') + '" data-a="add" data-v="' + p.id + '"' + (cc ? ' style="border-top:5px solid ' + cc + '"' : '') + '>' + (ph ? '<img class="pph" src="' + ph + '" alt="">' : '') + '<div style="display:flex;flex-direction:column;gap:2px"><span class="m">' + esc(p.libelle) + '</span><span class="s">' + esc(cat.nom) + '</span></div>' + vRest(st, p.id) + '<span class="p">' + money(p.prix) + '</span></button>';
     }).join(''); })() + '</div></div>';
 
   if (PHONE && S.cart.length && !S.cartOpen) {
@@ -2878,7 +2967,8 @@ function cfgApply() {
 }
 function cfgCheck(manual) {
   if (navigator.onLine === false) return;
-  themeCheck(function () { render(); if (manual) toast('Apparence mise à jour'); });
+  themeCheck(function () { tkPrepLogo(); photosCheck(render); render(); if (manual) toast('Apparence mise à jour'); });
+  photosCheck(render);
   fetch('config.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { if (r.status === 404) return null; if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function (j) {

@@ -6,40 +6,51 @@
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
 header{background:#111A26;color:#EEF2F7;padding:16px 20px}header .in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 header h1{font-size:20px;margin:0;flex:1}header small{color:#A9B4C2}
-main{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+nav.tabs{max-width:1080px;margin:0 auto;padding:12px 16px 0;display:flex;gap:8px}
+nav.tabs button{background:#fff;color:var(--ink);border:1px solid var(--line)}nav.tabs button.on{background:var(--c);color:#fff;border-color:var(--c)}
+main{max-width:1080px;margin:0 auto;padding:16px 16px 60px}
 section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
 h2{font-size:18px;margin:0 0 10px}p{color:var(--mut);line-height:1.5;margin:6px 0}
 label{display:block;font-weight:700;font-size:14px;margin:12px 0 4px}
 input,select,textarea{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 10px;border:1px solid #C9D1DB;border-radius:10px;background:#fff}
-textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;min-height:90px}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;min-height:90px}textarea.note{font-family:inherit;font-size:14px;min-height:60px}
 button,.b{font:inherit;font-weight:700;font-size:14px;padding:9px 14px;border:1px solid var(--c);border-radius:10px;background:var(--c);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
 .b.sec,button.sec{background:#fff;color:var(--c)}button.danger{background:#fff;color:var(--red);border-color:var(--red)}button:disabled{opacity:.5;cursor:default}
 header button{background:transparent;border-color:#3A4757;color:#EEF2F7}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
 .card{border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
 .card h3{margin:0;font-size:17px}.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
-.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E8F0F8;color:var(--c)}.tag.gh{background:#E6F4EA;color:var(--ok)}.tag.warn{background:#FBEDE3;color:#7A3D00}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E8F0F8;color:var(--c)}.tag.gh{background:#E6F4EA;color:var(--ok)}.tag.warn{background:#FBEDE3;color:#7A3D00}.tag.so{background:#F1E8FA;color:#6A3F99}
 .msg{font-weight:600;margin-top:8px}.ok{color:var(--ok)}.err{color:var(--red)}.faint{color:var(--mut);font-size:13px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:640px){.two{grid-template-columns:1fr}}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:640px){.types{grid-template-columns:1fr}}
+.type{border:2px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;display:block;font-weight:400;margin:0}.type.on{border-color:var(--c);background:#F3F7FB}.type b{display:block;font-size:15px}.type input{width:auto;margin-right:6px}
+.filter{max-width:320px}
 </style></head>
 <body>
 <header><div class="in"><h1>SuperAdmin · Caisse <small id="ver"></small></h1><span id="hb"></span></div></header>
+<nav class="tabs" id="tabs"></nav>
 <main id="m"></main>
 <script src="../core/templates.js"></script>
 <script>
-/* Écran de Loïc : gère les dossiers des amis dans le dépôt du site (scraper147/app) avec SON jeton (Contents : Read and write
-   sur ce dépôt), chiffré sur cet appareil. N'a jamais accès aux données des amis (leurs dépôts privés). */
-var K = 'caisse-superadmin:', RESERVED = ['core', 'superadmin', 'cle', 'index', 'app', 'assets'];
-var S = { acc: null, amis: null, tree: null, err: null, busy: '', form: null, edit: null, del: null, version: null };
+/* Écran de Loïc : apps (un dossier par app dans le dépôt du site) et clients (à qui appartiennent les apps).
+   Jeton de Loïc (Contents : Read and write sur le dépôt du site), chiffré sur cet appareil ; jamais d'accès aux données des apps.
+   Clients : superadmin/clients.json, CHIFFRÉ (le dépôt du site est public) avec une clé tirée de la phrase de passe. */
+var K = 'caisse-superadmin:', RESERVED = ['core', 'superadmin', 'cle', 'index', 'app', 'assets'], CLIENTS_PATH = 'superadmin/clients.json';
+var S = { acc: null, ck: null, apps: null, clients: null, clientsSha: null, clientsErr: null, tree: null, err: null, busy: '', form: null, edit: null, del: null, cform: null, cdel: null, version: null, tab: 'apps', filtre: '' };
 function $(id) { return document.getElementById(id); }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function norm(p) { return String(p || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase(); }
 function b64e(u) { var s = ''; u = new Uint8Array(u); for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
 function b64d(s) { var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
 function utf8b64(s) { return btoa(unescape(encodeURIComponent(s))); }
+function b64utf8(s) { return decodeURIComponent(escape(atob(String(s).replace(/\s/g, '')))); }
 function key(pass, salt, use) { return crypto.subtle.importKey('raw', new TextEncoder().encode(norm(pass)), 'PBKDF2', false, ['deriveKey']).then(function (b) { return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 600000, hash: 'SHA-256' }, b, { name: 'AES-GCM', length: 256 }, false, [use]); }); }
 function enc(obj, pass) { var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)); return key(pass, salt, 'encrypt').then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(JSON.stringify(obj))); }).then(function (c) { return { salt: b64e(salt), iv: b64e(iv), data: b64e(c) }; }); }
 function dec(b, pass) { return key(pass, b64d(b.salt), 'decrypt').then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(b.iv) }, k, b64d(b.data)); }).then(function (p) { return JSON.parse(new TextDecoder().decode(p)); }); }
+/* clé des clients : PBKDF2(phrase, sel fixe) → 32 octets, gardés pour la session */
+function clientsKeyFrom(pass) { return crypto.subtle.importKey('raw', new TextEncoder().encode(norm(pass)), 'PBKDF2', false, ['deriveBits']).then(function (b) { return crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode('caisse-superadmin-clients'), iterations: 300000, hash: 'SHA-256' }, b, 256); }).then(function (bits) { return b64e(bits); }); }
+function ckImport() { return crypto.subtle.importKey('raw', b64d(S.ck), 'AES-GCM', false, ['encrypt', 'decrypt']); }
 function gitSha(text) { var b = new TextEncoder().encode(text), h = new TextEncoder().encode('blob ' + b.length + '\0'), all = new Uint8Array(h.length + b.length); all.set(h); all.set(b, h.length); return crypto.subtle.digest('SHA-1', all).then(function (d) { return Array.prototype.map.call(new Uint8Array(d), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }); }
 function gh(path, opts) {
   opts = opts || {};
@@ -49,25 +60,36 @@ function gh(path, opts) {
       function () { var e = new Error('Pas de réseau'); e.status = 0; throw e; });
 }
 function cpath(p) { return '/repos/' + S.acc.depot + '/contents/' + p.split('/').map(encodeURIComponent).join('/'); }
-/* ---------- chargement : arbre du dépôt du site, dossiers contenant client.js ---------- */
+/* ---------- chargement ---------- */
 function load() {
   S.busy = 'Lecture du dépôt…'; S.err = null; render();
   fetch('../core/version.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) { S.version = v; render(); }, function () {});
   gh('/repos/' + S.acc.depot + '/git/trees/HEAD?recursive=1').then(function (t) {
     S.tree = {}; (t.tree || []).forEach(function (x) { if (x.type === 'blob') S.tree[x.path] = x.sha; });
     var ids = Object.keys(S.tree).map(function (p) { var m = /^([^/]+)\/client\.js$/.exec(p); return m ? m[1] : null; }).filter(Boolean).sort();
-    return Promise.all(ids.map(function (id) { return gh(cpath(id + '/client.js'), { raw: true }).then(function (txt) { var j = {}; try { j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) {} j.id = j.id || id; return j; }); }));
-  }).then(function (amis) { S.amis = amis; S.busy = ''; render(); }, function (e) { S.busy = ''; S.err = e.status === 401 ? 'GitHub refuse le jeton (expiré ou révoqué).' : e.status === 404 ? 'Dépôt du site introuvable avec ce jeton.' : e.message; render(); });
+    var pc = S.tree[CLIENTS_PATH] ? gh(cpath(CLIENTS_PATH)).then(function (j) { S.clientsSha = j.sha; return clientsDecrypt(JSON.parse(b64utf8(j.content))); }) : Promise.resolve({ clients: {} });
+    return Promise.all([Promise.all(ids.map(function (id) { return gh(cpath(id + '/client.js'), { raw: true }).then(function (txt) { var j = {}; try { j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) {} j.id = j.id || id; return j; }); })),
+      pc.then(function (c) { S.clientsErr = null; return c; }, function () { S.clientsErr = 'Liste des clients illisible : elle a été chiffrée avec une autre phrase de passe.'; return null; })]);
+  }).then(function (r) { S.apps = r[0]; S.clients = r[1] ? r[1].clients || {} : null; S.busy = ''; render(); }, function (e) { S.busy = ''; S.err = e.status === 401 ? 'GitHub refuse le jeton (expiré ou révoqué).' : e.status === 404 ? 'Dépôt du site introuvable avec ce jeton.' : e.message; render(); });
 }
-/* ---------- fichiers d'un ami (modèles de core/templates.js) ---------- */
+function clientsDecrypt(f) { return ckImport().then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(f.iv) }, k, b64d(f.data)); }).then(function (p) { return JSON.parse(new TextDecoder().decode(p)); }); }
+function clientsSave(clients, msg) {
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  return ckImport().then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(JSON.stringify({ clients: clients }))); }).then(function (ct) {
+    var file = JSON.stringify({ format: 'caisse/clients', formatVersion: 1, chiffre: 'AES-GCM, clé tirée de la phrase de passe SuperAdmin', majLe: new Date().toISOString(), iv: b64e(iv), data: b64e(ct) }, null, 1);
+    var body = { message: msg, content: utf8b64(file) }; if (S.clientsSha) body.sha = S.clientsSha;
+    return gh(cpath(CLIENTS_PATH), { method: 'PUT', body: body }).then(function (r) { S.clientsSha = r.content.sha; S.tree[CLIENTS_PATH] = r.content.sha; S.clients = clients; });
+  });
+}
+/* ---------- fichiers d'une app (modèles de core/templates.js) ; une caisse simple n'a pas le dossier soiree/ ---------- */
 function filesFor(cl) {
   var out = {}, T = window.CAISSE_TEMPLATES || {}, nj = JSON.stringify(cl.nom).slice(1, -1);
-  Object.keys(T).forEach(function (rel) { out[cl.id + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
-  out[cl.id + '/client.js'] = '/* Ami « ' + cl.id + ' » : seul fichier propre à cet ami. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
+  Object.keys(T).forEach(function (rel) { if (cl.type === 'simple' && rel.indexOf('soiree/') === 0) return; out[cl.id + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
+  out[cl.id + '/client.js'] = '/* App « ' + cl.id + ' » : seul fichier propre à cette app. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
   return out;
 }
-/* Écrit seulement les fichiers qui changent (empreinte git comparée à l'arbre), un par un (pas de conflit de branche) */
-function writeFiles(files, msg) {
+function extraFiles(id, files) { return Object.keys(S.tree).filter(function (p) { return p.indexOf(id + '/soiree/') === 0 && !files[p]; }); }
+function writeFiles(files, msg, remove) {
   var paths = Object.keys(files), n = 0;
   return paths.reduce(function (p, path) {
     return p.then(function () {
@@ -78,109 +100,171 @@ function writeFiles(files, msg) {
         return gh(cpath(path), { method: 'PUT', body: body }).then(function (r) { S.tree[path] = r.content.sha; });
       });
     });
-  }, Promise.resolve()).then(function () { return n; });
+  }, Promise.resolve()).then(function () {
+    return (remove || []).reduce(function (p, path) { return p.then(function () { n++; S.busy = msg + ' : retrait de ' + path; render(); return gh(cpath(path), { method: 'DELETE', body: { message: msg + ' : retrait de ' + path, sha: S.tree[path] } }).then(function () { delete S.tree[path]; }); }); }, Promise.resolve());
+  }).then(function () { return n; });
 }
 function checkCle(txt) {
   if (!txt.trim()) return null;
   var j = JSON.parse(txt); if (!j.salt || !j.iv || !j.data) throw new Error('Clé incomplète (salt, iv, data).');
   return { v: j.v || 1, kdf: j.kdf || 'PBKDF2-SHA256', iter: j.iter || 600000, salt: j.salt, iv: j.iv, data: j.data, le: j.le || new Date().toISOString().slice(0, 10) };
 }
-function saveAmi(isNew) {
+function saveApp(isNew) {
   var f = S.form, id = (f.id || '').trim().toLowerCase(), nom = (f.nom || '').trim(), cle = null;
   if (!/^[a-z0-9][a-z0-9-]{1,29}$/.test(id) || RESERVED.indexOf(id) >= 0) { S.err = 'Identifiant : 2 à 30 caractères, lettres minuscules, chiffres et tirets (pas « ' + RESERVED.join(', ') + ' »).'; render(); return; }
-  if (!nom) { S.err = 'Indiquez le nom.'; render(); return; }
+  if (!nom) { S.err = 'Indiquez le nom de l’app.'; render(); return; }
   if (isNew && Object.keys(S.tree).some(function (p) { return p.indexOf(id + '/') === 0; })) { S.err = 'Un dossier « ' + id + ' » existe déjà.'; render(); return; }
   try { cle = checkCle(f.cle || ''); } catch (e) { S.err = 'Clé illisible : ' + e.message; render(); return; }
-  if (f.donnees === 'github' && !cle) { S.err = 'Le mode GitHub demande la clé chiffrée de l’ami (page « Préparer la clé d’accès »).'; render(); return; }
-  var old = isNew ? {} : (S.amis.filter(function (a) { return a.id === id; })[0] || {});
-  var cl = { id: id, nom: nom, donnees: f.donnees, canal: 'stable', creeLe: old.creeLe || new Date().toISOString().slice(0, 10) };
+  if (f.donnees === 'github' && !cle) { S.err = 'Le mode GitHub demande la clé chiffrée (page « Préparer la clé d’accès »).'; render(); return; }
+  var old = isNew ? {} : (S.apps.filter(function (a) { return a.id === id; })[0] || {});
+  var cl = { id: id, nom: nom, type: f.type === 'simple' ? 'simple' : 'soiree', client: f.client || '', donnees: f.donnees, canal: 'stable', creeLe: old.creeLe || new Date().toISOString().slice(0, 10) };
   if (cle) cl.cle = cle;
-  S.err = null;
-  writeFiles(filesFor(cl), (isNew ? 'Nouvel ami ' : 'Mise à jour de l’ami ') + id).then(function (n) {
-    S.busy = ''; S.form = null; S.edit = null; S.flash = (isNew ? 'Dossier « ' + id + ' » créé' : n ? n + ' fichier(s) mis à jour pour « ' + id + ' »' : 'Rien à changer pour « ' + id + ' »') + '. GitHub Pages publie en une à deux minutes.'; load();
+  S.err = null; var files = filesFor(cl);
+  writeFiles(files, (isNew ? 'Nouvelle app ' : 'Mise à jour de l’app ') + id, extraFiles(id, files)).then(function (n) {
+    S.busy = ''; S.form = null; S.edit = null; S.flash = (isNew ? 'App « ' + id + ' » créée' : n ? n + ' fichier(s) mis à jour pour « ' + id + ' »' : 'Rien à changer pour « ' + id + ' »') + '. GitHub Pages publie en une à deux minutes.'; load();
   }, function (e) { S.busy = ''; S.err = 'Échec : ' + e.message + ' (les fichiers déjà écrits restent ; relancez pour terminer).'; render(); });
 }
 function syncAll() {
-  var all = {}; S.amis.forEach(function (a) { var fs = filesFor(a); Object.keys(fs).forEach(function (p) { all[p] = fs[p]; }); });
-  writeFiles(all, 'Mise à jour des dossiers d’amis').then(function (n) { S.busy = ''; S.flash = n ? n + ' fichier(s) remis à jour.' : 'Tous les dossiers sont à jour.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+  var all = {}, rm = []; S.apps.forEach(function (a) { var fs = filesFor(a); Object.keys(fs).forEach(function (p) { all[p] = fs[p]; }); rm = rm.concat(extraFiles(a.id, fs)); });
+  writeFiles(all, 'Mise à jour des dossiers des apps', rm).then(function (n) { S.busy = ''; S.flash = n ? n + ' fichier(s) remis à jour.' : 'Tous les dossiers sont à jour.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
-function delAmi(id) {
+function delApp(id) {
   var paths = Object.keys(S.tree).filter(function (p) { return p.indexOf(id + '/') === 0; }), n = 0;
-  paths.reduce(function (p, path) { return p.then(function () { S.busy = 'Suppression (' + (++n) + '/' + paths.length + ')…'; render(); return gh(cpath(path), { method: 'DELETE', body: { message: 'Suppression de l’ami ' + id + ' : ' + path, sha: S.tree[path] } }).then(function () { delete S.tree[path]; }); }); }, Promise.resolve())
-    .then(function () { S.busy = ''; S.del = null; S.flash = 'Dossier « ' + id + ' » supprimé. Les données de l’ami (son dépôt privé) ne sont pas touchées.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+  paths.reduce(function (p, path) { return p.then(function () { S.busy = 'Suppression (' + (++n) + '/' + paths.length + ')…'; render(); return gh(cpath(path), { method: 'DELETE', body: { message: 'Suppression de l’app ' + id + ' : ' + path, sha: S.tree[path] } }).then(function () { delete S.tree[path]; }); }); }, Promise.resolve())
+    .then(function () { S.busy = ''; S.del = null; S.flash = 'App « ' + id + ' » supprimée. Ses données (dépôt privé) ne sont pas touchées.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+}
+function saveClient() {
+  var f = S.cform, nom = (f.nom || '').trim(); if (!nom) { S.err = 'Indiquez le nom du client.'; render(); return; }
+  var cs = JSON.parse(JSON.stringify(S.clients || {})), id = f.id || ('c' + Date.now().toString(36));
+  cs[id] = { nom: nom, contact: (f.contact || '').trim(), email: (f.email || '').trim(), tel: (f.tel || '').trim(), note: (f.note || '').trim(), creeLe: (cs[id] && cs[id].creeLe) || new Date().toISOString().slice(0, 10) };
+  S.busy = 'Enregistrement du client…'; S.err = null; render();
+  clientsSave(cs, (f.id ? 'Client modifié' : 'Nouveau client') + ' (SuperAdmin)').then(function () { S.busy = ''; S.cform = null; S.flash = 'Client « ' + nom + ' » enregistré.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+}
+function delClient(id) {
+  var cs = JSON.parse(JSON.stringify(S.clients || {})), nom = (cs[id] || {}).nom; delete cs[id];
+  S.busy = 'Suppression du client…'; render();
+  clientsSave(cs, 'Client supprimé (SuperAdmin)').then(function () { S.busy = ''; S.cdel = null; S.flash = 'Client « ' + nom + ' » supprimé (ses apps restent, sans client).'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
 /* ---------- affichage ---------- */
 function vLock() {
   var has = !!localStorage.getItem(K + 'cle');
   return '<section><h2>' + (has ? 'Déverrouiller' : 'Première utilisation sur cet appareil') + '</h2>' +
     (has ? '<p>Phrase de passe de la clé SuperAdmin de cet appareil.</p><label>Phrase de passe</label><input type="password" id="pp" autocomplete="current-password"><div class="row" style="margin-top:12px"><button data-a="unlock">Déverrouiller</button><button class="danger" data-a="forget">Oublier la clé de cet appareil</button></div>'
-      : '<p>Il faut un jeton GitHub fine-grained avec <strong>Contents : Read and write</strong> sur le dépôt du site (et rien d’autre). Il est chiffré sur cet appareil avec une phrase de passe, et seulement déverrouillé pour la session.</p>' +
+      : '<p>Il faut un jeton GitHub fine-grained avec <strong>Contents : Read and write</strong> sur le dépôt du site (et rien d’autre). Il est chiffré sur cet appareil avec une phrase de passe, et seulement déverrouillé pour la session. La même phrase de passe chiffre la liste des clients : utilisez la même sur tous vos appareils.</p>' +
         '<label>Dépôt du site</label><input id="sd" value="scraper147/app"><label>Jeton</label><input id="st" type="password" autocomplete="off" placeholder="github_pat_…">' +
         '<div class="two"><div><label>Phrase de passe (20 caractères au moins)</label><input id="p1" type="password" autocomplete="new-password"></div><div><label>Retaper</label><input id="p2" type="password" autocomplete="new-password"></div></div><div class="row" style="margin-top:12px"><button data-a="setup">Vérifier et enregistrer</button></div>') +
     (S.err ? '<div class="msg err">' + esc(S.err) + '</div>' : '') + (S.busy ? '<div class="msg faint">' + esc(S.busy) + '</div>' : '') + '</section>';
 }
-function vForm(isNew) {
+function clientName(id) { return id && S.clients && S.clients[id] ? S.clients[id].nom : ''; }
+function clientOptions(sel) { var cs = S.clients || {}; return '<option value="">— aucun client —</option>' + Object.keys(cs).sort(function (a, b) { return cs[a].nom.localeCompare(cs[b].nom, 'fr'); }).map(function (id) { return '<option value="' + esc(id) + '"' + (id === sel ? ' selected' : '') + '>' + esc(cs[id].nom) + '</option>'; }).join(''); }
+function vAppForm(isNew) {
   var f = S.form;
-  return '<section><h2>' + (isNew ? 'Nouvel ami' : 'Modifier « ' + esc(f.id) + ' »') + '</h2><div class="two"><div><label>Identifiant (adresse)</label><input data-f="id" value="' + esc(f.id) + '"' + (isNew ? '' : ' disabled') + ' placeholder="ex. jardin"><p class="faint">Adresse : scraper147.github.io/app/<strong>' + esc(f.id || '…') + '</strong>/</p></div>' +
-    '<div><label>Nom</label><input data-f="nom" value="' + esc(f.nom) + '" placeholder="ex. Jardin de Marie"></div></div>' +
-    '<label>Données</label><select data-f="donnees"><option value="local"' + (f.donnees === 'local' ? ' selected' : '') + '>Démonstration (navigateur, un seul appareil)</option><option value="github"' + (f.donnees === 'github' ? ' selected' : '') + '>Dépôt GitHub privé de l’ami (plusieurs appareils)</option></select>' +
-    '<label>Clé chiffrée de l’ami</label><textarea data-f="cle" placeholder=\'{"v":1,"kdf":"PBKDF2-SHA256",…}\'>' + esc(f.cle || '') + '</textarea>' +
-    '<p class="faint">L’ami la prépare sur la page <a href="../cle.html" target="_blank">Préparer la clé d’accès</a> (son dépôt et son jeton, chiffrés avec sa phrase de passe) et vous envoie le texte. Vous ne voyez jamais son jeton.</p>' +
-    '<div class="row" style="margin-top:12px"><button data-a="' + (isNew ? 'create' : 'update') + '"' + (S.busy ? ' disabled' : '') + '>' + (isNew ? 'Créer le dossier' : 'Enregistrer') + '</button><button class="sec" data-a="cancel">Annuler</button></div></section>';
+  function type(v, t, d) { return '<label class="type' + (f.type === v ? ' on' : '') + '"><input type="radio" name="ty" data-f="type" value="' + v + '"' + (f.type === v ? ' checked' : '') + '><b>' + t + '</b><span class="faint">' + d + '</span></label>'; }
+  return '<section><h2>' + (isNew ? 'Nouvelle app' : 'Modifier l’app « ' + esc(f.id) + ' »') + '</h2>' +
+    '<label>Type</label><div class="types">' + type('simple', 'Caisse simple', 'Caisse et Admin : articles, panier, encaissement, ticket, stock, commandes…') + type('soiree', 'Caisse complexe (soirée)', 'En plus : la Caisse Soirée (entrées, cartes à cases, boissons en cases, préventes) et son module dans l’Admin.') + '</div>' +
+    '<div class="two"><div><label>Identifiant (adresse)</label><input data-f="id" value="' + esc(f.id) + '"' + (isNew ? '' : ' disabled') + ' placeholder="ex. jardin"><p class="faint">Adresse : scraper147.github.io/app/<strong>' + esc(f.id || '…') + '</strong>/</p></div>' +
+    '<div><label>Nom de l’app</label><input data-f="nom" value="' + esc(f.nom) + '" placeholder="ex. Marché de Noël"></div></div>' +
+    '<label>Client</label>' + (S.clients ? '<div class="row" style="flex-wrap:nowrap"><select data-f="client">' + clientOptions(f.client) + '</select><button class="sec" data-a="cnewFromApp" style="white-space:nowrap">+ Nouveau client</button></div>' : '<p class="err">' + esc(S.clientsErr || 'Clients indisponibles') + '</p>') +
+    '<label>Données</label><select data-f="donnees"><option value="local"' + (f.donnees === 'local' ? ' selected' : '') + '>Démonstration (navigateur, un seul appareil)</option><option value="github"' + (f.donnees === 'github' ? ' selected' : '') + '>Dépôt GitHub privé (plusieurs appareils)</option></select>' +
+    '<label>Clé chiffrée</label><textarea data-f="cle" placeholder=\'{"v":1,"kdf":"PBKDF2-SHA256",…}\'>' + esc(f.cle || '') + '</textarea>' +
+    '<p class="faint">Le client la prépare sur la page <a href="../cle.html" target="_blank">Préparer la clé d’accès</a> (son dépôt et son jeton, chiffrés avec sa phrase de passe) et vous envoie le texte. Vous ne voyez jamais son jeton.</p>' +
+    '<div class="row" style="margin-top:12px"><button data-a="' + (isNew ? 'create' : 'update') + '"' + (S.busy ? ' disabled' : '') + '>' + (isNew ? 'Créer l’app' : 'Enregistrer') + '</button><button class="sec" data-a="cancel">Annuler</button></div></section>';
 }
-function vAmis() {
-  if (!S.amis) return '';
-  var base = location.href.replace(/superadmin\/.*$/, '');
-  return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Amis (' + S.amis.length + ')</h2><div class="row"><button data-a="new">+ Nouvel ami</button><button class="sec" data-a="sync" title="Réécrit les fichiers des dossiers d’après les modèles de cette version">Remettre les dossiers à jour</button><button class="sec" data-a="reload">Actualiser</button></div></div>' +
-    '<div class="grid" style="margin-top:14px">' + S.amis.map(function (a) {
-      var gh = a.donnees === 'github';
-      return '<div class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(a.nom || a.id) + '</h3><span class="tag' + (gh ? ' gh' : '') + '">' + (gh ? 'GitHub' : 'Démo locale') + '</span></div>' +
+function vClientForm() {
+  var f = S.cform;
+  return '<section><h2>' + (f.id ? 'Modifier le client' : 'Nouveau client') + '</h2><div class="two"><div><label>Nom (commerce, association…)</label><input data-cf="nom" value="' + esc(f.nom) + '"></div><div><label>Personne de contact</label><input data-cf="contact" value="' + esc(f.contact) + '"></div></div>' +
+    '<div class="two"><div><label>E-mail</label><input data-cf="email" value="' + esc(f.email) + '"></div><div><label>Téléphone</label><input data-cf="tel" value="' + esc(f.tel) + '"></div></div>' +
+    '<label>Note</label><textarea class="note" data-cf="note">' + esc(f.note) + '</textarea><p class="faint">Enregistré chiffré dans le dépôt du site (lisible seulement avec votre phrase de passe SuperAdmin).</p>' +
+    '<div class="row" style="margin-top:12px"><button data-a="csave"' + (S.busy ? ' disabled' : '') + '>Enregistrer</button><button class="sec" data-a="ccancel">Annuler</button></div></section>';
+}
+function vApps() {
+  if (!S.apps) return '';
+  var base = location.href.replace(/superadmin\/.*$/, ''), q = norm(S.filtre), list = S.apps.filter(function (a) { return !q || norm(a.nom + ' ' + a.id + ' ' + clientName(a.client)).indexOf(q) >= 0; });
+  return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Apps (' + S.apps.length + ')</h2><div class="row"><button data-a="new">+ Nouvelle app</button><button class="sec" data-a="sync" title="Réécrit les fichiers des dossiers d’après les modèles de cette version">Remettre les dossiers à jour</button><button class="sec" data-a="reload">Actualiser</button></div></div>' +
+    '<input class="filter" data-flt placeholder="Rechercher (app, client)" value="' + esc(S.filtre) + '" style="margin-top:12px">' +
+    '<div class="grid" style="margin-top:14px">' + list.map(function (a) {
+      var gh = a.donnees === 'github', so = a.type !== 'simple', cn = clientName(a.client);
+      return '<div class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(a.nom || a.id) + '</h3><span><span class="tag' + (so ? ' so' : '') + '">' + (so ? 'Soirée' : 'Simple') + '</span> <span class="tag' + (gh ? ' gh' : '') + '">' + (gh ? 'GitHub' : 'Démo locale') + '</span></span></div>' +
         '<div class="mono">' + esc(a.id) + '/</div>' +
-        '<div class="faint">' + (a.creeLe ? 'Créé le ' + esc(a.creeLe) + ' · ' : '') + 'canal ' + esc(a.canal || 'stable') + (gh ? ' · ' + (a.cle ? 'clé du ' + esc(a.cle.le || '?') : '<span class="tag warn">clé manquante</span>') : '') + '</div>' +
-        '<div class="row"><a class="b sec" href="' + base + a.id + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + a.id + '/admin/" target="_blank">Admin</a><a class="b sec" href="' + base + a.id + '/caisse/" target="_blank">Caisse</a></div>' +
-        (S.del === a.id ? '<div><p class="err">Supprimer le dossier « ' + esc(a.id) + ' » ? Ses tablettes ne s’ouvriront plus. Son dépôt de données n’est pas touché.</p><div class="row"><button class="danger" data-a="delGo" data-v="' + esc(a.id) + '">Oui, supprimer</button><button class="sec" data-a="delNo">Annuler</button></div></div>'
+        '<div>' + (cn ? 'Client : <strong>' + esc(cn) + '</strong>' : '<span class="faint">Aucun client</span>') + '</div>' +
+        '<div class="faint">' + (a.creeLe ? 'Créée le ' + esc(a.creeLe) + ' · ' : '') + 'canal ' + esc(a.canal || 'stable') + (gh ? ' · ' + (a.cle ? 'clé du ' + esc(a.cle.le || '?') : '<span class="tag warn">clé manquante</span>') : '') + '</div>' +
+        '<div class="row"><a class="b sec" href="' + base + a.id + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + a.id + '/admin/" target="_blank">Admin</a><a class="b sec" href="' + base + a.id + '/caisse/" target="_blank">Caisse</a>' + (so ? '<a class="b sec" href="' + base + a.id + '/soiree/" target="_blank">Soirée</a>' : '') + '</div>' +
+        (S.del === a.id ? '<div><p class="err">Supprimer l’app « ' + esc(a.id) + ' » ? Ses tablettes ne s’ouvriront plus. Ses données ne sont pas touchées.</p><div class="row"><button class="danger" data-a="delGo" data-v="' + esc(a.id) + '">Oui, supprimer</button><button class="sec" data-a="delNo">Annuler</button></div></div>'
           : '<div class="row"><button class="sec" data-a="edit" data-v="' + esc(a.id) + '">Modifier</button><button class="danger" data-a="del" data-v="' + esc(a.id) + '">Supprimer</button></div>') + '</div>';
     }).join('') + '</div></section>';
 }
+function vClients() {
+  if (!S.apps) return '';
+  if (!S.clients) return '<section><h2>Clients</h2><p class="err">' + esc(S.clientsErr || 'Clients indisponibles') + '</p><button class="danger" data-a="creset">Repartir d’une liste vide</button></section>';
+  var cs = S.clients, ids = Object.keys(cs).sort(function (a, b) { return cs[a].nom.localeCompare(cs[b].nom, 'fr'); });
+  return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Clients (' + ids.length + ')</h2><button data-a="cnew">+ Nouveau client</button></div>' +
+    (ids.length ? '<div class="grid" style="margin-top:14px">' + ids.map(function (id) {
+      var c = cs[id], apps = S.apps.filter(function (a) { return a.client === id; });
+      return '<div class="card"><h3>' + esc(c.nom) + '</h3>' + (c.contact ? '<div>' + esc(c.contact) + '</div>' : '') +
+        '<div class="faint">' + [c.email ? '<a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '', c.tel ? esc(c.tel) : ''].filter(Boolean).join(' · ') + '</div>' + (c.note ? '<div class="faint">' + esc(c.note) + '</div>' : '') +
+        '<div>' + (apps.length ? apps.length + ' app' + (apps.length > 1 ? 's' : '') + ' : ' + apps.map(function (a) { return '<span class="tag' + (a.type !== 'simple' ? ' so' : '') + '">' + esc(a.nom || a.id) + '</span>'; }).join(' ') : '<span class="faint">Aucune app</span>') + '</div>' +
+        (S.cdel === id ? '<div><p class="err">Supprimer ce client ? Ses apps restent, sans client.</p><div class="row"><button class="danger" data-a="cdelGo" data-v="' + esc(id) + '">Oui, supprimer</button><button class="sec" data-a="cdelNo">Annuler</button></div></div>'
+          : '<div class="row"><button class="sec" data-a="cedit" data-v="' + esc(id) + '">Modifier</button><button class="sec" data-a="cnewApp" data-v="' + esc(id) + '">+ App pour ce client</button><button class="danger" data-a="cdel" data-v="' + esc(id) + '">Supprimer</button></div>') + '</div>';
+    }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
+}
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v6';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v7';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
+  $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
   $('m').innerHTML = (S.flash ? '<section class="msg ok" style="margin-top:0">' + esc(S.flash) + '</section>' : '') + (S.err ? '<section class="msg err" style="margin-top:0">' + esc(S.err) + '</section>' : '') +
-    (S.busy ? '<section class="faint">' + esc(S.busy) + '</section>' : '') + (S.form ? vForm(!S.edit) : '') + vAmis() +
-    '<section><h2>Mises à jour</h2><p>Le code commun est dans <span class="mono">core/</span> : déposez la nouvelle version (dossier <span class="mono">core/</span> et pages communes) dans le dépôt ; toutes les tablettes de tous les amis la prennent à leur prochain chargement. Les dossiers des amis ne changent pas, sauf si les modèles changent (bouton « Remettre les dossiers à jour »).</p></section>';
+    (S.busy ? '<section class="faint">' + esc(S.busy) + '</section>' : '') +
+    (S.tab === 'clients' ? (S.cform ? vClientForm() : '') + vClients()
+      : (S.cform ? vClientForm() : S.form ? vAppForm(!S.edit) : '') + vApps() +
+        '<section><h2>Mises à jour</h2><p>Le code commun est dans <span class="mono">core/</span> : déposez la nouvelle version (dossier <span class="mono">core/</span> et pages communes) dans le dépôt ; toutes les tablettes de toutes les apps la prennent à leur prochain chargement. Les dossiers des apps ne changent pas, sauf si les modèles changent (bouton « Remettre les dossiers à jour »).</p></section>');
 }
-document.addEventListener('input', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) S.form[k] = e.target.value; });
-document.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) S.form[k] = e.target.value; });
+document.addEventListener('input', function (e) {
+  var t = e.target, k = t.getAttribute && t.getAttribute('data-f'), kc = t.getAttribute && t.getAttribute('data-cf');
+  if (k && S.form) S.form[k] = t.value; if (kc && S.cform) S.cform[kc] = t.value;
+  if (t.hasAttribute && t.hasAttribute('data-flt')) { S.filtre = t.value; var pos = t.selectionStart; render(); var n = document.querySelector('[data-flt]'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
+});
+document.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) { S.form[k] = e.target.value; if (k === 'type') render(); } });
+function unlocked(acc, pass) { return clientsKeyFrom(pass).then(function (ck) { S.acc = acc; S.ck = ck; sessionStorage.setItem(K + 'acces', JSON.stringify(acc)); sessionStorage.setItem(K + 'ck', ck); S.busy = ''; load(); }); }
 document.addEventListener('click', function (e) {
   var b = e.target.closest('[data-a]'); if (!b || b.disabled) return; var a = b.getAttribute('data-a'), v = b.getAttribute('data-v');
-  if (a !== 'delGo') S.flash = null;
+  if (a !== 'delGo' && a !== 'tab') S.flash = null;
   if (a === 'setup') {
     var depot = $('sd').value.trim(), tok = $('st').value.trim(), p1 = $('p1').value, p2 = $('p2').value;
     if (norm(p1).length < 20 || norm(p1) !== norm(p2)) { S.err = 'Phrase trop courte ou différente.'; render(); return; }
-    S.acc = { token: tok, depot: depot }; S.busy = 'Vérification…'; S.err = null; var acc = S.acc; S.acc = null; render(); S.acc = acc;
+    S.busy = 'Vérification…'; S.err = null; render(); S.acc = { token: tok, depot: depot };
     gh('/repos/' + depot).then(function (j) {
       if (j.permissions && !j.permissions.push) throw new Error('Le jeton ne peut pas écrire dans ' + depot + '.');
-      return enc({ token: tok, depot: j.full_name }, p1).then(function (c) { localStorage.setItem(K + 'cle', JSON.stringify(c)); S.acc = { token: tok, depot: j.full_name }; sessionStorage.setItem(K + 'acces', JSON.stringify(S.acc)); S.busy = ''; load(); });
+      var acc = { token: tok, depot: j.full_name };
+      return enc(acc, p1).then(function (c) { localStorage.setItem(K + 'cle', JSON.stringify(c)); return unlocked(acc, p1); });
     }).catch(function (x) { S.acc = null; S.busy = ''; S.err = x.status === 401 ? 'GitHub refuse le jeton.' : x.message; render(); });
   } else if (a === 'unlock') {
-    S.busy = 'Déverrouillage…'; S.err = null; render();
-    dec(JSON.parse(localStorage.getItem(K + 'cle')), $('pp') ? $('pp').value : '').then(function (acc) { S.acc = acc; sessionStorage.setItem(K + 'acces', JSON.stringify(acc)); S.busy = ''; load(); }, function () { S.busy = ''; S.err = 'Phrase de passe incorrecte.'; render(); });
-  } else if (a === 'forget') { localStorage.removeItem(K + 'cle'); sessionStorage.removeItem(K + 'acces'); S.err = null; render(); }
-  else if (a === 'lock') { sessionStorage.removeItem(K + 'acces'); S.acc = null; S.amis = null; render(); }
+    var pass = $('pp') ? $('pp').value : ''; S.busy = 'Déverrouillage…'; S.err = null; render();
+    dec(JSON.parse(localStorage.getItem(K + 'cle')), pass).then(function (acc) { return unlocked(acc, pass); }, function () { S.busy = ''; S.err = 'Phrase de passe incorrecte.'; render(); });
+  } else if (a === 'forget') { localStorage.removeItem(K + 'cle'); sessionStorage.removeItem(K + 'acces'); sessionStorage.removeItem(K + 'ck'); S.err = null; render(); }
+  else if (a === 'lock') { sessionStorage.removeItem(K + 'acces'); sessionStorage.removeItem(K + 'ck'); S.acc = null; S.ck = null; S.apps = null; S.clients = null; render(); }
+  else if (a === 'tab') { S.tab = v; S.form = null; S.cform = null; render(); }
   else if (a === 'reload') load();
-  else if (a === 'new') { S.form = { id: '', nom: '', donnees: 'local', cle: '' }; S.edit = null; S.err = null; render(); }
-  else if (a === 'edit') { var am = S.amis.filter(function (x) { return x.id === v; })[0]; S.form = { id: am.id, nom: am.nom || '', donnees: am.donnees || 'local', cle: am.cle ? JSON.stringify(am.cle) : '' }; S.edit = v; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'new') { S.form = { id: '', nom: '', type: 'simple', client: '', donnees: 'local', cle: '' }; S.edit = null; S.err = null; render(); }
+  else if (a === 'edit') { var am = S.apps.filter(function (x) { return x.id === v; })[0]; S.form = { id: am.id, nom: am.nom || '', type: am.type === 'simple' ? 'simple' : 'soiree', client: am.client || '', donnees: am.donnees || 'local', cle: am.cle ? JSON.stringify(am.cle) : '' }; S.edit = v; S.err = null; render(); window.scrollTo(0, 0); }
   else if (a === 'cancel') { S.form = null; S.edit = null; S.err = null; render(); }
-  else if (a === 'create') saveAmi(true);
-  else if (a === 'update') saveAmi(false);
+  else if (a === 'create') saveApp(true);
+  else if (a === 'update') saveApp(false);
   else if (a === 'sync') { S.busy = 'Comparaison des dossiers…'; render(); syncAll(); }
   else if (a === 'del') { S.del = v; render(); }
   else if (a === 'delNo') { S.del = null; render(); }
-  else if (a === 'delGo') delAmi(v);
+  else if (a === 'delGo') delApp(v);
+  else if (a === 'cnew' || a === 'cnewFromApp') { S.cform = { id: '', nom: '', contact: '', email: '', tel: '', note: '', fromApp: a === 'cnewFromApp' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'cedit') { var c = S.clients[v]; S.cform = { id: v, nom: c.nom, contact: c.contact || '', email: c.email || '', tel: c.tel || '', note: c.note || '' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'ccancel') { S.cform = null; S.err = null; render(); }
+  else if (a === 'csave') { var fromApp = S.cform.fromApp, before = Object.keys(S.clients || {}); saveClient(); if (fromApp) { var iv = setInterval(function () { if (!S.cform) { clearInterval(iv); var nid = Object.keys(S.clients || {}).filter(function (k) { return before.indexOf(k) < 0; })[0]; if (S.form && nid) S.form.client = nid; render(); } }, 200); } }
+  else if (a === 'cdel') { S.cdel = v; render(); }
+  else if (a === 'cdelNo') { S.cdel = null; render(); }
+  else if (a === 'cdelGo') delClient(v);
+  else if (a === 'cnewApp') { S.tab = 'apps'; S.form = { id: '', nom: '', type: 'simple', client: v, donnees: 'local', cle: '' }; S.edit = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'creset') { S.clients = {}; S.clientsErr = null; S.flash = 'Liste des clients vide : elle sera réécrite au prochain enregistrement.'; render(); }
 });
 document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'pp') document.querySelector('[data-a="unlock"]').click(); });
-try { S.acc = JSON.parse(sessionStorage.getItem(K + 'acces')); } catch (e) {}
+try { S.acc = JSON.parse(sessionStorage.getItem(K + 'acces')); S.ck = sessionStorage.getItem(K + 'ck'); if (!S.ck) S.acc = null; } catch (e) {}
 render(); if (S.acc) load();
 </script>
 </body></html>
