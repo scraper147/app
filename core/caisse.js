@@ -1,4 +1,4 @@
-/* caisse · caisse · v11 — code commun à tous les amis */
+/* caisse · caisse · v12 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -444,7 +444,7 @@ function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
   var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
   return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
-    modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    onglet: ['logo', 'client', 'image'].indexOf(t.onglet) >= 0 ? t.onglet : 'defaut', ongletImage: t.ongletImage || '', modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
@@ -537,7 +537,19 @@ function themeApply() {
   if (!el) { el = document.createElement('style'); el.id = 'theme-vars'; document.head.appendChild(el); }
   el.textContent = css;
   document.title = APP_ID === 'admin' ? 'Admin · ' + t.nom : APP_ID === 'soiree' ? 'Caisse Soirée · ' + t.nom : t.nom;
+  /* icône de l'onglet : Admin = logo du client (SuperAdmin) ; Caisse et Caisse Soirée = choix de l'Apparence */
+  var ic = themeFavicon(), li = document.querySelector('link[rel="icon"]');
+  if (ic) { if (!li) { li = document.createElement('link'); li.rel = 'icon'; document.head.appendChild(li); } if (!li.getAttribute('data-def')) li.setAttribute('data-def', li.getAttribute('href') || ''); li.setAttribute('href', ic); }
+  else if (li && li.getAttribute('data-def') != null) li.setAttribute('href', li.getAttribute('data-def'));
   var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', APP_ID === 'caisse' ? c : thMix(c, '#000000', .78));
+}
+function themeFavicon() {
+  var t = themeGet();
+  if (APP_ID === 'admin') return CLIENT.logoClient || '';
+  if (t.onglet === 'logo') return t.logo || themeLogo('square');
+  if (t.onglet === 'client') return CLIENT.logoClient || '';
+  if (t.onglet === 'image') return t.ongletImage || '';
+  return '';
 }
 /* Coordonnées du ticket : recopiées dans l'objet TICKET de la caisse (référence gardée pour les mises à jour) */
 var _thTicket = null;
@@ -563,7 +575,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v11'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v12'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';

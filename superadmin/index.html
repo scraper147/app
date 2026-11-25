@@ -86,7 +86,7 @@ function cheminOf(id, cid, cs) { var pg = cid ? pageOf(cid, cs) : ''; return pg 
 function racineOf(chemin) { return chemin.split('/').map(function () { return '../'; }).join(''); }
 function filesFor(cl) {
   var out = {}, T = window.CAISSE_TEMPLATES || {}, nj = JSON.stringify(cl.nom).slice(1, -1), ch = cl.chemin || cl.id, rr = racineOf(ch);
-  cl.chemin = ch; cl.racine = rr;
+  cl.chemin = ch; cl.racine = rr; var lc = cl.client && S.clients && S.clients[cl.client] ? S.clients[cl.client].logo : ''; if (lc) cl.logoClient = lc; else delete cl.logoClient;
   Object.keys(T).forEach(function (rel) { if (cl.type === 'simple' && rel.indexOf('soiree/') === 0) return; out[ch + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{CHEMIN}}').join(ch).split('{{R}}').join(rr).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
   out[ch + '/client.js'] = '/* App « ' + cl.id + ' » : seul fichier propre à cette app. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
   return out;
@@ -149,12 +149,13 @@ function saveClient() {
   if (Object.keys(cs).some(function (k) { return k !== id && pageOf(k, cs) === page; })) { S.err = 'L’adresse « ' + page + ' » est déjà prise par un autre client.'; render(); return; }
   if (RESERVED.indexOf(page) >= 0 || S.apps.some(function (a) { return a.chemin === page; })) { S.err = 'L’adresse « ' + page + ' » est déjà utilisée (app sans client ou nom réservé).'; render(); return; }
   var oldPage = f.id ? pageOf(f.id, cs) : '';
-  cs[id] = { nom: nom, page: page, contact: (f.contact || '').trim(), email: (f.email || '').trim(), tel: (f.tel || '').trim(), note: (f.note || '').trim(), creeLe: (cs[id] && cs[id].creeLe) || new Date().toISOString().slice(0, 10) };
+  cs[id] = { nom: nom, page: page, logo: f.logo || '', contact: (f.contact || '').trim(), email: (f.email || '').trim(), tel: (f.tel || '').trim(), note: (f.note || '').trim(), creeLe: (cs[id] && cs[id].creeLe) || new Date().toISOString().slice(0, 10) };
   S.busy = 'Enregistrement du client…'; S.err = null; render();
-  var mine = S.apps.filter(function (a) { return a.client === id; }), moving = oldPage && oldPage !== page ? mine : [];
+  var mine = S.apps.filter(function (a) { return a.client === id; }), moving = oldPage && oldPage !== page ? mine : [], logoChanged = ((S.clients || {})[id] || {}).logo !== cs[id].logo;
   clientsSave(cs, (f.id ? 'Client modifié' : 'Nouveau client') + ' (SuperAdmin)').then(function () {
     return moving.reduce(function (pr, a) { return pr.then(function () { var cl = JSON.parse(JSON.stringify(a)); cl.chemin = page + '/' + a.id; var fs = filesFor(cl); return writeFiles(fs, 'Déplacement de l’app ' + a.id, appFilesUnder(a.chemin).filter(function (p) { return !fs[p]; })).then(function () { a.chemin = cl.chemin; a.racine = cl.racine; }); }); }, Promise.resolve());
-  }).then(function () { return syncClientPages(cs, S.apps); }).then(function () { S.busy = ''; S.cform = null; S.flash = 'Client « ' + nom + ' » enregistré. Sa page : ' + page + '/' + (moving.length ? ' ; ' + moving.length + ' app(s) déplacée(s) : leurs tablettes doivent être réinstallées' : '') + '.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+  }).then(function () { if (!logoChanged) return; var all = {}; mine.filter(function (a) { return moving.indexOf(a) < 0; }).forEach(function (a) { var fs = filesFor(JSON.parse(JSON.stringify(a))); all[a.chemin + '/client.js'] = fs[a.chemin + '/client.js']; }); return writeFiles(all, 'Logo du client ' + nom); })
+  .then(function () { return syncClientPages(cs, S.apps); }).then(function () { S.busy = ''; S.cform = null; S.flash = 'Client « ' + nom + ' » enregistré. Sa page : ' + page + '/' + (moving.length ? ' ; ' + moving.length + ' app(s) déplacée(s) : leurs tablettes doivent être réinstallées' : '') + '.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
 function delClient(id) {
   if (S.apps.some(function (a) { return a.client === id; })) { S.err = 'Ce client a encore des apps : supprimez-les ou rattachez-les à un autre client d’abord.'; S.cdel = null; render(); return; }
@@ -170,11 +171,11 @@ function pageOf(cid, cs) { var c = (cs || S.clients || {})[cid]; return c ? (c.p
 function clientPageHtml(cid, cs, apps) {
   var c = cs[cid], mine = apps.filter(function (a) { return a.client === cid; }).sort(function (a, b) { return (a.nom || a.id).localeCompare(b.nom || b.id, 'fr'); });
   function btn(href, t) { return '<a class="b" href="' + href + '">' + t + '</a>'; }
-  return '<!DOCTYPE html>\n<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">\n<title>' + esc(c.nom) + ' · Caisse</title><link rel="icon" href="../core/icons/caisse-192.png">\n' +
+  return '<!DOCTYPE html>\n<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">\n<title>' + esc(c.nom) + '</title><link rel="icon" href="' + (c.logo || '../core/icons/caisse-192.png') + '"><link rel="apple-touch-icon" href="' + (c.logo || '../core/icons/caisse-apple.png') + '">\n' +
     '<style>body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#F3F5F8;color:#1A2230}main{max-width:760px;margin:0 auto;padding:32px 18px 60px}h1{font-size:28px;margin:0 0 4px}p{color:#586273;line-height:1.5}' +
     '.app{background:#fff;border:1px solid #DCE1E8;border-radius:16px;padding:18px;margin-top:14px}.app h2{font-size:20px;margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E8F0F8;color:#2F5D8A}.tag.so{background:#F1E8FA;color:#6A3F99}' +
     '.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.b{display:inline-block;padding:12px 16px;border-radius:12px;background:#2F5D8A;color:#fff;font-weight:700;text-decoration:none}.b.sec{background:#fff;color:#2F5D8A;border:1px solid #2F5D8A}small{color:#586273}</style></head>\n' +
-    '<body><main><h1>' + esc(c.nom) + '</h1><p>' + (mine.length ? 'Vos applications : ouvrez celle dont vous avez besoin. Sur une tablette, ouvrez l’app puis « Ajouter à l’écran d’accueil » pour l’installer.' : 'Aucune application pour l’instant.') + '</p>' +
+    '<body><main>' + (c.logo ? '<img src="' + c.logo + '" alt="" style="max-width:160px;max-height:96px;object-fit:contain;display:block;margin-bottom:12px">' : '') + '<h1>' + esc(c.nom) + '</h1><p>' + (mine.length ? 'Vos applications : ouvrez celle dont vous avez besoin. Sur une tablette, ouvrez l’app puis « Ajouter à l’écran d’accueil » pour l’installer.' : 'Aucune application pour l’instant.') + '</p>' +
     mine.map(function (a) { var so = a.type !== 'simple', b = './' + a.id + '/';
       return '<div class="app"><h2>' + esc(a.nom || a.id) + ' <span class="tag' + (so ? ' so' : '') + '">' + (so ? 'Caisse complexe (soirée)' : 'Caisse simple') + '</span></h2><small>' + esc(a.id) + '</small>' +
         '<div class="row">' + btn(b + 'caisse/', 'Caisse') + (so ? btn(b + 'soiree/', 'Caisse Soirée') : '') + btn(b + 'admin/', 'Admin') + '<a class="b sec" href="' + b + '">Accueil de l’app</a></div></div>'; }).join('') +
@@ -224,6 +225,7 @@ function vClientForm() {
   return '<section><h2>' + (f.id ? 'Modifier le client' : 'Nouveau client') + '</h2><div class="two"><div><label>Nom (commerce, association…)</label><input data-cf="nom" value="' + esc(f.nom) + '"></div><div><label>Personne de contact</label><input data-cf="contact" value="' + esc(f.contact) + '"></div></div>' +
     '<div class="two"><div><label>E-mail</label><input data-cf="email" value="' + esc(f.email) + '"></div><div><label>Téléphone</label><input data-cf="tel" value="' + esc(f.tel) + '"></div></div>' +
     '<label>Lien de sa page (court, au choix : ex. ag)</label><div class="row" style="flex-wrap:nowrap;gap:6px"><span class="mono" style="white-space:nowrap">scraper147.github.io/app/</span><input data-cf="page" value="' + esc(f.page) + '" placeholder="' + esc(slugify(f.nom) || 'ex. ag') + '"><span class="mono">/</span></div><p class="faint">Page publique avec la liste de ses apps : scraper147.github.io/app/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/ ; ses apps sont rangées dessous (…/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/nom-de-l-app/). Seulement le nom et les apps, jamais les coordonnées. Changer cette adresse déplace ses apps (tablettes à réinstaller).</p>' +
+    '<label>Logo</label><div class="row">' + (f.logo ? '<img src="' + f.logo + '" alt="" style="width:56px;height:56px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff">' : '') + '<input type="file" accept="image/*" id="clogo" style="width:auto">' + (f.logo ? '<button class="danger" data-a="clogoDel">Retirer</button>' : '') + '</div><p class="faint">Affiché sur sa page, dans l’en-tête de l’Admin de ses apps et comme icône de l’onglet de l’Admin (et de la caisse si choisi dans l’Apparence). Redimensionné sur cet appareil (192 × 192 au plus).</p>' +
     '<label>Note</label><textarea class="note" data-cf="note">' + esc(f.note) + '</textarea><p class="faint">Enregistré chiffré dans le dépôt du site (lisible seulement avec votre phrase de passe SuperAdmin).</p>' +
     '<div class="row" style="margin-top:12px"><button data-a="csave"' + (S.busy ? ' disabled' : '') + '>Enregistrer</button><button class="sec" data-a="ccancel">Annuler</button></div></section>';
 }
@@ -250,7 +252,7 @@ function vClients() {
   return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Clients (' + ids.length + ')</h2><button data-a="cnew">+ Nouveau client</button></div>' +
     (ids.length ? '<div class="grid" style="margin-top:14px">' + ids.map(function (id) {
       var c = cs[id], apps = S.apps.filter(function (a) { return a.client === id; });
-      return '<div class="card"><h3>' + esc(c.nom) + '</h3><div class="mono">…/app/' + esc(pageOf(id)) + '/</div>' + (c.contact ? '<div>' + esc(c.contact) + '</div>' : '') +
+      return '<div class="card"><div class="row" style="flex-wrap:nowrap">' + (c.logo ? '<img src="' + c.logo + '" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px">' : '') + '<h3>' + esc(c.nom) + '</h3></div><div class="mono">…/app/' + esc(pageOf(id)) + '/</div>' + (c.contact ? '<div>' + esc(c.contact) + '</div>' : '') +
         '<div class="faint">' + [c.email ? '<a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '', c.tel ? esc(c.tel) : ''].filter(Boolean).join(' · ') + '</div>' + (c.note ? '<div class="faint">' + esc(c.note) + '</div>' : '') +
         '<div>' + (apps.length ? apps.length + ' app' + (apps.length > 1 ? 's' : '') + ' : ' + apps.map(function (a) { return '<span class="tag' + (a.type !== 'simple' ? ' so' : '') + '">' + esc(a.nom || a.id) + '</span>'; }).join(' ') : '<span class="faint">Aucune app</span>') + '</div>' +
         (S.cdel === id ? '<div><p class="err">Supprimer ce client ? Ses apps restent, sans client.</p><div class="row"><button class="danger" data-a="cdelGo" data-v="' + esc(id) + '">Oui, supprimer</button><button class="sec" data-a="cdelNo">Annuler</button></div></div>'
@@ -258,7 +260,7 @@ function vClients() {
     }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v11';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v12';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
@@ -273,7 +275,11 @@ document.addEventListener('input', function (e) {
   if (k && S.form) S.form[k] = t.value; if (kc && S.cform) { S.cform[kc] = t.value; if (kc === 'nom' || kc === 'page') { var hint = t.closest('section').querySelector('[data-cf="page"] + .faint strong'); if (hint) hint.textContent = slugify(S.cform.page || S.cform.nom) || '…'; } }
   if (t.hasAttribute && t.hasAttribute('data-flt')) { S.filtre = t.value; var pos = t.selectionStart; render(); var n = document.querySelector('[data-flt]'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
 });
-document.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) { S.form[k] = e.target.value; if (k === 'type' || k === 'client') render(); } });
+document.addEventListener('change', function (e) {
+  if (e.target.id === 'clogo' && e.target.files && e.target.files[0] && S.cform) {
+    var fr = new FileReader(); fr.onload = function () { var im = new Image(); im.onload = function () { var r = Math.min(1, 192 / im.width, 192 / im.height), cv = document.createElement('canvas'); cv.width = Math.round(im.width * r); cv.height = Math.round(im.height * r); cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); S.cform.logo = cv.toDataURL('image/png'); render(); }; im.src = fr.result; }; fr.readAsDataURL(e.target.files[0]); return;
+  }
+  var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) { S.form[k] = e.target.value; if (k === 'type' || k === 'client') render(); } });
 function unlocked(acc, pass) { return clientsKeyFrom(pass).then(function (ck) { S.acc = acc; S.ck = ck; sessionStorage.setItem(K + 'acces', JSON.stringify(acc)); sessionStorage.setItem(K + 'ck', ck); S.busy = ''; load(); }); }
 document.addEventListener('click', function (e) {
   var b = e.target.closest('[data-a]'); if (!b || b.disabled) return; var a = b.getAttribute('data-a'), v = b.getAttribute('data-v');
@@ -303,8 +309,9 @@ document.addEventListener('click', function (e) {
   else if (a === 'del') { S.del = v; render(); }
   else if (a === 'delNo') { S.del = null; render(); }
   else if (a === 'delGo') delApp(v);
-  else if (a === 'cnew' || a === 'cnewFromApp') { S.cform = { id: '', nom: '', page: '', contact: '', email: '', tel: '', note: '', fromApp: a === 'cnewFromApp' }; S.err = null; render(); window.scrollTo(0, 0); }
-  else if (a === 'cedit') { var c = S.clients[v]; S.cform = { id: v, nom: c.nom, page: c.page || pageOf(v), contact: c.contact || '', email: c.email || '', tel: c.tel || '', note: c.note || '' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'cnew' || a === 'cnewFromApp') { S.cform = { id: '', nom: '', page: '', logo: '', contact: '', email: '', tel: '', note: '', fromApp: a === 'cnewFromApp' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'cedit') { var c = S.clients[v]; S.cform = { id: v, nom: c.nom, page: c.page || pageOf(v), logo: c.logo || '', contact: c.contact || '', email: c.email || '', tel: c.tel || '', note: c.note || '' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'clogoDel') { S.cform.logo = ''; render(); }
   else if (a === 'ccancel') { S.cform = null; S.err = null; render(); }
   else if (a === 'csave') { var fromApp = S.cform.fromApp, before = Object.keys(S.clients || {}); saveClient(); if (fromApp) { var iv = setInterval(function () { if (!S.cform) { clearInterval(iv); var nid = Object.keys(S.clients || {}).filter(function (k) { return before.indexOf(k) < 0; })[0]; if (S.form && nid) S.form.client = nid; render(); } }, 200); } }
   else if (a === 'cdel') { S.cdel = v; render(); }

@@ -1,4 +1,4 @@
-/* caisse · admin · v11 — code commun à tous les amis */
+/* caisse · admin · v12 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -444,7 +444,7 @@ function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
   var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
   return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
-    modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    onglet: ['logo', 'client', 'image'].indexOf(t.onglet) >= 0 ? t.onglet : 'defaut', ongletImage: t.ongletImage || '', modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
@@ -537,7 +537,19 @@ function themeApply() {
   if (!el) { el = document.createElement('style'); el.id = 'theme-vars'; document.head.appendChild(el); }
   el.textContent = css;
   document.title = APP_ID === 'admin' ? 'Admin · ' + t.nom : APP_ID === 'soiree' ? 'Caisse Soirée · ' + t.nom : t.nom;
+  /* icône de l'onglet : Admin = logo du client (SuperAdmin) ; Caisse et Caisse Soirée = choix de l'Apparence */
+  var ic = themeFavicon(), li = document.querySelector('link[rel="icon"]');
+  if (ic) { if (!li) { li = document.createElement('link'); li.rel = 'icon'; document.head.appendChild(li); } if (!li.getAttribute('data-def')) li.setAttribute('data-def', li.getAttribute('href') || ''); li.setAttribute('href', ic); }
+  else if (li && li.getAttribute('data-def') != null) li.setAttribute('href', li.getAttribute('data-def'));
   var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', APP_ID === 'caisse' ? c : thMix(c, '#000000', .78));
+}
+function themeFavicon() {
+  var t = themeGet();
+  if (APP_ID === 'admin') return CLIENT.logoClient || '';
+  if (t.onglet === 'logo') return t.logo || themeLogo('square');
+  if (t.onglet === 'client') return CLIENT.logoClient || '';
+  if (t.onglet === 'image') return t.ongletImage || '';
+  return '';
 }
 /* Coordonnées du ticket : recopiées dans l'objet TICKET de la caisse (référence gardée pour les mises à jour) */
 var _thTicket = null;
@@ -1362,7 +1374,7 @@ window.addEventListener('hashchange', function () { var s0 = JSON.stringify(SUB)
 
 function vShell() {
   var tabs = [{ id: 'accueil', court: 'Accueil', ready: true, ic: 'home' }].concat(MODULES.map(function (m) { return { id: m.id, court: m.court, ready: m.ready, ic: m.id }; }));
-  return '<header class="shell"><div class="in"><div class="brand"><img src="' + themeLogo('square') + '" alt=""><div class="name"><b>Admin</b><span>' + esc(themeGet().nom) + '</span></div>' +
+  return '<header class="shell"><div class="in"><div class="brand"><img src="' + (CLIENT.logoClient || themeLogo('square')) + '" alt=""><div class="name"><b>Admin</b><span>' + esc(themeGet().nom) + '</span></div>' +
     '<button class="ghost" data-a="theme" aria-label="Changer de thème">' + (isDark() ? '☀︎ <span class="lbl">Clair</span>' : '☾ <span class="lbl">Sombre</span>') + '</button></div>' +
     '<nav class="nav" aria-label="Modules">' + tabs.map(function (t) {
       return '<button class="' + (MOD === t.id ? 'on' : '') + '" data-a="go" data-v="' + t.id + '"' + (MOD === t.id ? ' aria-current="page"' : '') + '>' + ICONS[t.ic] + esc(t.court) + (t.ready ? '' : '<span class="soon">bientôt</span>') + '</button>';
@@ -3514,7 +3526,7 @@ function thModele(id) {
   ['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].forEach(function (k) { if (m[k] === '' ) delete t[k]; else t[k] = m[k]; }); if (m.mode === 'sombre') t.mode = 'sombre'; else delete t.mode; t.modele = m.id;
   themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); render(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 800);
 }
-function thRefresh() { var p = document.getElementById('apPrev'); if (p) p.innerHTML = vApPreview(); var st = document.getElementById('apStatus'); if (st) st.innerHTML = thStatus(); var br = document.querySelector('.shell .brand'); if (br) { var im = br.querySelector('img'); if (im) im.src = themeLogo('square'); var sp = br.querySelector('.name span'); if (sp) sp.textContent = themeGet().nom; } }
+function thRefresh() { var p = document.getElementById('apPrev'); if (p) p.innerHTML = vApPreview(); var st = document.getElementById('apStatus'); if (st) st.innerHTML = thStatus(); var br = document.querySelector('.shell .brand'); if (br) { var im = br.querySelector('img'); if (im) im.src = CLIENT.logoClient || themeLogo('square'); var sp = br.querySelector('.name span'); if (sp) sp.textContent = themeGet().nom; } }
 function thPublish() {
   if (TH_PUB.busy) { clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 800); return; }
   var o = themeCopy(); if (!o.pending) return;
@@ -3633,6 +3645,10 @@ function vApparence(part) {
         return '<button class="apmod' + (t.modele === m.id ? ' on' : '') + '" data-p="thModele" data-v="' + m.id + '" style="font-family:' + TH_FONTS[m.policeTitres].css + '"><span class="sw" style="background:' + (m.barre === '#FFFFFF' ? m.couleur : m.barre) + '"></span><span class="sw" style="background:' + m.couleur + '"></span><span class="sw" style="background:' + m.accent + '"></span><b>' + esc(m.nom) + '</b></button>'; }).join('') + '</div><p class="hint">Un modèle règle couleurs, polices et formes ; logo, nom, ticket, catégories et photos sont gardés.</p>' +
       h('Style') + '<div class="apmode">' + [['clair', '☀︎ Clair', 'Fond clair, texte foncé'], ['sombre', '☾ Sombre', 'Fond sombre, texte clair']].map(function (m) { return '<button class="apmod' + (t.mode === m[0] ? ' on' : '') + '" data-p="thMode" data-v="' + m[0] + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('') + '</div><p class="hint">S’applique à l’Admin et à la Caisse de tous les appareils (la Caisse Soirée reste sombre).</p>' +
       h('Identité') + fld('Nom du commerce', 'nom', d.nom, 'Caisse') + img('Logo', 'apLogo', !!t.logo, 'thLogoDel', 'Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).') +
+      h('Icône de l’onglet de la caisse') + '<div class="apmode" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">' + [['defaut', 'Par défaut', '../' + RACINE.replace(/^\.\.\//, '') + 'core/icons/caisse-192.png'], ['logo', 'Logo de l’app', t.logo || themeLogo('square')]].concat(CLIENT.logoClient ? [['client', 'Logo du client', CLIENT.logoClient]] : []).concat([['image', 'Image au choix', t.ongletImage]]).map(function (o) {
+        return '<button class="apmod apong' + (t.onglet === o[0] ? ' on' : '') + '" data-p="thOnglet" data-v="' + o[0] + '">' + (o[2] ? '<img src="' + o[2] + '" alt="">' : '<span class="apph0" style="width:32px;height:32px;font-size:18px">+</span>') + '<b>' + esc(o[1]) + '</b></button>'; }).join('') + '</div>' +
+      (t.onglet === 'image' ? img('Image de l’onglet (carrée de préférence)', 'apOnglet', !!t.ongletImage, 'thOngletDel', '') : '') +
+      '<p class="hint">Petite image affichée dans l’onglet du navigateur et dans la liste des onglets de la tablette (aussi pour la Caisse Soirée). L’Admin affiche le logo du client, réglé dans le SuperAdmin.</p>' +
       h('Couleurs') + '<div class="aprow">' + clr('Principale', 'couleur', d.couleur, t.couleur) + clr('Accent', 'accent', d.accent, t.accent) + clr('Fond', 'fond', t.fond, '#F5F7FA') + clr('Barre du haut', 'barre', t.barre, '#FFFFFF') + clr('Tuiles', 'tuile', t.tuile, '#FFFFFF') + '</div>' +
       (ctr.length ? '<p class="hint warnt">Lisibilité : ' + ctr.join(' ; ') + '.</p>' : '<p class="hint okt">Contrastes lisibles.</p>') +
       h('Polices') + '<div class="aprow"><div>' + sel('Titres', 'policeTitres', t.policeTitres, fonts) + '</div><div>' + sel('Texte', 'police', t.police, fonts) + '</div></div><p class="hint">Polices de l’appareil (aucun téléchargement, fonctionne hors ligne) : le rendu peut varier un peu d’une tablette à l’autre.</p>' +
@@ -3665,6 +3681,7 @@ document.addEventListener('change', function (e) {
   var el = e.target; if (!el || !el.files || !el.files[0]) return;
   if (el.id === 'apLogo') thImage(el.files[0], 800, 300, false, function (u) { thSet('logo', u); render(); });
   else if (el.id === 'apLogoTk') thImage(el.files[0], 800, 300, false, function (u) { thSet('ticket.logo', u); render(); });
+  else if (el.id === 'apOnglet') thImage(el.files[0], 128, 128, false, function (u) { thSet('ongletImage', u); render(); });
   else if (el.id === 'apFond') thImage(el.files[0], 1600, 1000, false, function (u) { thSet('fondImage', u); render(); });
   else if (el.hasAttribute('data-photo')) { var pid = el.getAttribute('data-photo'); thImage(el.files[0], 240, 240, true, function (u) { thPhotoSet(pid, u); render(); }); }
 });
@@ -3782,6 +3799,8 @@ function demoParClick(act, el) {
   if (act === 'thModele') { thModele(el.getAttribute('data-v')); return true; }
   if (act === 'thPhotoDel') { thPhotoSet(el.getAttribute('data-v'), ''); render(); return true; }
   if (act === 'phPub') { phPublish(); return true; }
+  if (act === 'thOnglet') { thSet('onglet', el.getAttribute('data-v') === 'defaut' ? '' : el.getAttribute('data-v')); render(); return true; }
+  if (act === 'thOngletDel') { thSet('ongletImage', ''); render(); return true; }
   if (act === 'thMode') { thSet('mode', el.getAttribute('data-v') === 'sombre' ? 'sombre' : ''); render(); return true; }
   if (act === 'emoOpen') { var ev = el.getAttribute('data-v'); TH_EMO = ev && TH_EMO !== ev ? ev : null; render(); return true; }
   if (act === 'emoPick') { thSet('categories.' + el.getAttribute('data-cat') + '.emoji', el.getAttribute('data-v')); TH_EMO = null; render(); return true; }

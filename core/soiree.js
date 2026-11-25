@@ -1,4 +1,4 @@
-/* caisse · soiree · v11 — code commun à tous les amis */
+/* caisse · soiree · v12 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -444,7 +444,7 @@ function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
   var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
   return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
-    modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    onglet: ['logo', 'client', 'image'].indexOf(t.onglet) >= 0 ? t.onglet : 'defaut', ongletImage: t.ongletImage || '', modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
@@ -537,7 +537,19 @@ function themeApply() {
   if (!el) { el = document.createElement('style'); el.id = 'theme-vars'; document.head.appendChild(el); }
   el.textContent = css;
   document.title = APP_ID === 'admin' ? 'Admin · ' + t.nom : APP_ID === 'soiree' ? 'Caisse Soirée · ' + t.nom : t.nom;
+  /* icône de l'onglet : Admin = logo du client (SuperAdmin) ; Caisse et Caisse Soirée = choix de l'Apparence */
+  var ic = themeFavicon(), li = document.querySelector('link[rel="icon"]');
+  if (ic) { if (!li) { li = document.createElement('link'); li.rel = 'icon'; document.head.appendChild(li); } if (!li.getAttribute('data-def')) li.setAttribute('data-def', li.getAttribute('href') || ''); li.setAttribute('href', ic); }
+  else if (li && li.getAttribute('data-def') != null) li.setAttribute('href', li.getAttribute('data-def'));
   var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', APP_ID === 'caisse' ? c : thMix(c, '#000000', .78));
+}
+function themeFavicon() {
+  var t = themeGet();
+  if (APP_ID === 'admin') return CLIENT.logoClient || '';
+  if (t.onglet === 'logo') return t.logo || themeLogo('square');
+  if (t.onglet === 'client') return CLIENT.logoClient || '';
+  if (t.onglet === 'image') return t.ongletImage || '';
+  return '';
 }
 /* Coordonnées du ticket : recopiées dans l'objet TICKET de la caisse (référence gardée pour les mises à jour) */
 var _thTicket = null;
@@ -571,7 +583,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v11'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v12'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';
