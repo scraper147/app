@@ -1,4 +1,4 @@
-/* caisse · soiree · v12 — code commun à tous les amis */
+/* caisse · soiree · v13 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -429,8 +429,8 @@ var TH_FONTS = {
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
-  { id: 'ardoise', nom: 'Ardoise (sombre)', mode: 'sombre', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
-  { id: 'lounge', nom: 'Lounge (sombre)', mode: 'sombre', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
+  { id: 'ardoise', nom: 'Ardoise', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
+  { id: 'lounge', nom: 'Lounge', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
   { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
   { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
   { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
@@ -524,7 +524,6 @@ function themeApply() {
     css += 'html:root:not([data-theme="dark"]){' + (t.fond ? '--bg:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + (t.barre ? '--band:' + t.barre + ';--band-ink:' + thInk(t.barre) + ';--band-muted:' + thMix(thInk(t.barre), t.barre, .35) + ';--band-line:' + thMix(t.barre, thInk(t.barre), .18) + ';' : '') + '}';
     if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';' : '') + (sb.fond ? '--bg:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
     css += 'html:root{--text:' + F + ';--display:' + FT + '}';
-    if (t.fondImage) css += '.band{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
   } else {
     css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
   }
@@ -583,7 +582,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v12'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v13'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

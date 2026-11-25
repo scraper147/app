@@ -1,4 +1,4 @@
-/* caisse · admin · v12 — code commun à tous les amis */
+/* caisse · admin · v13 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -429,8 +429,8 @@ var TH_FONTS = {
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
-  { id: 'ardoise', nom: 'Ardoise (sombre)', mode: 'sombre', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
-  { id: 'lounge', nom: 'Lounge (sombre)', mode: 'sombre', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
+  { id: 'ardoise', nom: 'Ardoise', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
+  { id: 'lounge', nom: 'Lounge', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
   { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
   { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
   { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
@@ -524,7 +524,6 @@ function themeApply() {
     css += 'html:root:not([data-theme="dark"]){' + (t.fond ? '--bg:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + (t.barre ? '--band:' + t.barre + ';--band-ink:' + thInk(t.barre) + ';--band-muted:' + thMix(thInk(t.barre), t.barre, .35) + ';--band-line:' + thMix(t.barre, thInk(t.barre), .18) + ';' : '') + '}';
     if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';' : '') + (sb.fond ? '--bg:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
     css += 'html:root{--text:' + F + ';--display:' + FT + '}';
-    if (t.fondImage) css += '.band{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
   } else {
     css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
   }
@@ -3523,7 +3522,7 @@ function thSet(path, v) {
   themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); thRefresh(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 1200); }
 function thModele(id) {
   var m = TH_MODELES.filter(function (x) { return x.id === id; })[0]; if (!m) return; var o = themeCopy(), t = JSON.parse(JSON.stringify(o.t || {}));
-  ['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].forEach(function (k) { if (m[k] === '' ) delete t[k]; else t[k] = m[k]; }); if (m.mode === 'sombre') t.mode = 'sombre'; else delete t.mode; t.modele = m.id;
+  ['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].forEach(function (k) { if (m[k] === '' ) delete t[k]; else t[k] = m[k]; }); t.modele = m.id;
   themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); render(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 800);
 }
 function thRefresh() { var p = document.getElementById('apPrev'); if (p) p.innerHTML = vApPreview(); var st = document.getElementById('apStatus'); if (st) st.innerHTML = thStatus(); var br = document.querySelector('.shell .brand'); if (br) { var im = br.querySelector('img'); if (im) im.src = CLIENT.logoClient || themeLogo('square'); var sp = br.querySelector('.name span'); if (sp) sp.textContent = themeGet().nom; } }
@@ -3641,9 +3640,9 @@ function vApparence(part) {
     if (t.fond && thContrast(t.fond, '#1C2219') < 4.5) ctr.push('le fond est trop foncé pour le texte');
     if (thContrast(t.couleur, '#ffffff') < 3 && thContrast(t.couleur, '#111111') < 3) ctr.push('la couleur principale contraste peu');
     if (t.tuile && t.fond && thContrast(t.tuile, t.fond) < 1.05) ctr.push('tuiles et fond presque identiques');
-    form = h('Modèles') + '<div class="apmods">' + TH_MODELES.map(function (m) {
-        return '<button class="apmod' + (t.modele === m.id ? ' on' : '') + '" data-p="thModele" data-v="' + m.id + '" style="font-family:' + TH_FONTS[m.policeTitres].css + '"><span class="sw" style="background:' + (m.barre === '#FFFFFF' ? m.couleur : m.barre) + '"></span><span class="sw" style="background:' + m.couleur + '"></span><span class="sw" style="background:' + m.accent + '"></span><b>' + esc(m.nom) + '</b></button>'; }).join('') + '</div><p class="hint">Un modèle règle couleurs, polices et formes ; logo, nom, ticket, catégories et photos sont gardés.</p>' +
-      h('Style') + '<div class="apmode">' + [['clair', '☀︎ Clair', 'Fond clair, texte foncé'], ['sombre', '☾ Sombre', 'Fond sombre, texte clair']].map(function (m) { return '<button class="apmod' + (t.mode === m[0] ? ' on' : '') + '" data-p="thMode" data-v="' + m[0] + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('') + '</div><p class="hint">S’applique à l’Admin et à la Caisse de tous les appareils (la Caisse Soirée reste sombre).</p>' +
+    form = h('Style') + '<div class="apmode">' + [['clair', '☀︎ Clair', 'Fond clair, texte foncé'], ['sombre', '☾ Sombre', 'Fond sombre, texte clair']].map(function (m) { return '<button class="apmod' + (t.mode === m[0] ? ' on' : '') + '" data-p="thMode" data-v="' + m[0] + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('') + '</div><p class="hint">S’applique à l’Admin et à la Caisse de tous les appareils (la Caisse Soirée reste sombre).</p>' +
+      h('Modèles') + '<div class="apmods">' + TH_MODELES.map(function (m) {
+        return '<button class="apmod' + (t.modele === m.id ? ' on' : '') + '" data-p="thModele" data-v="' + m.id + '" style="font-family:' + TH_FONTS[m.policeTitres].css + '"><span class="sw" style="background:' + (m.barre === '#FFFFFF' ? m.couleur : m.barre) + '"></span><span class="sw" style="background:' + m.couleur + '"></span><span class="sw" style="background:' + m.accent + '"></span><b>' + esc(m.nom) + '</b></button>'; }).join('') + '</div><p class="hint">Un modèle règle couleurs, polices et formes ; le style (clair ou sombre), le logo, le nom, le ticket, les catégories et les photos sont gardés.</p>' +
       h('Identité') + fld('Nom du commerce', 'nom', d.nom, 'Caisse') + img('Logo', 'apLogo', !!t.logo, 'thLogoDel', 'Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).') +
       h('Icône de l’onglet de la caisse') + '<div class="apmode" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">' + [['defaut', 'Par défaut', '../' + RACINE.replace(/^\.\.\//, '') + 'core/icons/caisse-192.png'], ['logo', 'Logo de l’app', t.logo || themeLogo('square')]].concat(CLIENT.logoClient ? [['client', 'Logo du client', CLIENT.logoClient]] : []).concat([['image', 'Image au choix', t.ongletImage]]).map(function (o) {
         return '<button class="apmod apong' + (t.onglet === o[0] ? ' on' : '') + '" data-p="thOnglet" data-v="' + o[0] + '">' + (o[2] ? '<img src="' + o[2] + '" alt="">' : '<span class="apph0" style="width:32px;height:32px;font-size:18px">+</span>') + '<b>' + esc(o[1]) + '</b></button>'; }).join('') + '</div>' +
@@ -3653,7 +3652,7 @@ function vApparence(part) {
       (ctr.length ? '<p class="hint warnt">Lisibilité : ' + ctr.join(' ; ') + '.</p>' : '<p class="hint okt">Contrastes lisibles.</p>') +
       h('Polices') + '<div class="aprow"><div>' + sel('Titres', 'policeTitres', t.policeTitres, fonts) + '</div><div>' + sel('Texte', 'police', t.police, fonts) + '</div></div><p class="hint">Polices de l’appareil (aucun téléchargement, fonctionne hors ligne) : le rendu peut varier un peu d’une tablette à l’autre.</p>' +
       h('Formes') + '<div class="aprow"><div>' + sel('Boutons et tuiles', 'forme', t.forme, [['arrondi', 'Arrondis'], ['carre', 'Carrés'], ['pastille', 'Pastilles']]) + '</div><div>' + sel('Densité', 'densite', t.densite, [['normale', 'Normale'], ['compacte', 'Compacte']]) + '</div></div>' + chk('Ombres sous les tuiles et cartes', 'ombre', t.ombre) +
-      h('Fond d’écran') + img('Image (accueil de la caisse, bandeau de l’Admin)', 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
+      h('Fond d’écran') + img('Image (page d’accueil de la caisse)', 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
       (t.mode === 'sombre' ? h('Couleurs du thème sombre') + '<div class="aprow">' + clr('Couleur principale', 'sombre.couleur', t.sombre.couleur, thMix(t.couleur, '#ffffff', .45)) + clr('Fond', 'sombre.fond', t.sombre.fond, '#0B0F14') + '</div>' : '') +
       h('Catégories') + (cats.length ? '<p class="hint">Couleur (onglet et liseré des tuiles) et icône affichée devant le nom de la catégorie sur la caisse.</p><div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
         return '<div class="apcat"><input type="color" data-ap="categories.' + esc(k.id) + '.couleur" value="' + (c.couleur || t.couleur) + '">' + '<button class="apemo' + (c.emoji ? '' : ' vide') + '" data-p="emoOpen" data-v="' + esc(k.id) + '" title="Icône de la catégorie">' + (c.emoji ? esc(c.emoji) : 'Icône') + '</button><span>' + esc(k.nom) + '</span>' + (c.couleur ? '<button class="btn sm" data-p="thClr" data-v="categories.' + esc(k.id) + '.couleur">auto</button>' : '') + '</div>' + (TH_EMO === k.id ? vEmoGrid(k.id, c.emoji) : ''); }).join('') + '</div>' : '<p class="hint">Publiez d’abord un catalogue.</p>') +

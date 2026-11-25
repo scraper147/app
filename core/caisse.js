@@ -1,4 +1,4 @@
-/* caisse · caisse · v12 — code commun à tous les amis */
+/* caisse · caisse · v13 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -429,8 +429,8 @@ var TH_FONTS = {
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
-  { id: 'ardoise', nom: 'Ardoise (sombre)', mode: 'sombre', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
-  { id: 'lounge', nom: 'Lounge (sombre)', mode: 'sombre', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
+  { id: 'ardoise', nom: 'Ardoise', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
+  { id: 'lounge', nom: 'Lounge', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
   { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
   { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
   { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
@@ -524,7 +524,6 @@ function themeApply() {
     css += 'html:root:not([data-theme="dark"]){' + (t.fond ? '--bg:' + t.fond + ';' : '') + (t.tuile ? '--surface:' + t.tuile + ';' : '') + (t.barre ? '--band:' + t.barre + ';--band-ink:' + thInk(t.barre) + ';--band-muted:' + thMix(thInk(t.barre), t.barre, .35) + ';--band-line:' + thMix(t.barre, thInk(t.barre), .18) + ';' : '') + '}';
     if (sb.couleur || sb.fond) css += 'html:root[data-theme="dark"]{' + (sb.couleur ? '--green:' + sb.couleur + ';--green-d:' + thMix(sb.couleur, '#ffffff', .4) + ';' : '') + (sb.fond ? '--bg:' + sb.fond + ';--surface:' + thMix(sb.fond, '#ffffff', .06) + ';' : '') + '}';
     css += 'html:root{--text:' + F + ';--display:' + FT + '}';
-    if (t.fondImage) css += '.band{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
   } else {
     css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
   }
@@ -575,7 +574,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v12'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v13'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';

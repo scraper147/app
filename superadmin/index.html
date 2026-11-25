@@ -157,6 +157,32 @@ function saveClient() {
   }).then(function () { if (!logoChanged) return; var all = {}; mine.filter(function (a) { return moving.indexOf(a) < 0; }).forEach(function (a) { var fs = filesFor(JSON.parse(JSON.stringify(a))); all[a.chemin + '/client.js'] = fs[a.chemin + '/client.js']; }); return writeFiles(all, 'Logo du client ' + nom); })
   .then(function () { return syncClientPages(cs, S.apps); }).then(function () { S.busy = ''; S.cform = null; S.flash = 'Client « ' + nom + ' » enregistré. Sa page : ' + page + '/' + (moving.length ? ' ; ' + moving.length + ' app(s) déplacée(s) : leurs tablettes doivent être réinstallées' : '') + '.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
+/* Historique de superadmin/clients.json (commits du dépôt) : versions lisibles avec la phrase de passe, clients manquants récupérables */
+function histScan() {
+  S.hist = { busy: true, list: [] }; render();
+  gh('/repos/' + S.acc.depot + '/commits?path=' + encodeURIComponent(CLIENTS_PATH) + '&per_page=100').then(function (cs) {
+    return cs.reduce(function (p, c) { return p.then(function () {
+      return gh(cpath(CLIENTS_PATH) + '?ref=' + c.sha).then(function (j) { return clientsDecrypt(JSON.parse(b64utf8(j.content))); }).then(function (r) {
+        var cl = (r && r.clients) || {}; if (Object.keys(cl).length) S.hist.list.push({ sha: c.sha, le: (c.commit && (c.commit.committer || c.commit.author) || {}).date || '', clients: cl }); render();
+      }, function () {});
+    }); }, Promise.resolve());
+  }).then(function () { S.hist.busy = false; render(); }, function (e) { S.hist = { busy: false, list: [], err: e.message }; render(); });
+}
+function vHist() {
+  var H = S.hist; if (!H) return '';
+  var cur = S.clients || {};
+  return '<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px"><h3 style="margin:0 0 6px;font-size:16px">Anciennes versions lisibles</h3>' + (H.err ? '<p class="err">' + esc(H.err) + '</p>' : '') +
+    H.list.map(function (v, i) { var ids = Object.keys(v.clients), miss = ids.filter(function (k) { return !cur[k]; });
+      return '<div class="card" style="margin-top:8px"><b>' + (v.le ? new Date(v.le).toLocaleString('fr-BE') : v.sha.slice(0, 7)) + ' · ' + ids.length + ' client' + (ids.length > 1 ? 's' : '') + '</b><div class="faint">' + ids.map(function (k) { return esc(v.clients[k].nom) + (cur[k] ? '' : ' (manquant)'); }).join(', ') + '</div>' +
+        (miss.length ? '<div class="row"><button data-a="chistGo" data-v="' + i + '">Récupérer ' + miss.length + ' client' + (miss.length > 1 ? 's' : '') + ' manquant' + (miss.length > 1 ? 's' : '') + '</button></div>' : '<div class="faint">Rien à récupérer.</div>') + '</div>'; }).join('') +
+    (H.busy ? '<p class="faint">Recherche dans l’historique…</p>' : H.list.length ? '' : '<p class="faint">Aucune version lisible avec cette phrase de passe.</p>') + '<div class="row" style="margin-top:8px"><button class="sec" data-a="chistClose">Fermer</button></div></div>';
+}
+function histRestore(i) {
+  var v = S.hist.list[i], cs = JSON.parse(JSON.stringify(S.clients || {})), n = 0;
+  Object.keys(v.clients).forEach(function (k) { if (!cs[k]) { cs[k] = v.clients[k]; n++; } });
+  S.busy = 'Récupération…'; render();
+  clientsSave(cs, 'Clients récupérés depuis l’historique (SuperAdmin)').then(function () { S.clientsErr = null; return syncClientPages(cs, S.apps); }).then(function () { S.busy = ''; S.hist = null; S.flash = n + ' client(s) récupéré(s).'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+}
 function delClient(id) {
   if (S.apps.some(function (a) { return a.client === id; })) { S.err = 'Ce client a encore des apps : supprimez-les ou rattachez-les à un autre client d’abord.'; S.cdel = null; render(); return; }
   var cs = JSON.parse(JSON.stringify(S.clients || {})), nom = (cs[id] || {}).nom; delete cs[id];
@@ -247,9 +273,9 @@ function vApps() {
 }
 function vClients() {
   if (!S.apps) return '';
-  if (!S.clients) return '<section><h2>Clients</h2><p class="err">' + esc(S.clientsErr || 'Clients indisponibles') + '</p><button class="danger" data-a="creset">Repartir d’une liste vide</button></section>';
+  if (!S.clients) return '<section><h2>Clients</h2><p class="err">' + esc(S.clientsErr || 'Clients indisponibles') + '</p><div class="row"><button data-a="chist">Chercher une version lisible dans l’historique</button><button class="danger" data-a="creset">Repartir d’une liste vide</button></div>' + vHist() + '</section>';
   var cs = S.clients, ids = Object.keys(cs).sort(function (a, b) { return cs[a].nom.localeCompare(cs[b].nom, 'fr'); });
-  return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Clients (' + ids.length + ')</h2><button data-a="cnew">+ Nouveau client</button></div>' +
+  return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Clients (' + ids.length + ')</h2><div class="row"><button data-a="cnew">+ Nouveau client</button><button class="sec" data-a="chist" title="Anciennes versions de la liste (historique du dépôt)">Historique</button></div></div>' + vHist() +
     (ids.length ? '<div class="grid" style="margin-top:14px">' + ids.map(function (id) {
       var c = cs[id], apps = S.apps.filter(function (a) { return a.client === id; });
       return '<div class="card"><div class="row" style="flex-wrap:nowrap">' + (c.logo ? '<img src="' + c.logo + '" alt="" style="width:40px;height:40px;object-fit:contain;border-radius:8px">' : '') + '<h3>' + esc(c.nom) + '</h3></div><div class="mono">…/app/' + esc(pageOf(id)) + '/</div>' + (c.contact ? '<div>' + esc(c.contact) + '</div>' : '') +
@@ -260,7 +286,7 @@ function vClients() {
     }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v12';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v13';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
@@ -319,6 +345,9 @@ document.addEventListener('click', function (e) {
   else if (a === 'ccopy') { var url = location.href.replace(/superadmin\/.*$/, '') + pageOf(v) + '/'; (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { S.flash = 'Lien copié : ' + url; render(); }, function () { S.flash = 'Lien : ' + url; render(); }); }
   else if (a === 'cdelGo') delClient(v);
   else if (a === 'cnewApp') { S.tab = 'apps'; S.form = { id: '', nom: '', type: 'simple', client: v, donnees: 'local', cle: '' }; S.edit = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'chist') histScan();
+  else if (a === 'chistClose') { S.hist = null; render(); }
+  else if (a === 'chistGo') histRestore(+v);
   else if (a === 'creset') { S.clients = {}; S.clientsErr = null; S.flash = 'Liste des clients vide : elle sera réécrite au prochain enregistrement.'; render(); }
 });
 document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'pp') document.querySelector('[data-a="unlock"]').click(); });
