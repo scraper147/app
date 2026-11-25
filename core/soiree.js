@@ -1,4 +1,4 @@
-/* caisse · soiree · v4 — code commun à tous les amis */
+/* caisse · soiree · v5 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -349,6 +349,8 @@ var FEATURES = [
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
   { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
     { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
+    { id: 'commandesCaisse', nom: 'Retrait des commandes au stand', desc: 'Onglet Commandes sur la caisse : commandes à retirer à ce stand, encaissement du reste à payer, remise au client.', req: 'commandes' },
+    { id: 'commandesStock', nom: 'Commandes retirées du stock', desc: 'Une commande en livraison est retirée du stand de stockage, une commande en retrait du stand choisi (dès son enregistrement).', req: 'commandes' },
     { id: 'livraison', nom: 'Livraison à domicile', desc: 'Bouton Livraison sur la caisse avec nom, adresse et téléphone, ticket vendeur ; aussi après coup depuis l’Historique.' },
     { id: 'gestionLivraisons', nom: 'Gestion des livraisons', desc: 'Liste des livraisons à faire, statut À livrer / Livrée, liste pour le livreur (Admin).', req: 'livraison' },
     { id: 'facture', nom: 'Gestion des factures', desc: 'Bouton « À facturer » sur la caisse (payé ou non), encaissement plus tard ; onglet Factures de l’Admin (établie, payée par virement).' } ] },
@@ -489,7 +491,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v4'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v5'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

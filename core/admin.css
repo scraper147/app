@@ -229,7 +229,8 @@ td>.sub{display:block;font-size:12px;color:var(--muted);font-weight:400}
 .lvcard{border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:12px 14px;margin:0 0 10px;background:var(--surface)}
 .lvcard.done{border-left-color:var(--green)}.lvcard p{margin:6px 0 0;overflow-wrap:anywhere}.lvcard .row-between{gap:8px;flex-wrap:wrap}.lvcard a{color:inherit}
 .lvstat{font-size:13px;font-weight:700;padding:3px 10px;border-radius:12px;background:var(--gold);color:#1A1408}.lvstat.done{background:var(--green);color:#fff}
-.lvnote{flex:1 1 200px;max-width:420px}
+.lvnote{flex:1 1 200px;max-width:420px}.coenc{color:var(--green);font-weight:600}.lvcard.cmd{border-left-style:double;border-left-width:6px}
+.sssub td{font-weight:700;background:var(--soft);border-top:2px solid var(--line)}
 @media print{body.printliv .lvcard{break-inside:avoid;border-color:#999}body.printliv .lvnote:placeholder-shown{display:none}}
 .req{color:var(--red);font-weight:700}.reqnote{margin:8px 0 0;font-size:13px;color:var(--muted)}.coform form>.cbtns{margin-top:18px}
 .cbadges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}

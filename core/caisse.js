@@ -1,4 +1,4 @@
-/* caisse · caisse · v4 — code commun à tous les amis */
+/* caisse · caisse · v5 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -349,6 +349,8 @@ var FEATURES = [
     { id: 'arrondi', nom: 'Arrondi à 5 cents', desc: 'Le total est arrondi aux 5 cents supérieurs.' } ] },
   { id: 'cmdliv', nom: 'Commandes, livraisons et factures', items: [
     { id: 'commandes', nom: 'Gestion des commandes', desc: 'Commandes de clients (livraison ou retrait sur un stand), statuts, reste à payer, export (Admin).' },
+    { id: 'commandesCaisse', nom: 'Retrait des commandes au stand', desc: 'Onglet Commandes sur la caisse : commandes à retirer à ce stand, encaissement du reste à payer, remise au client.', req: 'commandes' },
+    { id: 'commandesStock', nom: 'Commandes retirées du stock', desc: 'Une commande en livraison est retirée du stand de stockage, une commande en retrait du stand choisi (dès son enregistrement).', req: 'commandes' },
     { id: 'livraison', nom: 'Livraison à domicile', desc: 'Bouton Livraison sur la caisse avec nom, adresse et téléphone, ticket vendeur ; aussi après coup depuis l’Historique.' },
     { id: 'gestionLivraisons', nom: 'Gestion des livraisons', desc: 'Liste des livraisons à faire, statut À livrer / Livrée, liste pour le livreur (Admin).', req: 'livraison' },
     { id: 'facture', nom: 'Gestion des factures', desc: 'Bouton « À facturer » sur la caisse (payé ou non), encaissement plus tard ; onglet Factures de l’Admin (établie, payée par virement).' } ] },
@@ -481,7 +483,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v4'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v5'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
@@ -622,6 +624,7 @@ function persist(noSync) {
 function lineTotal(l) { return applyDisc(l.price * l.qty, l.disc); }
 function subtotal() { return S.cart.reduce(function (a, l) { return a + lineTotal(l); }, 0); }
 function total() { return applyDisc(up5(subtotal()), S.ticketDisc); }
+function payTotal() { return S.cmdPay ? S.cmdPay.reste : total(); }
 function today() { return isoDate(new Date()); }
 function validSales(list) { return (list || []).filter(function (v) { return !v.annulation; }); }
 function salesOf(date) { return S.days[date || today()] || []; }
@@ -646,6 +649,7 @@ function dayFile(date) {
     totalBancontact: r2(sales.reduce(function (a, v) { return a + v.paiement.bancontact; }, 0)),
     totalNonPaye: r2(sales.reduce(function (a, v) { return a + (unpaid(v) ? dueOf(v) : 0); }, 0)),
     nombreAFacturer: sales.filter(function (v) { return !!v.facture; }).length,
+    totalPayeALaCommande: r2(sales.reduce(function (a, v) { return a + (v.commande ? Number(v.commande.dejaPaye) || 0 : 0); }, 0)),
     ouverturesTiroir: S.tiroir[date] || [],
     nombreOuverturesSansVente: (S.tiroir[date] || []).filter(function (o) { return !o.venteId; }).length,
     caisse: cxExport(date),
@@ -746,6 +750,7 @@ function autoSchedule(delay) { if (!ghConfigured()) return; clearTimeout(AUTO.ti
 async function autoSync() { if (!FEAT('envoiAuto')) return;
   if (!ghReady() || S.ghBusy || navigator.onLine === false) return;
   stkSync(); // mouvements de stock en attente (file séparée)
+  if (typeof cmdSync === 'function') cmdSync().then(function () { cmdRefresh(false); }); // commandes : mises à jour en attente puis relecture
   cxSync().then(function () { cxRefresh(false); }); // fichier de caisse partagé : envoi des saisies puis lecture des saisies de l'Admin
   var todo = daysToSend(); if (!todo.length) return;
   var wait = AUTO.last + AUTO_MIN_INTERVALLE - Date.now();
@@ -760,7 +765,7 @@ function autoStatus() {
   if (!ghConfigured()) return null;
   if (!ghReady()) return { ko: true, court: 'Envoi auto inactif', t: 'Envoi automatique inactif : touchez pour déverrouiller GitHub' };
   if (S.ghBusy === 'auto') return { court: 'Envoi…', t: 'Envoi automatique en cours…' };
-  var n = daysToSend().length, nq = (typeof STK !== 'undefined' ? STK.queue.length : 0) + (typeof CXF !== 'undefined' ? CXF.queue.length : 0), last = Object.keys(GH.envois).map(function (k) { return GH.envois[k]; }).sort().pop();
+  var n = daysToSend().length, nq = (typeof STK !== 'undefined' ? STK.queue.length : 0) + (typeof CXF !== 'undefined' ? CXF.queue.length : 0) + (typeof CMD !== 'undefined' ? CMD.queue.length : 0), last = Object.keys(GH.envois).map(function (k) { return GH.envois[k]; }).sort().pop();
   if (n) {
     if (navigator.onLine === false) return { warn: true, court: 'En attente de réseau', t: 'Pas de réseau : ' + n + ' jour' + (n > 1 ? 's' : '') + ' à envoyer dès le retour d\u2019internet' };
     if (AUTO.err === 401) return { ko: true, court: 'Envoi auto inactif', t: 'GitHub refuse le jeton : touchez pour déverrouiller à nouveau' };
@@ -932,6 +937,7 @@ async function stkRefresh() {
 function stkPendingText() {
   var n = STK.queue.length, m = typeof CXF !== 'undefined' ? CXF.queue.length : 0, t = [];
   if (n) t.push(n + ' mouvement' + (n > 1 ? 's' : '') + ' de stock'); if (m) t.push(m + ' saisie' + (m > 1 ? 's' : '') + ' de caisse');
+  var kq = typeof CMD !== 'undefined' ? CMD.queue.length : 0; if (kq) t.push(kq + ' commande' + (kq > 1 ? 's' : '') + ' retirée' + (kq > 1 ? 's' : ''));
   return t.join(' et ') || '0 mouvement';
 }
 S.rq = {};
@@ -972,7 +978,7 @@ function stkcFromDoc(d) {
 function salesSummary(f) {
   var q = {};
   (f.ventes || []).forEach(function (v) {
-    if (v.annulation) return;
+    if (v.annulation || v.commande) return; // commande : le stock a déjà été retiré par l'App admin
     (v.lignes || []).forEach(function (l) { if (l.produitId) q[l.produitId] = (q[l.produitId] || 0) + (Number(l.quantite) || 0); });
   });
   return { pdv: f.pointDeVente ? f.pointDeVente.id : null, date: f.date || null, maj: f.miseAJour || '', q: q };
@@ -982,7 +988,7 @@ async function stkcLoadSales() {
   var r = await ghApi('GET', '/repos/' + GH_REPO + '/git/trees/HEAD?recursive=1', GH.token);
   if (!r.ok) throw r.status;
   var tree = (await r.json()).tree || [], pre = GH_DOSSIER + '/', keep = {}, mine = slug(S.placeId).slice(0, 12);
-  var files = tree.filter(function (t) { return t.type === 'blob' && t.path.indexOf(pre) === 0 && t.path.indexOf(pre + 'stock/') !== 0 && /\.json$/i.test(t.path); });
+  var files = tree.filter(function (t) { return t.type === 'blob' && t.path.indexOf(pre) === 0 && t.path.indexOf(pre + 'stock/') !== 0 && t.path.indexOf(pre + 'commandes/') !== 0 && t.path.indexOf(pre + 'caisse/') !== 0 && t.path.indexOf(pre + 'factures/') !== 0 && /\.json$/i.test(t.path); });
   for (var i = 0; i < files.length; i++) {
     var t = files[i], name = t.path.split('/').pop(), m = /^(\d{4}-\d{2}-\d{2})_([^_]+)_/.exec(name);
     if (m && m[2] !== mine) continue;                    // autre stand (identifiant dans le nom du fichier) : pas lu
@@ -1296,6 +1302,12 @@ function cxReportXml(d) {
   t(tkLine('Total des ventes', tkMoney(ok.reduce(function (a, v) { return a + v.total; }, 0))));
   t(tkLine('  dont cash', tkMoney(ok.reduce(function (a, v) { return a + v.paiement.cash; }, 0))));
   t(tkLine('  dont Bancontact', tkMoney(ok.reduce(function (a, v) { return a + v.paiement.bancontact; }, 0))));
+  var cmds = ok.filter(function (v) { return v.commande; });
+  if (cmds.length) {
+    t(tkLine('  dont payé à la commande', tkMoney(cmds.reduce(function (a, v) { return a + (Number(v.commande.dejaPaye) || 0); }, 0))));
+    t('Commandes retirées : ' + cmds.length);
+    cmds.forEach(function (v) { t(tkLine('  Commande n° ' + cmdNum(v.commande.numero) + ' · déjà payé ' + tkMoney(v.commande.dejaPaye || 0), 'encaissé ' + tkMoney(v.paiement.cash + v.paiement.bancontact))); });
+  }
   t(SEP); st('em="true"'); t('Caisse (argent liquide)'); st('em="false"');
   t(tkLine('Fond de caisse' + (c.fond && c.fond.source === 'admin' ? ' (Admin)' : ''), s.fond == null ? 'non saisi' : tkMoney(s.fond)));
   t(tkLine('+ Ventes en cash', tkMoney(s.ventes)));
@@ -1319,6 +1331,130 @@ function cxReportXml(d) {
 function cxPrint(d) {
   S.prBusy = true; render();
   eposSend(cxReportXml(d), 15000).then(function (r) { S.prBusy = false; toast(r.ok ? 'Rapport imprimé' : 'Rapport non imprimé : ' + r.text); render(); });
+}
+
+/* ---------- Commandes à retirer au stand ----------
+   Fichier écrit par l'App admin : <GH_DOSSIER>/commandes/<AAAA>.json (format agri-garden-caisse/commandes, `commandes` indexé par id).
+   La caisse lit le fichier (copie locale réduite aux commandes « retrait » de son stand, pour le hors ligne) et met à jour SEULEMENT
+   la commande encaissée : statut, paye, encaissement, historique, modifieLe (+ majLe/majPar du fichier). Relecture + PUT avec le sha lu,
+   3 essais sur 409/422, file d'attente hors ligne. Les articles d'une commande ont déjà été retirés du stock par l'Admin :
+   une vente avec `commande` n'est jamais déduite du stock. */
+var CMD_DIR = GH_DOSSIER + '/commandes';
+var CMD_KEY = STORE_KEY + '-commandes';
+var CMD = { files: {}, queue: [], alerts: [], lu: null, err: null, busy: false, loading: false, last: 0 };
+try { var cmdSaved = JSON.parse(localStorage.getItem(CMD_KEY) || 'null'); if (cmdSaved) { CMD.files = cmdSaved.files || {}; CMD.queue = cmdSaved.queue || []; CMD.alerts = cmdSaved.alerts || []; CMD.lu = cmdSaved.lu || null; } } catch (e) {}
+function saveCmd() { try { localStorage.setItem(CMD_KEY, JSON.stringify({ files: CMD.files, queue: CMD.queue, alerts: CMD.alerts, lu: CMD.lu })); refreshUsage(); return true; } catch (e) { return false; } }
+function cmdYears() { var d = new Date(), y = d.getFullYear(); return d.getMonth() === 0 ? [y - 1, y] : [y]; }
+function cmdPaid(c) { return r2(Number(c && c.paye && c.paye.montant) || 0); }
+function cmdReste(c) { return r2(Math.max(0, (Number(c.total) || 0) - cmdPaid(c))); }
+function cmdNum(n) { return n != null && n !== '' ? String(n) : '…'; }
+function cmdModeTxt(m) { return m === 'cash' ? 'cash' : m === 'bancontact' ? 'Bancontact' : m === 'virement' ? 'virement' : m === 'mixte' ? 'mixte' : ''; }
+function cmdMine(c) { return !!(c && c.mode === 'retrait' && c.retrait && c.retrait.stand && c.retrait.stand.id === S.placeId); }
+/* Copie locale : seulement les commandes « retrait » de ce stand (moins de données personnelles sur la tablette) */
+function cmdTakeFile(y, d) {
+  var keep = {}, cs = (d && d.commandes) || {};
+  Object.keys(cs).forEach(function (id) { if (cmdMine(cs[id])) keep[id] = cs[id]; });
+  CMD.files[y] = { place: S.placeId, commandes: keep }; CMD.lu = isoLocal(new Date());
+}
+function cmdYearOf(id) {
+  var y = null; Object.keys(CMD.files).forEach(function (k) { if (CMD.files[k].commandes && CMD.files[k].commandes[id]) y = k; });
+  if (!y) { var m = /^cmd-(\d{4})/.exec(id || ''); y = m ? m[1] : String(new Date().getFullYear()); }
+  return y;
+}
+/* Vente non annulée de la tablette liée à cette commande */
+function cmdLocalSale(id) { var r = null; Object.keys(S.days).forEach(function (d) { (S.days[d] || []).forEach(function (v) { if (v.commande && v.commande.id === id && !v.annulation) r = { date: d, v: v }; }); }); return r; }
+/* Commandes du stand : dernière lecture + opérations en attente d'envoi */
+function cmdList() {
+  var out = [];
+  Object.keys(CMD.files).forEach(function (y) {
+    var f = CMD.files[y]; if (!f || f.place !== S.placeId) return;
+    Object.keys(f.commandes || {}).forEach(function (id) {
+      var c = f.commandes[id]; if (!cmdMine(c) || c.statut === 'annulee') return;
+      var x = { id: id, annee: y, c: c, statut: c.statut, enc: c.encaissement || null, attente: false };
+      var pend = CMD.queue.filter(function (o) { return o.id === id; }).pop(), loc = cmdLocalSale(id);
+      if (pend && pend.op === 'encaisser') { x.statut = 'livree'; x.attente = true; x.enc = { venteId: pend.venteId, horodatage: pend.horodatage }; }
+      else if (pend && pend.op === 'annuler') { x.statut = 'prete'; x.enc = null; x.attente = true; }
+      else if (loc && x.statut !== 'livree') { x.statut = 'livree'; x.attente = true; x.enc = { venteId: loc.v.id, horodatage: loc.v.horodatage }; }
+      out.push(x);
+    });
+  });
+  return out;
+}
+function cmdTodoCount() { var t = today(); return cmdList().filter(function (x) { return x.statut !== 'livree' && x.c.retrait.date && x.c.retrait.date <= t; }).length; }
+async function cmdReadYear(y) {
+  var r = await ghApi('GET', ghUrl(CMD_DIR + '/' + y + '.json'), GH.token);
+  if (r.status === 404) return null;
+  if (!r.ok) throw r.status;
+  var j = await r.json();
+  return { sha: j.sha, data: JSON.parse(b64utf8d(j.content)) };
+}
+/* Lecture : à l'ouverture de l'écran (force), au démarrage et à chaque passage de l'envoi automatique (20 s mini) */
+async function cmdRefresh(force) { if (!FEAT('commandesCaisse')) return;
+  if (!ghReady() || navigator.onLine === false || CMD.loading || CMD.busy || !S.placeId) return;
+  if (!force && Date.now() - CMD.last < 20000) return;
+  CMD.loading = true; CMD.last = Date.now(); render();
+  try {
+    var ys = cmdYears(), seen = {};
+    for (var i = 0; i < ys.length; i++) {
+      var f = await cmdReadYear(ys[i]);
+      if (f && f.data && f.data.format === 'agri-garden-caisse/commandes') { cmdTakeFile(String(ys[i]), f.data); seen[ys[i]] = true; }
+      else delete CMD.files[String(ys[i])];
+    }
+    Object.keys(CMD.files).forEach(function (y) { if (!seen[y] && ys.indexOf(Number(y)) < 0) delete CMD.files[y]; });
+    CMD.lu = isoLocal(new Date()); CMD.err = null; saveCmd();
+  } catch (e) { var c = typeof e === 'number' ? e : 0; if (c === 401) { delete GH.token; saveGh(); } CMD.err = c; }
+  finally { CMD.loading = false; render(); }
+}
+/* Applique une opération ({op:'encaisser'|'annuler', annee, id, venteId, …}) sur la seule commande concernée */
+async function cmdApply(op) {
+  var url = ghUrl(CMD_DIR + '/' + op.annee + '.json'), pl = findPlace(S.placeId);
+  for (var essai = 0; essai < 3; essai++) {
+    var r = await ghApi('GET', url, GH.token);
+    if (r.status === 404) { if (op.op === 'encaisser') throw 'annulee'; return null; }
+    if (!r.ok) throw r.status;
+    var j = await r.json(), d = JSON.parse(b64utf8d(j.content)), cs = d.commandes || {}, c = cs[op.id], now = isoLocal(new Date());
+    if (op.op === 'encaisser') {
+      if (!c || c.statut === 'annulee') throw 'annulee';
+      if (c.encaissement) { if (c.encaissement.venteId === op.venteId) return d; throw 'deja'; }
+      c.statut = 'livree';
+      c.paye = { montant: r2(op.dejaPaye + op.montant), mode: op.montant > 0 ? op.paiement.mode : ((c.paye && c.paye.mode) || '') };
+      c.encaissement = { venteId: op.venteId, horodatage: op.horodatage, montant: op.montant, paiement: op.paiement, pointDeVente: op.pdv, appareil: GH.appareil };
+      c.historique = Array.isArray(c.historique) ? c.historique : [];
+      c.historique.push({ statut: 'livree', le: op.horodatage, source: 'caisse' });
+    } else {
+      if (!c || !c.encaissement || c.encaissement.venteId !== op.venteId) return d; // rien à défaire
+      delete c.encaissement; c.statut = 'prete';
+      c.paye = { montant: r2(op.dejaPaye), mode: op.modeAvant || '' };
+      c.historique = Array.isArray(c.historique) ? c.historique : [];
+      c.historique.push({ statut: 'prete', le: now, source: 'caisse', motif: 'Vente n° ' + saleNum(op.venteId) + ' annulée à la caisse' });
+    }
+    c.modifieLe = now; d.majLe = now; d.majPar = 'caisse';
+    var w = await ghApi('PUT', url, GH.token, { message: 'Commande n° ' + cmdNum(c.numero) + (op.op === 'encaisser' ? ' retirée' : ' remise à retirer') + ' (Caisse ' + (pl ? pl.nom : S.placeId) + ')', content: b64utf8(JSON.stringify(d, null, 2)), sha: j.sha });
+    if (w.ok) return d;
+    if (w.status === 409 || w.status === 422) continue;
+    throw w.status;
+  }
+  throw 409;
+}
+/* Envoi de la file d'attente (mêmes déclencheurs que l'envoi automatique des ventes) */
+async function cmdSync() {
+  if (CMD.busy || !CMD.queue.length || !ghReady() || navigator.onLine === false) return;
+  CMD.busy = true; render();
+  try {
+    while (CMD.queue.length) {
+      var op = CMD.queue[0], d;
+      try { d = await cmdApply(op); if (d) cmdTakeFile(String(op.annee), d); }
+      catch (e) {
+        if (e !== 'annulee' && e !== 'deja') throw e;
+        var txt = e === 'annulee' ? 'Commande n° ' + cmdNum(op.numero) + ' annulée dans l’Admin : prévenir le responsable (la vente n° ' + saleNum(op.venteId) + ' est gardée).'
+          : 'Commande n° ' + cmdNum(op.numero) + ' déjà retirée avec une autre vente : prévenir le responsable (la vente n° ' + saleNum(op.venteId) + ' est gardée).';
+        CMD.alerts.push({ id: op.id, texte: txt, le: isoLocal(new Date()) }); toast(txt);
+      }
+      CMD.queue.shift(); saveCmd();
+    }
+    CMD.err = null;
+  } catch (e) { var c = typeof e === 'number' ? e : 0; if (c === 401) { delete GH.token; saveGh(); } CMD.err = c; saveCmd(); }
+  finally { CMD.busy = false; render(); }
 }
 
 /* ---------- Vues ---------- */
@@ -1550,6 +1686,7 @@ function ticketXml(v, opts) {
   var num = v.id.split('-').pop();
   t(tkLine('Ticket n° ' + num, frDate(v.horodatage) + ' ' + v.horodatage.slice(11, 16)));
   if (v.pointDeVente) t('Point de vente : ' + v.pointDeVente.nom);
+  if (v.commande) { st('em="true"'); t('Commande n° ' + cmdNum(v.commande.numero)); st('em="false"'); }
   if (v.livraisonAjoutee) t('Livraison ajoutée le ' + frDate(v.livraisonAjoutee.horodatage).slice(0, 5) + ' à ' + v.livraisonAjoutee.horodatage.slice(11, 16));
   if (v.venteLiee) { var lo = findSale(v.venteLiee); t('Livraison de la vente n° ' + saleNum(v.venteLiee) + (lo ? ' du ' + frDate(lo.date).slice(0, 5) : '')); }
   t(SEP2);
@@ -1573,6 +1710,7 @@ function ticketXml(v, opts) {
   st('em="true" dw="true" dh="true"'); t(tkLine('TOTAL', tkMoney(v.total) + ' EUR', TK_W / 2)); st('em="false" dw="false" dh="false"');
   t(nb + ' article' + (nb > 1 ? 's' : ''));
   t(SEP);
+  if (v.commande) { t(tkLine('Déjà payé à la commande', tkMoney(v.commande.dejaPaye || 0))); t(tkLine('Encaissé maintenant', tkMoney(p.cash + p.bancontact))); }
   if (p.cash > 0) t(tkLine('Cash', tkMoney(p.cash)));
   if (p.bancontact > 0) t(tkLine('Bancontact', tkMoney(p.bancontact)));
   if (p.mode === 'cash' && opts.recu) { t(tkLine('Reçu', tkMoney(opts.recu))); t(tkLine('Rendu', tkMoney(Math.max(0, opts.recu - v.total)))); }
@@ -1687,7 +1825,7 @@ var A = {
   openPos: function () { S.screen = 'pos'; S.tab = 'caisse'; S.openedDate = today(); persist();
     S.cxDate = today(); var c = cxDay(); if (FEAT('fond') && (!c || !c.fond) && !S.fondLater[today()]) A.fondOpen(); }, // début de journée : fond de caisse demandé
   fullscreen: function () { var el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || function () {}).call(el); },
-  tab: function (t) { S.tab = t; S.menu = false; S.cartOpen = false; if (t === 'hist') S.histDay = today(); },
+  tab: function (t) { S.tab = t; S.menu = false; S.cartOpen = false; if (t === 'hist') S.histDay = today(); if (t === 'cmd') { S.cmdTab = S.cmdTab || 'todo'; cmdSync().then(function () { cmdRefresh(true); }); } },
   toggleMenu: function () { S.menu = !S.menu; },
   openCart: function () { S.cartOpen = true; S.menu = false; },
   closeCart: function () { S.cartOpen = false; },
@@ -1853,6 +1991,46 @@ var A = {
   },
   openFree: function () { S.modal = 'free'; S.freeLabel = ''; S.freePrice = ''; },
   openFreeMenu: function () { S.menu = false; A.openFree(); },
+  cmdTab: function (t) { S.cmdTab = t; },
+  cmdAlertOk: function () { CMD.alerts = []; saveCmd(); },
+  cmdReload: function () { cmdSync().then(function () { cmdRefresh(true); }); },
+  /* Encaisser une commande : montant = reste à payer ; reste 0 → « Remettre au client », sans paiement */
+  cmdPay: function (id) {
+    var x = cmdList().filter(function (k) { return k.id === id; })[0];
+    if (!x || x.statut === 'livree' || x.enc) { toast('Cette commande est déjà retirée'); return; }
+    if (cmdLocalSale(id)) { toast('Cette commande est déjà retirée'); return; }
+    var c = x.c;
+    S.cmdPay = { id: id, annee: x.annee, numero: c.numero != null ? c.numero : null, dejaPaye: cmdPaid(c), modeAvant: (c.paye && c.paye.mode) || '', total: r2(Number(c.total) || 0), reste: cmdReste(c), lignes: c.lignes || [] };
+    if (S.cmdPay.reste <= 0) { S.payMode = null; A.validateCmd(); return; }
+    A.openPay();
+  },
+  validateCmd: function () {
+    var k = S.cmdPay; if (!k) return;
+    var t = k.reste, d = new Date(), p = findPlace(S.placeId), pay, nm = 'Commande n° ' + cmdNum(k.numero);
+    if (t <= 0) pay = { mode: 'deja-paye', cash: 0, bancontact: 0 };
+    else if (S.payMode === 'cash') pay = { mode: 'cash', cash: r2(t), bancontact: 0 };
+    else if (S.payMode === 'bc') pay = { mode: 'bancontact', cash: 0, bancontact: r2(t) };
+    else if (S.payMode === 'mix') { var mc = num(S.mix); pay = { mode: 'mixte', cash: r2(mc), bancontact: r2(t - mc) }; }
+    else return;
+    var list = S.days[today()] || (S.days[today()] = []), n = list.length + 1;
+    var sale = {
+      id: p.id + '-' + today().replace(/-/g, '') + '-' + ('000' + n).slice(-4), horodatage: isoLocal(d), pointDeVente: { id: p.id, nom: p.nom },
+      lignes: k.lignes.map(function (l) { var a = l.produitId ? stkArticle(l.produitId) : null, q = Number(l.quantite) || 0; return { produitId: l.produitId || null, categorie: a ? a.categorie : '', libelle: l.libelle || (a && a.libelle) || '', articleLibre: !l.produitId, prixUnitaire: r2(Number(l.prixUnitaire) || 0), quantite: q, remise: null, total: r2(l.total != null ? Number(l.total) : (Number(l.prixUnitaire) || 0) * q) }; }),
+      sousTotal: k.total, remiseTicket: null, total: k.total, paiement: pay,
+      commande: { id: k.id, numero: k.numero, dejaPaye: k.dejaPaye, modeDejaPaye: k.modeAvant }
+    };
+    list.push(sale);
+    if (!S.payDrawer && pay.cash > 0) payDrawerOpen();
+    if (S.payDrawer) { S.payDrawer.motif = pay.cash > 0 ? nm + ' retirée' : nm + ' payée par Bancontact (tiroir ouvert pendant l’encaissement)'; S.payDrawer.venteId = sale.id; S.payDrawer = null; }
+    CMD.queue.push({ op: 'encaisser', annee: k.annee, id: k.id, numero: k.numero, venteId: sale.id, horodatage: sale.horodatage, montant: r2(pay.cash + pay.bancontact), paiement: pay, dejaPaye: k.dejaPaye, pdv: { id: p.id, nom: p.nom } });
+    saveCmd();
+    var msg = t > 0 ? nm + ' encaissée' : nm + ' remise au client';
+    S.lastSale = { date: today(), id: sale.id, recu: 0, msg: msg, titre: msg, rendu: t > 0 && S.payMode === 'cash' ? Math.max(0, num(S.received) - t) : null };
+    S.cmdPay = null; S.modal = null;
+    if (!persist()) { S.storageMsg = nm + ' NON enregistrée dans l’appareil'; return; }
+    cmdSync();
+    if (prConfigured()) S.modal = 'ticket'; else toast(msg);
+  },
   /* Remise ticket : code, puis la fenêtre de remise habituelle */
   discAsk: function () { if (!S.cart.length) return; S.menu = false; S.modal = 'code'; S.codeVal = ''; S.codeMsg = null; },
   codeKey: function (k) {
@@ -1887,6 +2065,7 @@ var A = {
   close: function () { if (S.modal === 'pay' && S.payDrawer) { S.payDrawer = null; persist(); }
     if (S.modal === 'fond') { S.fondLater[today()] = true; if (S.cxFrom === 'cx') { S.modal = 'cx'; S.cxFrom = null; return; } }
     if (S.modal === 'pay' && S.after) restoreCart();
+    if (S.modal === 'pay') S.cmdPay = null;
     S.modal = S.modal === 'ghcfg' && S.ghBack ? S.ghBack : null; S.ghBack = null; S.ghPending = null; S.storageMsg = ''; },
   checkCatalogue: function () { loadSiteCatalogue(true); },
   checkCatMenu: function () { S.menu = false; if (!S.catLoading) loadSiteCatalogue(true); },
@@ -1906,20 +2085,27 @@ var A = {
     if (!v || v.annulation) { S.modal = null; return; }
     var motif = (S.cancelMotif || '').trim().slice(0, 120);
     v.annulation = { horodatage: isoLocal(new Date()), motif: motif };
+    if (v.commande) { // la commande redevient « à retirer »
+      var qi = CMD.queue.findIndex(function (o) { return o.op === 'encaisser' && o.venteId === v.id; });
+      if (qi >= 0) CMD.queue.splice(qi, 1);
+      else CMD.queue.push({ op: 'annuler', annee: cmdYearOf(v.commande.id), id: v.commande.id, numero: v.commande.numero, venteId: v.id, dejaPaye: Number(v.commande.dejaPaye) || 0, modeAvant: v.commande.modeDejaPaye || '' });
+      saveCmd(); cmdSync();
+    }
     var wasExported = !!S.exported[parts[0]]; delete S.exported[parts[0]];
     S.modal = null;
     if (persist()) toast('Vente de ' + v.horodatage.slice(11, 16) + ' annulée' + (wasExported ? ' · pensez à re-télécharger ce jour' : ''));
   },
-  openPay: function () { S.modal = 'pay'; S.payMode = !S.after && S.cartFac && S.cartFac.payee === false ? 'fac' : null; S.received = ''; S.mix = ''; S.payDrawer = null; },
+  openPay: function () { S.modal = 'pay'; S.payMode = !S.after && !S.cmdPay && S.cartFac && S.cartFac.payee === false ? 'fac' : null; S.received = ''; S.mix = ''; S.payDrawer = null; },
   /* Le mode de paiement peut être changé à tout moment avant de valider (le client change d'avis) */
   mode: function (m) { if (S.payMode !== 'fac') S.payMode = m; },
   /* Le tiroir s'ouvre quand le vendeur indique l'argent reçu (billet rapide ou montant exact), une seule fois par encaissement.
      Montant tapé au clavier : le tiroir s'ouvre à la validation. L'ouverture est rattachée à la vente à la validation. */
   bill: function (b) { var f = S.payMode === 'mix' ? 'mix' : 'received'; S[f] = String(r2(num(S[f]) + +b)).replace('.', ','); payDrawerOpen(); },
-  exact: function () { S.received = total().toFixed(2).replace('.', ','); payDrawerOpen(); },
+  exact: function () { S.received = payTotal().toFixed(2).replace('.', ','); payDrawerOpen(); },
   resetReceived: function () { S.received = ''; },
   resetMix: function () { S.mix = ''; },
   validate: function () {
+    if (S.cmdPay) { if (S.cmdPay.reste > 0 && !S.payMode) return; A.validateCmd(); return; }
     if (!S.payMode) return;
     var t = total(), d = new Date(), p = findPlace(S.placeId), pay, msg = 'Vente enregistrée';
     if (S.payMode === 'cash') { pay = { mode: 'cash', cash: r2(t), bancontact: 0 }; msg += ' · À rendre : ' + money(Math.max(0, num(S.received) - t)); }
@@ -2233,18 +2419,19 @@ function vHist() {
   all.slice().reverse().forEach(function (v) {
     var lines = v.lignes.map(function (l) { return l.quantite + ' × ' + esc(l.libelle) + (l.remise ? ' (' + discText(fromJsonDisc(l.remise)) + ')' : ''); });
     if (v.remiseTicket) lines.push('Remise ticket ' + discText(fromJsonDisc(v.remiseTicket)));
-    var p = v.paiement, pay = unpaid(v) ? '<span style="color:var(--red);font-weight:800">À facturer · non payé</span>' + (p.cash + p.bancontact > 0 ? '<br>déjà payé ' + money(p.cash + p.bancontact) : '') : p.mode === 'cash' ? 'Cash' : p.mode === 'bancontact' ? 'Bancontact' : 'Mixte · cash ' + money(p.cash) + ' + Bancontact ' + money(p.bancontact);
+    var p = v.paiement, pay = v.commande ? (p.cash + p.bancontact > 0 ? (p.mode === 'cash' ? 'Cash ' : p.mode === 'bancontact' ? 'Bancontact ' : 'Mixte ') + money(p.cash + p.bancontact) + '<br>' : '') + 'Payé à la commande ' + money(v.commande.dejaPaye || 0) : unpaid(v) ? '<span style="color:var(--red);font-weight:800">À facturer · non payé</span>' + (p.cash + p.bancontact > 0 ? '<br>déjà payé ' + money(p.cash + p.bancontact) : '') : p.mode === 'cash' ? 'Cash' : p.mode === 'bancontact' ? 'Bancontact' : 'Mixte · cash ' + money(p.cash) + ' + Bancontact ' + money(p.bancontact);
     var an = v.annulation;
     html += '<div class="sale' + (an ? ' cancelled' : '') + '"><span class="h">' + v.horodatage.slice(11, 16) + '</span><div class="l">' + lines.map(function (x) { return '<span>' + x + '</span>'; }).join('') +
       (v.venteLiee ? (function () { var o = findSale(v.venteLiee); return '<span class="link">Livraison de la vente n° ' + esc(saleNum(v.venteLiee)) + (o ? ' (' + (o.date !== day ? frDate(o.date).slice(0, 5) + ' ' : '') + o.v.horodatage.slice(11, 16) + ')' : '') + '</span>'; })() : '') +
       (v.livraisonAjoutee ? '<span class="link">Livraison ajoutée' + (v.livraisonAjoutee.horodatage.slice(0, 10) !== day ? ' le ' + frDate(v.livraisonAjoutee.horodatage).slice(0, 5) : '') + ' à ' + v.livraisonAjoutee.horodatage.slice(11, 16) + ' · ' + money(v.livraisonAjoutee.montant) + ' ' + (v.livraisonAjoutee.paiement.mode === 'cash' ? 'en cash' : v.livraisonAjoutee.paiement.mode === 'bancontact' ? 'par Bancontact' : 'en mixte') + '</span>' : '') +
       (!an && !v.venteLiee ? (function () { var ld = linkedDelivery(v.id); return ld ? '<span class="link">Livraison ajoutée' + (ld.date !== day ? ' le ' + frDate(ld.date).slice(0, 5) : '') + ' à ' + ld.v.horodatage.slice(11, 16) + ' (vente n° ' + esc(saleNum(ld.v.id)) + ')</span>' : ''; })() : '') +
+      (v.commande ? '<span class="link">Commande n° ' + esc(cmdNum(v.commande.numero)) + ' · déjà payé ' + money(v.commande.dejaPaye || 0) + '</span>' : '') +
       (v.livraison ? '<span class="link">Livraison : ' + esc(v.livraison.nom) + ' · ' + esc(v.livraison.adresse) + ' · ' + esc(v.livraison.telephone) + '</span>' : '') +
       (v.facture ? '<span class="link">Facture : ' + esc(v.facture.societe) + ' · TVA ' + esc(v.facture.tva) + (v.facture.paiement ? ' · payée le ' + frDate(v.facture.paiement.horodatage).slice(0, 5) : '') + '</span>' : '') +
       (an ? '<span class="annul">Annulée à ' + an.horodatage.slice(11, 16) + (an.horodatage.slice(0, 10) !== day ? ' le ' + frDate(an.horodatage) : '') + (an.motif ? ' · ' + esc(an.motif) : '') + '</span>' : '') +
       '</div><span class="pm">' + pay + '</span><span class="tt">' + money(v.total) + '</span>' +
       '<span class="act">' + (an ? '' : (prConfigured() ? '<button class="btn" data-a="reprint" data-v="' + esc(day + '|' + v.id) + '"' + (S.prBusy ? ' disabled' : '') + '>Ticket</button>' : '') +
-        (deliveryProduct() && !v.venteLiee && !hasDeliveryLine(v) && !linkedDelivery(v.id) ? '<button class="btn hdeliv" data-a="histDeliv" data-v="' + esc(v.id) + '">' + TRUCK + '<span>Livraison</span></button>' : '') +
+        (deliveryProduct() && !v.commande && !v.venteLiee && !hasDeliveryLine(v) && !linkedDelivery(v.id) ? '<button class="btn hdeliv" data-a="histDeliv" data-v="' + esc(v.id) + '">' + TRUCK + '<span>Livraison</span></button>' : '') +
         (hasDeliveryLine(v) ? '<button class="btn hdeliv" data-a="livOpen" data-v="' + esc('edit:' + day + '|' + v.id) + '">' + TRUCK + '<span>' + (prConfigured() ? 'Ticket livraison' : 'Infos livraison') + '</span></button>' : '') +
         '<button class="btn hdeliv" data-a="facOpen" data-v="' + esc(day + '|' + v.id) + '">' + DOC + '<span>' + (v.facture ? 'Facture ✓' : 'À facturer') + '</span></button>' +
         (unpaid(v) && dueOf(v) > 0 ? '<button class="btn btn-primary" data-a="histPay" data-v="' + esc(v.id) + '">Encaisser</button>' : '') +
@@ -2383,13 +2570,55 @@ function vMenu() {
     '<button class="mhome" data-a="goHome">' + MI.home + '<span>Retour à l\u2019accueil</span><span class="mt-s">Paramètres de la tablette</span></button>' +
     '<div class="meta">' + catalogueLabel(CATALOGUE) + '</div></div>';
 }
+function vCmdTab() {
+  if (!ghConfigured() || !FEAT('commandesCaisse')) return '';
+  var n = cmdTodoCount();
+  return '<button class="' + (S.tab === 'cmd' ? 'on' : '') + '" data-a="tab" data-v="cmd">Commandes' + (n ? '<span class="cbadge">' + n + '</span>' : '') + '</button>';
+}
+function vCmd() {
+  var list = cmdList(), t = today(), q = (S.cmdQ || '').trim().toLowerCase().replace(/^n°\s*/, ''), done = S.cmdTab === 'done';
+  var todo = list.filter(function (x) { return x.statut !== 'livree'; }), ret = list.filter(function (x) { return x.statut === 'livree'; });
+  var rows = (done ? ret : todo).filter(function (x) { var c = x.c; return !q || String(c.numero) === q || ((c.client && c.client.nom) || '').toLowerCase().indexOf(q) >= 0; });
+  if (done) rows.sort(function (a, b) { return String((b.enc && b.enc.horodatage) || '').localeCompare(String((a.enc && a.enc.horodatage) || '')); });
+  else rows.sort(function (a, b) { return String(a.c.retrait.date || '').localeCompare(String(b.c.retrait.date || '')) || (Number(a.c.numero) || 0) - (Number(b.c.numero) || 0); });
+  var stat = !ghReady() ? { cls: 'warn', t: 'Déverrouillez l’envoi GitHub (bandeau ☁ de l’accueil) pour lire les commandes.' + (CMD.lu ? ' Affichage de la lecture du ' + frDate(CMD.lu).slice(0, 5) + ' à ' + CMD.lu.slice(11, 16) + '.' : '') }
+    : CMD.loading ? { cls: '', t: 'Lecture des commandes…' }
+    : CMD.err != null ? { cls: 'warn', t: ghError(CMD.err) + (CMD.lu ? ' · lecture du ' + frDate(CMD.lu).slice(0, 5) + ' à ' + CMD.lu.slice(11, 16) : '') }
+    : navigator.onLine === false ? { cls: 'warn', t: 'Hors ligne · commandes lues le ' + (CMD.lu ? frDate(CMD.lu).slice(0, 5) + ' à ' + CMD.lu.slice(11, 16) : '—') }
+    : CMD.lu ? { cls: 'ok', t: 'Lues à ' + CMD.lu.slice(11, 16) + (CMD.queue.length ? ' · ' + CMD.queue.length + ' mise' + (CMD.queue.length > 1 ? 's' : '') + ' à jour en attente d’envoi' : '') } : { cls: 'warn', t: 'Pas encore lues : il faut internet.' };
+  var html = '<div class="hist cmdv"><div class="hhead"><h2>Commandes à retirer</h2><div class="seg">' +
+    '<button class="' + (done ? '' : 'on') + '" data-a="cmdTab" data-v="todo">À retirer (' + todo.length + ')</button>' +
+    '<button class="' + (done ? 'on' : '') + '" data-a="cmdTab" data-v="done">Retirées (' + ret.length + ')</button></div></div>' +
+    CMD.alerts.map(function (a) { return '<div class="result ko" style="display:block;font-size:16px;margin-bottom:8px">' + esc(a.texte) + '</div>'; }).join('') +
+    (CMD.alerts.length ? '<div style="margin-bottom:10px"><button class="btn" data-a="cmdAlertOk">J’ai compris</button></div>' : '') +
+    '<div class="cmdtools"><input type="search" data-f="cmdQ" value="' + esc(S.cmdQ || '') + '" placeholder="Rechercher un nom ou un n°" autocomplete="off"><button class="btn" data-a="cmdReload"' + (CMD.loading || CMD.busy ? ' disabled' : '') + '>Actualiser</button></div>' +
+    '<div class="rcstat ' + stat.cls + '">' + esc(stat.t) + '</div>';
+  if (!rows.length) return html + '<div class="empty" style="padding:40px">' + (q ? 'Aucune commande trouvée' : done ? 'Aucune commande retirée' : 'Aucune commande à retirer à ce stand') + '</div></div>';
+  html += '<div class="cmdlist">' + rows.map(function (x) {
+    var c = x.c, d = c.retrait.date || '', late = !done && d && d < t, isT = !done && d === t, reste = cmdReste(c), cl = c.client || {};
+    var when = d ? (isT ? 'Aujourd’hui' : frDate(d)) : 'Date non fixée';
+    var act;
+    if (x.statut === 'livree') {
+      var e = x.enc || {};
+      act = '<div class="cmddone">' + (x.attente ? 'Retirée (envoi en attente)' : 'Retirée' + (e.horodatage ? ' le ' + frDate(e.horodatage).slice(0, 5) + ' à ' + e.horodatage.slice(11, 16) : '') + (e.venteId ? ' (vente n° ' + esc(saleNum(e.venteId)) + ')' : '')) + '</div>';
+    } else act = '<button class="btn btn-primary" data-a="cmdPay" data-v="' + esc(x.id) + '">' + (reste > 0 ? 'Encaisser ' + money(reste) : 'Remettre au client') + '</button>';
+    return '<div class="cmd' + (late ? ' late' : isT ? ' today' : '') + '">' +
+      '<div class="cmdh"><strong>N° ' + esc(cmdNum(c.numero)) + ' · ' + esc(cl.nom || '') + '</strong><span class="cmdd' + (late ? ' ko' : isT ? ' ok' : '') + '">' + (late ? 'En retard · ' : '') + when + '</span></div>' +
+      (cl.tel ? '<div class="sub">Tél ' + esc(cl.tel) + '</div>' : '') +
+      '<div class="cmdl">' + (c.lignes || []).map(function (l) { return '<span>' + (Number(l.quantite) || 0) + ' × ' + esc(l.libelle || '') + '</span>'; }).join('') + '</div>' +
+      '<div class="cmdm"><span>Total <b>' + money(Number(c.total) || 0) + '</b></span><span>Déjà payé <b>' + money(cmdPaid(c)) + '</b>' + (cmdPaid(c) > 0 && c.paye && c.paye.mode ? ' (' + esc(cmdModeTxt(c.paye.mode)) + ')' : '') + '</span>' +
+        (x.statut === 'livree' ? '' : '<span>Reste à payer <b class="' + (reste > 0 ? 'koc' : 'okc') + '">' + money(reste) + '</b></span>') + '</div>' +
+      (c.note ? '<div class="sub">Remarque : ' + esc(c.note) + '</div>' : '') +
+      '<div class="cmdf"><span class="cmds">' + (x.statut === 'livree' ? 'retirée' : x.statut === 'prete' ? 'prête' : 'à préparer') + '</span>' + act + '</div></div>';
+  }).join('') + '</div>';
+  return html + '</div>';
+}
 function vPosPhone(d, p) {
-  return '<div class="full"><div class="header"><img src="' + themeLogo('text') + '" alt="' + esc(themeGet().nom) + '"><div style="flex:1"></div>' +
+  return '<div class="full"><div class="header"><img src="' + themeLogo('text') + '" alt="' + esc(themeGet().nom) + '"><div class="place hplace"><span>' + esc(p ? p.nom : '') + ' · ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + vAutoMini('<br>') + vPrMini('<br>') + '</span></div>' +
     '<button class="iconbtn" data-a="toggleTheme" aria-label="' + (isDark() ? 'Mode clair' : 'Mode sombre') + '">' + (isDark() ? ICON_SUN : ICON_MOON) + '</button>' +
     '<button class="iconbtn" data-a="toggleMenu" aria-label="Menu">' + ICON_DOTS + '</button></div>' +
-    '<div class="subbar"><div class="seg"><button class="' + (S.tab === 'caisse' ? 'on' : '') + '" data-a="tab" data-v="caisse">Caisse</button><button class="' + (S.tab === 'hist' ? 'on' : '') + '" data-a="tab" data-v="hist">Historique</button></div>' +
-    '<div class="place"><span>' + esc(p ? p.nom : '') + ' · ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + vAutoMini('<br>') + vPrMini('<br>') + '</span></div></div>' +
-    vStorageBar() + (S.tab === 'caisse' ? vCaisse() : vHist()) + '</div>' +
+    '<div class="subbar"><div class="seg"><button class="' + (S.tab === 'caisse' ? 'on' : '') + '" data-a="tab" data-v="caisse">Caisse</button><button class="' + (S.tab === 'hist' ? 'on' : '') + '" data-a="tab" data-v="hist">Historique</button>' + vCmdTab() + '</div></div>' +
+    vStorageBar() + (S.tab === 'caisse' ? vCaisse() : S.tab === 'cmd' ? vCmd() : vHist()) + '</div>' +
     vMenu();
 }
 
@@ -2397,10 +2626,10 @@ function vPos() {
   var d = new Date(), p = findPlace(S.placeId);
   if (PHONE) return vPosPhone(d, p);
   return '<div class="full"><div class="header"><img src="' + themeLogo('text') + '" alt="' + esc(themeGet().nom) + '">' +
-    '<div class="seg"><button class="' + (S.tab === 'caisse' ? 'on' : '') + '" data-a="tab" data-v="caisse">Caisse</button><button class="' + (S.tab === 'hist' ? 'on' : '') + '" data-a="tab" data-v="hist">Historique</button></div>' +
+    '<div class="seg"><button class="' + (S.tab === 'caisse' ? 'on' : '') + '" data-a="tab" data-v="caisse">Caisse</button><button class="' + (S.tab === 'hist' ? 'on' : '') + '" data-a="tab" data-v="hist">Historique</button>' + vCmdTab() + '</div>' +
     '<div style="flex:1"></div><div class="place">' + ICON_PIN + '<span>' + esc(p ? p.nom : '') + ' · ' + pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + vAutoMini('<br>') + vPrMini(ghConfigured() ? ' · ' : '<br>') + '</span></div>' +
     '<button class="iconbtn" data-a="toggleTheme" aria-label="' + (isDark() ? 'Mode clair' : 'Mode sombre') + '">' + (isDark() ? ICON_SUN : ICON_MOON) + '</button>' + '<button class="iconbtn" data-a="toggleMenu" aria-label="Menu">' + ICON_DOTS + '</button></div>' +
-    vStorageBar() + (S.tab === 'caisse' ? vCaisse() : vHist()) + '</div>' +
+    vStorageBar() + (S.tab === 'caisse' ? vCaisse() : S.tab === 'cmd' ? vCmd() : vHist()) + '</div>' +
     vMenu();
 }
 
@@ -2410,8 +2639,9 @@ function vPos() {
 function vCancel() {
   var parts = (S.cancelRef || '').split('|'), v = salesOf(parts[0]).filter(function (x) { return x.id === parts[1]; })[0];
   if (!v) return '';
-  var p = v.paiement, pay = p.mode === 'cash' ? 'cash' : p.mode === 'bancontact' ? 'Bancontact' : 'cash ' + money(p.cash) + ' + Bancontact ' + money(p.bancontact);
+  var p = v.paiement, pay = p.mode === 'deja-paye' ? 'payée à la commande' : p.mode === 'a-facturer' ? 'à facturer' : p.mode === 'cash' ? 'cash' : p.mode === 'bancontact' ? 'Bancontact' : 'cash ' + money(p.cash) + ' + Bancontact ' + money(p.bancontact);
   return '<div class="overlay"><div class="modal" style="width:min(560px,96vw)"><h2>Annuler cette vente ?</h2>' +
+    (v.commande ? '<div class="sub">Commande n° ' + esc(cmdNum(v.commande.numero)) + ' : elle redeviendra « à retirer » dans l’écran Commandes.</div>' : '') +
     '<div class="result" style="display:block;line-height:1.5"><strong>' + frDate(parts[0]) + ' à ' + v.horodatage.slice(11, 16) + ' · ' + money(v.total) + '</strong> (' + pay + ')<br>' +
       v.lignes.map(function (l) { return l.quantite + ' × ' + esc(l.libelle); }).join(', ') + '</div>' +
     '<label class="f">Motif (facultatif)<input type="text" data-f="cancelMotif" value="' + esc(S.cancelMotif || '') + '" placeholder="ex. erreur de saisie, client remboursé" autocomplete="off"></label>' +
@@ -2542,9 +2772,9 @@ function vDisc() {
 }
 
 function vPay() {
-  var t = total(), rec = num(S.received), ch = rec - t, mixC = num(S.mix);
+  var t = payTotal(), rec = num(S.received), ch = rec - t, mixC = num(S.mix);
   var can = S.payMode === 'cash' ? rec >= t - 0.001 : S.payMode === 'mix' ? (mixC > 0 && mixC < t) : S.payMode === 'bc' || S.payMode === 'fac';
-  var html = '<div class="overlay"><div class="modal paymodal" style="width:min(660px,96vw)"><div class="row"><h2>' + (S.after && S.after.kind === 'pay' ? 'Paiement · vente à facturer n° ' + esc(saleNum(S.after.id)) : S.after ? 'Livraison · vente n° ' + esc(saleNum(S.after.id)) + ' (' + (S.after.date !== today() ? frDate(S.after.date).slice(0, 5) + ' ' : '') + S.after.heure + ')' : 'Encaissement') + '</h2><span style="font-size:40px;font-weight:800">' + money(t) + '</span></div>' +
+  var html = '<div class="overlay"><div class="modal paymodal" style="width:min(660px,96vw)"><div class="row"><h2>' + (S.cmdPay ? 'Commande n° ' + esc(cmdNum(S.cmdPay.numero)) + ' · reste à payer' : S.after && S.after.kind === 'pay' ? 'Paiement · vente à facturer n° ' + esc(saleNum(S.after.id)) : S.after ? 'Livraison · vente n° ' + esc(saleNum(S.after.id)) + ' (' + (S.after.date !== today() ? frDate(S.after.date).slice(0, 5) + ' ' : '') + S.after.heure + ')' : 'Encaissement') + '</h2><span style="font-size:40px;font-weight:800">' + money(t) + '</span></div>' +
     (S.payMode === 'fac' ? '<div class="modes"><button class="mode on" disabled style="grid-column:1/-1">À facturer · non payé</button></div>' : '<div class="modes"><button class="mode' + (S.payMode === 'cash' ? ' on' : '') + '" data-a="mode" data-v="cash">Cash</button><button class="mode' + (S.payMode === 'bc' ? ' on' : '') + '" data-a="mode" data-v="bc">Bancontact</button><button class="mode' + (S.payMode === 'mix' ? ' on' : '') + '" data-a="mode" data-v="mix">Mixte</button></div>');
   function cashBody() {
     return '<div class="sub" style="font-weight:700">Billets reçus</div><div class="bills">' +
@@ -2663,6 +2893,7 @@ setInterval(function () { if (document.visibilityState !== 'hidden') cfgCheck(fa
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') cfgCheck(false); });
 setTimeout(function () { cfgCheck(false); }, 400);
 function render() {
+  if (S.tab === 'cmd' && !FEAT('commandesCaisse')) S.tab = 'caisse';
   var act = document.activeElement, f = act && act.dataset ? act.dataset.f : null, pos = f ? act.selectionStart : null;
   var keep = {}; app.querySelectorAll('[data-keep]').forEach(function (el) { keep[el.dataset.keep] = el.scrollTop; });
   var html = S.screen === 'home' ? vHome() : S.screen === 'setup' ? vSetup() : vPos();
@@ -2763,6 +2994,7 @@ cxMigrate(); render();
 setTimeout(function () { cxSync().then(function () { cxRefresh(true); }); }, 3000);
 // Stock du stand : calcul au démarrage, au retour du réseau et toutes les 15 minutes (lecture seule, sans message)
 setTimeout(function () { stkcRefresh(false); }, 4000);
+setTimeout(function () { cmdSync().then(function () { cmdRefresh(true); }); }, 5000);
 window.addEventListener('online', function () { setTimeout(function () { stkcRefresh(false); }, 3000); });
 setInterval(function () { stkcRefresh(false); }, 15 * 60000);
 // Stockage protégé : Chrome n'efface pas ces données de lui-même

@@ -289,6 +289,27 @@ pre.json{flex:1;margin:0;overflow:auto;background:#151B12;color:#E4EBDC;border-r
 .small.deliv svg{flex-shrink:0}
 .small.deliv:active{transform:translateY(1px);box-shadow:none}
 .small.deliv.done{border-color:var(--line2);background:var(--soft);color:var(--muted);box-shadow:none}
+.cbadge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;margin-left:6px;border-radius:11px;background:var(--red);color:#fff;font-size:13px;font-weight:800}
+.cmdtools{display:flex;gap:10px;margin-bottom:8px}
+.cmdtools input{flex:1;min-width:0;height:46px;border:1px solid var(--line2);border-radius:12px;padding:0 14px;font-size:17px;background:var(--surface);color:var(--text)}
+.cmdlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-top:10px}
+.cmd{border:1px solid var(--line2);border-radius:14px;background:var(--surface);padding:14px;display:flex;flex-direction:column;gap:6px}
+.cmd.today{border:2px solid var(--green)}
+.cmd.late{border:2px solid var(--red)}
+.cmdh{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:18px}
+.cmdd{font-weight:700;font-size:15px;white-space:nowrap}
+.cmdd.ok{color:var(--green)} .cmdd.ko{color:var(--red)}
+.cmdl{display:flex;flex-direction:column;font-size:16px}
+.cmdm{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:15px}
+.cmdf{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+.cmds{font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase}
+.cmddone{font-weight:700;color:var(--green);font-size:15px}
+.phone .cmdlist{grid-template-columns:1fr}
+.phone .subbar .seg button{padding:0 7px;font-size:14px;white-space:nowrap}
+.phone .hplace{flex:1;min-width:0;justify-content:flex-end;text-align:right;font-size:13px;line-height:1.25}
+.phone .subbar .seg{flex:1;display:flex}
+.phone .subbar .seg button{flex:1}
+.phone .cbadge{min-width:18px;height:18px;font-size:11px;margin-left:3px;padding:0 4px}
 .codedots{display:flex;justify-content:center;gap:16px;margin:6px 0}
 .codedots span{width:18px;height:18px;border-radius:50%;border:2px solid var(--green)}
 .codedots span.on{background:var(--green)}
