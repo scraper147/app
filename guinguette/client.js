@@ -1,7 +1,9 @@
-/* Ami « guinguette » : seul fichier propre à cet ami. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */
+/* App « guinguette » : seul fichier propre à cette app. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */
 window.CLIENT = {
  "id": "guinguette",
  "nom": "Guinguette Noel",
+ "type": "simple",
+ "client": "cmwvu6ju4",
  "donnees": "github",
  "canal": "stable",
  "creeLe": "2026-11-25",
