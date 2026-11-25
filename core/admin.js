@@ -1,4 +1,4 @@
-/* caisse · admin · v10 — code commun à tous les amis */
+/* caisse · admin · v11 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -3436,7 +3436,7 @@ function renderParametres() {
   var P = SUB.parametres || 'apparence';
   var db = demoDb(), n = 0; Object.keys(db).forEach(function (r) { n += Object.keys(db[r]).length; });
   var used = 0; try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(KP + '') === 0) used += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
-  document.getElementById('mod').innerHTML = '<div class="band"><div class="band-top"><h1>Paramètres</h1></div><p class="soon-lead">Version de démonstration.</p></div><main>' + (P === 'apparence' ? vApparence('app') : P === 'ticket' ? vApparence('ticket') : P === 'fonctionnalites' ? vFeatures() : vSecuriteHead() +
+  document.getElementById('mod').innerHTML = '<div style="height:18px"></div><main>' + (P === 'apparence' ? vApparence('app') : P === 'ticket' ? vApparence('ticket') : P === 'fonctionnalites' ? vFeatures() : vSecuriteHead() +
     (CLIENT.donnees === 'github' ? vConnexion() : '<section><h3>Données de démonstration</h3><p class="lead">Tout est rangé dans ce navigateur (aucun compte, aucun serveur). L’app Caisse ouverte sur ce même appareil voit le catalogue publié ici, et ses ventes arrivent dans le Bilan, le Stock et l’Historique.</p>' +
     '<p class="hint">' + n + ' fichier' + (n > 1 ? 's' : '') + ' sur le serveur de démonstration · ' + Math.round(used / 1024) + ' Ko utilisés.</p>' +
     (PAR.demoAsk ? '<div class="alert">' + (PAR.demoAsk === 'seed' ? 'Remplacer toutes les données par l’exemple ?' : 'Effacer toutes les données de démonstration (catalogue, ventes, stock, caisse) ?') + '</div>' : '') +

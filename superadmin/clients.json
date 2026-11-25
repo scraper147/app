@@ -2,7 +2,7 @@
  "format": "caisse/clients",
  "formatVersion": 1,
  "chiffre": "AES-GCM, clé tirée de la phrase de passe SuperAdmin",
- "majLe": "2026-11-25T08:51:59.874Z",
- "iv": "22pNIWApTXqfH8EC",
- "data": "PUC6f1XTWBlcbtltC2bw2HEYZmRLsUcsOy+TNNcaBQHRtyQTgM90qVJ76GeXslLbFIiEy8Bm91jLNHF5igfsd19tLNoecyLAEn9jvv0J+DedMXl1jqevsOeN0QSjplTkWG7ZeU0LzqR9nKaQmFqUw5OKb7nupKdZKro3wARZjcfdSlzcW8otl8L+Nt43DwYg9thEHjWLH5/SZkBjuA=="
+ "majLe": "2026-11-25T09:04:15.389Z",
+ "iv": "uIwvWjFxe1AsZh2s",
+ "data": "pD+g4AB8XMvEjMWN5U1lpkUyPCGaWIB+4gUoqoGERl/1IDhVqLkkzdKlPM/7TrFtZKd9KNjarKmDD522v1Ru/ZHYLIG/xNU/QimipTnel0vVpFYLPNXcBKAeWdZs/1YBjeek1qME1w+FNgfluvdNGYhP/GDZgyhYJGmgYE7x4WgaiNQFTrkcs3cfpv2dpLZO5o7Ej6D+4zSQFLmonCKgVGeyI/Fl7M8="
 }

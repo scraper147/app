@@ -70,7 +70,7 @@ function load() {
     var pc = S.tree[CLIENTS_PATH] ? gh(cpath(CLIENTS_PATH)).then(function (j) { S.clientsSha = j.sha; return clientsDecrypt(JSON.parse(b64utf8(j.content))); }) : Promise.resolve({ clients: {} });
     return Promise.all([Promise.all(ids.map(function (id) { return gh(cpath(id + '/client.js'), { raw: true }).then(function (txt) { var j = {}; try { j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) {} j.chemin = id; j.id = j.id || id.split('/').pop(); return j; }); })),
       pc.then(function (c) { S.clientsErr = null; return c; }, function () { S.clientsErr = 'Liste des clients illisible : elle a été chiffrée avec une autre phrase de passe.'; return null; })]);
-  }).then(function (r) { S.apps = r[0]; S.clients = r[1] ? r[1].clients || {} : null; S.busy = ''; render(); }, function (e) { S.busy = ''; S.err = e.status === 401 ? 'GitHub refuse le jeton (expiré ou révoqué).' : e.status === 404 ? 'Dépôt du site introuvable avec ce jeton.' : e.message; render(); });
+  }).then(function (r) { S.apps = r[0]; S.clients = r[1] ? r[1].clients || {} : null; S.busy = ''; render(); pagesRepair(); }, function (e) { S.busy = ''; S.err = e.status === 401 ? 'GitHub refuse le jeton (expiré ou révoqué).' : e.status === 404 ? 'Dépôt du site introuvable avec ce jeton.' : e.message; render(); });
 }
 function clientsDecrypt(f) { return ckImport().then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(f.iv) }, k, b64d(f.data)); }).then(function (p) { return JSON.parse(new TextDecoder().decode(p)); }); }
 function clientsSave(clients, msg) {
@@ -186,6 +186,13 @@ function clientPages(cs, apps) {
   var stale = Object.keys(S.tree).filter(function (p) { if (files[p]) return false; if (p.indexOf('client/') === 0) return true; var m = /^([^/]+)\/index\.html$/.exec(p); return !!(m && !appDirs[m[1]] && RESERVED.indexOf(m[1]) < 0 && !S.tree[m[1] + '/client.js'] && Object.keys(S.tree).filter(function (q) { return q.indexOf(m[1] + '/') === 0; }).length === 1); });
   return { files: files, stale: stale };
 }
+/* Au chargement : pages de clients manquantes (clients créés avant les pages, adresse changée ailleurs…) → écrites tout de suite */
+function pagesRepair() {
+  if (!S.clients || !S.apps) return; var pg = clientPages(S.clients, S.apps), miss = Object.keys(pg.files).filter(function (p) { return !S.tree[p]; });
+  if (!miss.length && !pg.stale.length) return;
+  S.busy = 'Création des pages des clients…'; render();
+  writeFiles(pg.files, 'Pages des clients', pg.stale).then(function (n) { S.busy = ''; if (n) S.flash = n + ' page(s) de client mise(s) à jour (en ligne dans une à deux minutes).'; render(); }, function (e) { S.busy = ''; S.err = 'Pages des clients : ' + e.message; render(); });
+}
 function syncClientPages(cs, apps) { if (!cs) return Promise.resolve(0); var pg = clientPages(cs, apps); return writeFiles(pg.files, 'Pages des clients', pg.stale); }
 /* ---------- affichage ---------- */
 function vLock() {
@@ -216,7 +223,7 @@ function vClientForm() {
   var f = S.cform;
   return '<section><h2>' + (f.id ? 'Modifier le client' : 'Nouveau client') + '</h2><div class="two"><div><label>Nom (commerce, association…)</label><input data-cf="nom" value="' + esc(f.nom) + '"></div><div><label>Personne de contact</label><input data-cf="contact" value="' + esc(f.contact) + '"></div></div>' +
     '<div class="two"><div><label>E-mail</label><input data-cf="email" value="' + esc(f.email) + '"></div><div><label>Téléphone</label><input data-cf="tel" value="' + esc(f.tel) + '"></div></div>' +
-    '<label>Adresse de sa page</label><input data-cf="page" value="' + esc(f.page) + '" placeholder="' + esc(slugify(f.nom) || 'ex. jardin-de-marie') + '"><p class="faint">Page publique avec la liste de ses apps : scraper147.github.io/app/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/ ; ses apps sont rangées dessous (…/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/nom-de-l-app/). Seulement le nom et les apps, jamais les coordonnées. Changer cette adresse déplace ses apps (tablettes à réinstaller).</p>' +
+    '<label>Lien de sa page (court, au choix : ex. ag)</label><div class="row" style="flex-wrap:nowrap;gap:6px"><span class="mono" style="white-space:nowrap">scraper147.github.io/app/</span><input data-cf="page" value="' + esc(f.page) + '" placeholder="' + esc(slugify(f.nom) || 'ex. ag') + '"><span class="mono">/</span></div><p class="faint">Page publique avec la liste de ses apps : scraper147.github.io/app/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/ ; ses apps sont rangées dessous (…/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/nom-de-l-app/). Seulement le nom et les apps, jamais les coordonnées. Changer cette adresse déplace ses apps (tablettes à réinstaller).</p>' +
     '<label>Note</label><textarea class="note" data-cf="note">' + esc(f.note) + '</textarea><p class="faint">Enregistré chiffré dans le dépôt du site (lisible seulement avec votre phrase de passe SuperAdmin).</p>' +
     '<div class="row" style="margin-top:12px"><button data-a="csave"' + (S.busy ? ' disabled' : '') + '>Enregistrer</button><button class="sec" data-a="ccancel">Annuler</button></div></section>';
 }
@@ -243,7 +250,7 @@ function vClients() {
   return '<section><div class="row" style="justify-content:space-between"><h2 style="margin:0">Clients (' + ids.length + ')</h2><button data-a="cnew">+ Nouveau client</button></div>' +
     (ids.length ? '<div class="grid" style="margin-top:14px">' + ids.map(function (id) {
       var c = cs[id], apps = S.apps.filter(function (a) { return a.client === id; });
-      return '<div class="card"><h3>' + esc(c.nom) + '</h3>' + (c.contact ? '<div>' + esc(c.contact) + '</div>' : '') +
+      return '<div class="card"><h3>' + esc(c.nom) + '</h3><div class="mono">…/app/' + esc(pageOf(id)) + '/</div>' + (c.contact ? '<div>' + esc(c.contact) + '</div>' : '') +
         '<div class="faint">' + [c.email ? '<a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '', c.tel ? esc(c.tel) : ''].filter(Boolean).join(' · ') + '</div>' + (c.note ? '<div class="faint">' + esc(c.note) + '</div>' : '') +
         '<div>' + (apps.length ? apps.length + ' app' + (apps.length > 1 ? 's' : '') + ' : ' + apps.map(function (a) { return '<span class="tag' + (a.type !== 'simple' ? ' so' : '') + '">' + esc(a.nom || a.id) + '</span>'; }).join(' ') : '<span class="faint">Aucune app</span>') + '</div>' +
         (S.cdel === id ? '<div><p class="err">Supprimer ce client ? Ses apps restent, sans client.</p><div class="row"><button class="danger" data-a="cdelGo" data-v="' + esc(id) + '">Oui, supprimer</button><button class="sec" data-a="cdelNo">Annuler</button></div></div>'
@@ -251,7 +258,7 @@ function vClients() {
     }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v10';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v11';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
