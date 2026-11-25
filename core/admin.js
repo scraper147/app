@@ -1,4 +1,4 @@
-/* caisse · admin · v8 — code commun à tous les amis */
+/* caisse · admin · v10 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -9,7 +9,8 @@ document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 /* Utilisateur (client.js du dossier de l'utilisateur) et préfixe de TOUTES les clés de mémoire : plusieurs utilisateurs
    partagent l'adresse scraper147.github.io, leurs données ne doivent jamais se mélanger. */
 var CLIENT = window.CLIENT || { id: 'demo', donnees: 'local' };
-var KP = 'caisse:' + CLIENT.id + ':';
+var KP = 'caisse:' + (CLIENT.chemin || CLIENT.id) + ':'; // chemin = dossier de l'app (« client/app » quand l'app est rangée sous un client)
+var RACINE = '../' + (CLIENT.racine || '../'); // depuis une page de l'app (caisse/, admin/, soiree/) vers la racine du site
 var APP_ID = window.APP_ID || (/\/admin\//.test(location.pathname) ? 'admin' : /\/soiree\//.test(location.pathname) ? 'soiree' : 'caisse');
 var DEMO_KEY = KP + 'serveur';
 var DEMO_CAT_REPO = 'demo/caisse', DEMO_SALES_REPO = 'demo/ventes';
@@ -3748,13 +3749,13 @@ function vRemiseCode() {
     '<p class="hint">Les caisses reçoivent le nouveau code à leur prochaine relecture des réglages (au plus tard 30 secondes, ou ⋮ › Vérifier le catalogue). Ce code freine le personnel, ce n’est pas une protection forte.</p></section>';
 }
 function vSecuriteHead() {
-  return vRemiseCode() + (CLIENT.donnees === 'github' ? '' : '<section><h3>Accès</h3><p class="lead">Mode démonstration : aucune clé ni jeton, les données restent dans ce navigateur. Pour enregistrer les données dans un dépôt GitHub privé (plusieurs tablettes), préparez une clé d’accès et envoyez-la à la personne qui gère votre compte.</p><div class="cbtns"><a class="btn" href="../../cle.html" target="_blank" rel="noopener">Préparer une clé d’accès</a></div></section>');
+  return vRemiseCode() + (CLIENT.donnees === 'github' ? '' : '<section><h3>Accès</h3><p class="lead">Mode démonstration : aucune clé ni jeton, les données restent dans ce navigateur. Pour enregistrer les données dans un dépôt GitHub privé (plusieurs tablettes), préparez une clé d’accès et envoyez-la à la personne qui gère votre compte.</p><div class="cbtns"><a class="btn" href="' + RACINE + 'cle.html" target="_blank" rel="noopener">Préparer une clé d’accès</a></div></section>');
 }
 function vConnexion() {
   var acc = caisseAcces();
   return '<section><h3>Connexion</h3><p class="lead">Les données de ce commerce (catalogue, réglages, apparence, ventes, stock, caisse, commandes, factures) sont enregistrées dans son dépôt GitHub privé.</p>' +
     '<p class="hint">Dépôt : <span class="mono">' + esc(acc ? acc.depot : '—') + '</span>' + (acc && acc.le ? ' · appareil déverrouillé le ' + new Date(acc.le).toLocaleDateString('fr-BE') : '') + '</p>' +
-    '<div class="cbtns"><button class="btn danger" data-p="caisseLock">Verrouiller cet appareil</button><a class="btn" href="../../cle.html" target="_blank" rel="noopener">Préparer une nouvelle clé</a></div><p class="hint">Verrouiller retire l’accès de cet appareil ; la phrase de passe sera redemandée. Nouvelle clé : quand le jeton expire ou si la phrase de passe a fuité (envoyez-la à la personne qui gère votre compte).</p></section>';
+    '<div class="cbtns"><button class="btn danger" data-p="caisseLock">Verrouiller cet appareil</button><a class="btn" href="' + RACINE + 'cle.html" target="_blank" rel="noopener">Préparer une nouvelle clé</a></div><p class="hint">Verrouiller retire l’accès de cet appareil ; la phrase de passe sera redemandée. Nouvelle clé : quand le jeton expire ou si la phrase de passe a fuité (envoyez-la à la personne qui gère votre compte).</p></section>';
 }
 function demoParClick(act, el) {
   if (act === 'caisseLock') { caisseLock(); return true; }

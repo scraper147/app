@@ -16,7 +16,8 @@ core/                 CODE COMMUN (le même pour tous)
   templates.js        modèles des fichiers d’un dossier d’ami
   icons/  version.json
 superadmin/clients.json   liste des clients, CHIFFRÉE (écrite par le SuperAdmin, ne pas écraser)
-<app>/                UN DOSSIER PAR APP (créé par le SuperAdmin ; demo/ fourni)
+<client>/             page publique du client (index.html : la liste de ses apps) et ses apps rangées dessous : <client>/<app>/
+<client>/<app>/       UN DOSSIER PAR APP (créé par le SuperAdmin) ; une app sans client reste au premier niveau (<app>/, ex. demo/)
   client.js           seul fichier propre à l’app : { id, nom, type, client, donnees, canal, creeLe, cle? }
   index.html          accueil de l’app
   caisse/ admin/ [soiree/]   index.html (charge ../../core/…), manifest, sw.js (importScripts ../../core/sw.js) ; soiree/ seulement pour une caisse complexe
@@ -27,13 +28,14 @@ Les dossiers des apps **ne dépendent pas de la version** : une mise à jour ne 
 ## Publier une mise à jour
 
 1. Monter `VERSION` dans `build.py`, reconstruire.
-2. Déposer dans le dépôt `core/`, `index.html`, `cle.html`, `superadmin/` (et `demo/` si besoin). **Ne pas supprimer** les dossiers des apps ni `superadmin/clients.json`.
+2. Déposer dans le dépôt `core/`, `index.html`, `cle.html`, `superadmin/` (et `demo/` si besoin). **Ne pas supprimer** les dossiers des clients et des apps ni `superadmin/clients.json`.
 3. Chaque tablette prend la nouvelle version à son prochain chargement (le service worker commun change).
 4. Si les modèles des dossiers ont changé : SuperAdmin › **Remettre les dossiers à jour**.
 
 ## SuperAdmin (`/app/superadmin/`)
 
 - Onglets **Apps** et **Clients**. Une app a un **type** : *Caisse simple* (Caisse + Admin) ou *Caisse complexe (soirée)* (en plus la Caisse Soirée et son module dans l’Admin), et un **client** (facultatif). Les clients (nom, contact, e-mail, téléphone, note) sont enregistrés chiffrés dans `superadmin/clients.json` avec une clé tirée de la phrase de passe SuperAdmin : utiliser la même phrase sur tous les appareils.
+- **Page du client** : `<client>/` (adresse réglable dans la fiche du client ; ses apps sont dans `<client>/<app>/`), avec seulement son nom et ses apps (Caisse, Caisse Soirée, Admin, Accueil) ; jamais ses coordonnées. Changer l’adresse d’un client, ou le client d’une app, déplace les apps : leurs tablettes doivent être réinstallées depuis la nouvelle adresse (envoyer les ventes avant). Régénérée à chaque création, modification ou suppression d’une app ou d’un client, et par « Remettre les dossiers à jour ».
 
 - Première utilisation sur un appareil : jeton GitHub fine-grained de Loïc, **Contents : Read and write sur `scraper147/app` seulement**, chiffré sur l’appareil avec une phrase de passe ; déverrouillé pour la session.
 - Liste des amis (dossiers contenant `client.js`), liens Accueil / Admin / Caisse, **+ Nouvel ami** (identifiant, nom, mode, clé), **Modifier**, **Supprimer** (le dépôt de données de l’ami n’est pas touché), **Remettre les dossiers à jour** (n’écrit que les fichiers qui changent).

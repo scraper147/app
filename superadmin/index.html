@@ -36,7 +36,7 @@ header button{background:transparent;border-color:#3A4757;color:#EEF2F7}
 /* Écran de Loïc : apps (un dossier par app dans le dépôt du site) et clients (à qui appartiennent les apps).
    Jeton de Loïc (Contents : Read and write sur le dépôt du site), chiffré sur cet appareil ; jamais d'accès aux données des apps.
    Clients : superadmin/clients.json, CHIFFRÉ (le dépôt du site est public) avec une clé tirée de la phrase de passe. */
-var K = 'caisse-superadmin:', RESERVED = ['core', 'superadmin', 'cle', 'index', 'app', 'assets'], CLIENTS_PATH = 'superadmin/clients.json';
+var K = 'caisse-superadmin:', RESERVED = ['core', 'superadmin', 'cle', 'index', 'app', 'assets', 'client'], CLIENTS_PATH = 'superadmin/clients.json';
 var S = { acc: null, ck: null, apps: null, clients: null, clientsSha: null, clientsErr: null, tree: null, err: null, busy: '', form: null, edit: null, del: null, cform: null, cdel: null, version: null, tab: 'apps', filtre: '' };
 function $(id) { return document.getElementById(id); }
 function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -66,9 +66,9 @@ function load() {
   fetch('../core/version.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (v) { S.version = v; render(); }, function () {});
   gh('/repos/' + S.acc.depot + '/git/trees/HEAD?recursive=1').then(function (t) {
     S.tree = {}; (t.tree || []).forEach(function (x) { if (x.type === 'blob') S.tree[x.path] = x.sha; });
-    var ids = Object.keys(S.tree).map(function (p) { var m = /^([^/]+)\/client\.js$/.exec(p); return m ? m[1] : null; }).filter(Boolean).sort();
+    var ids = Object.keys(S.tree).map(function (p) { var m = /^((?:[^/]+\/)?[^/]+)\/client\.js$/.exec(p); return m ? m[1] : null; }).filter(Boolean).sort();
     var pc = S.tree[CLIENTS_PATH] ? gh(cpath(CLIENTS_PATH)).then(function (j) { S.clientsSha = j.sha; return clientsDecrypt(JSON.parse(b64utf8(j.content))); }) : Promise.resolve({ clients: {} });
-    return Promise.all([Promise.all(ids.map(function (id) { return gh(cpath(id + '/client.js'), { raw: true }).then(function (txt) { var j = {}; try { j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) {} j.id = j.id || id; return j; }); })),
+    return Promise.all([Promise.all(ids.map(function (id) { return gh(cpath(id + '/client.js'), { raw: true }).then(function (txt) { var j = {}; try { j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)); } catch (e) {} j.chemin = id; j.id = j.id || id.split('/').pop(); return j; }); })),
       pc.then(function (c) { S.clientsErr = null; return c; }, function () { S.clientsErr = 'Liste des clients illisible : elle a été chiffrée avec une autre phrase de passe.'; return null; })]);
   }).then(function (r) { S.apps = r[0]; S.clients = r[1] ? r[1].clients || {} : null; S.busy = ''; render(); }, function (e) { S.busy = ''; S.err = e.status === 401 ? 'GitHub refuse le jeton (expiré ou révoqué).' : e.status === 404 ? 'Dépôt du site introuvable avec ce jeton.' : e.message; render(); });
 }
@@ -82,13 +82,17 @@ function clientsSave(clients, msg) {
   });
 }
 /* ---------- fichiers d'une app (modèles de core/templates.js) ; une caisse simple n'a pas le dossier soiree/ ---------- */
+function cheminOf(id, cid, cs) { var pg = cid ? pageOf(cid, cs) : ''; return pg ? pg + '/' + id : id; }
+function racineOf(chemin) { return chemin.split('/').map(function () { return '../'; }).join(''); }
 function filesFor(cl) {
-  var out = {}, T = window.CAISSE_TEMPLATES || {}, nj = JSON.stringify(cl.nom).slice(1, -1);
-  Object.keys(T).forEach(function (rel) { if (cl.type === 'simple' && rel.indexOf('soiree/') === 0) return; out[cl.id + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
-  out[cl.id + '/client.js'] = '/* App « ' + cl.id + ' » : seul fichier propre à cette app. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
+  var out = {}, T = window.CAISSE_TEMPLATES || {}, nj = JSON.stringify(cl.nom).slice(1, -1), ch = cl.chemin || cl.id, rr = racineOf(ch);
+  cl.chemin = ch; cl.racine = rr;
+  Object.keys(T).forEach(function (rel) { if (cl.type === 'simple' && rel.indexOf('soiree/') === 0) return; out[ch + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{CHEMIN}}').join(ch).split('{{R}}').join(rr).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
+  out[ch + '/client.js'] = '/* App « ' + cl.id + ' » : seul fichier propre à cette app. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
   return out;
 }
-function extraFiles(id, files) { return Object.keys(S.tree).filter(function (p) { return p.indexOf(id + '/soiree/') === 0 && !files[p]; }); }
+function extraFiles(ch, files) { return Object.keys(S.tree).filter(function (p) { return p.indexOf(ch + '/soiree/') === 0 && !files[p]; }); }
+function appFilesUnder(ch) { var subApps = S.apps ? S.apps.filter(function (a) { return a.chemin !== ch && a.chemin.indexOf(ch + '/') === 0; }).map(function (a) { return a.chemin + '/'; }) : []; return Object.keys(S.tree).filter(function (p) { return p.indexOf(ch + '/') === 0 && !subApps.some(function (x) { return p.indexOf(x) === 0; }) && !(p === ch + '/index.html' && false); }); }
 function writeFiles(files, msg, remove) {
   var paths = Object.keys(files), n = 0;
   return paths.reduce(function (p, path) {
@@ -113,38 +117,76 @@ function saveApp(isNew) {
   var f = S.form, id = (f.id || '').trim().toLowerCase(), nom = (f.nom || '').trim(), cle = null;
   if (!/^[a-z0-9][a-z0-9-]{1,29}$/.test(id) || RESERVED.indexOf(id) >= 0) { S.err = 'Identifiant : 2 à 30 caractères, lettres minuscules, chiffres et tirets (pas « ' + RESERVED.join(', ') + ' »).'; render(); return; }
   if (!nom) { S.err = 'Indiquez le nom de l’app.'; render(); return; }
-  if (isNew && Object.keys(S.tree).some(function (p) { return p.indexOf(id + '/') === 0; })) { S.err = 'Un dossier « ' + id + ' » existe déjà.'; render(); return; }
+  if (isNew && S.apps.some(function (a) { return a.id === id; })) { S.err = 'Une app « ' + id + ' » existe déjà.'; render(); return; }
   try { cle = checkCle(f.cle || ''); } catch (e) { S.err = 'Clé illisible : ' + e.message; render(); return; }
   if (f.donnees === 'github' && !cle) { S.err = 'Le mode GitHub demande la clé chiffrée (page « Préparer la clé d’accès »).'; render(); return; }
-  var old = isNew ? {} : (S.apps.filter(function (a) { return a.id === id; })[0] || {});
-  var cl = { id: id, nom: nom, type: f.type === 'simple' ? 'simple' : 'soiree', client: f.client || '', donnees: f.donnees, canal: 'stable', creeLe: old.creeLe || new Date().toISOString().slice(0, 10) };
+  var old = isNew ? {} : (S.apps.filter(function (a) { return a.id === id; })[0] || {}), ch = cheminOf(id, f.client), moved = !isNew && old.chemin && old.chemin !== ch;
+  if (ch === id && pageUsed(id)) { S.err = 'L’adresse « ' + id + ' » est celle de la page d’un client : choisissez un autre identifiant ou rattachez l’app à un client.'; render(); return; }
+  var cl = { id: id, nom: nom, type: f.type === 'simple' ? 'simple' : 'soiree', client: f.client || '', chemin: ch, donnees: f.donnees, canal: 'stable', creeLe: old.creeLe || new Date().toISOString().slice(0, 10) };
   if (cle) cl.cle = cle;
-  S.err = null; var files = filesFor(cl);
-  writeFiles(files, (isNew ? 'Nouvelle app ' : 'Mise à jour de l’app ') + id, extraFiles(id, files)).then(function (n) {
-    S.busy = ''; S.form = null; S.edit = null; S.flash = (isNew ? 'App « ' + id + ' » créée' : n ? n + ' fichier(s) mis à jour pour « ' + id + ' »' : 'Rien à changer pour « ' + id + ' »') + '. GitHub Pages publie en une à deux minutes.'; load();
+  S.err = null; var files = filesFor(cl), rm = moved ? appFilesUnder(old.chemin).filter(function (p) { return !files[p]; }) : extraFiles(ch, files);
+  writeFiles(files, (isNew ? 'Nouvelle app ' : moved ? 'Déplacement de l’app ' : 'Mise à jour de l’app ') + id, rm).then(function (n) {
+    var apps = S.apps.filter(function (a) { return a.id !== id; }).concat([cl]); return syncClientPages(S.clients, apps).then(function () { return n; });
+  }).then(function (n) {
+    S.busy = ''; S.form = null; S.edit = null; S.flash = (isNew ? 'App « ' + id + ' » créée : ' + ch + '/' : moved ? 'App « ' + id + ' » déplacée vers ' + ch + '/ : ses tablettes doivent être réinstallées depuis la nouvelle adresse' : n ? n + ' fichier(s) mis à jour pour « ' + id + ' »' : 'Rien à changer pour « ' + id + ' »') + '. GitHub Pages publie en une à deux minutes.'; load();
   }, function (e) { S.busy = ''; S.err = 'Échec : ' + e.message + ' (les fichiers déjà écrits restent ; relancez pour terminer).'; render(); });
 }
 function syncAll() {
-  var all = {}, rm = []; S.apps.forEach(function (a) { var fs = filesFor(a); Object.keys(fs).forEach(function (p) { all[p] = fs[p]; }); rm = rm.concat(extraFiles(a.id, fs)); });
-  writeFiles(all, 'Mise à jour des dossiers des apps', rm).then(function (n) { S.busy = ''; S.flash = n ? n + ' fichier(s) remis à jour.' : 'Tous les dossiers sont à jour.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+  var all = {}, rm = []; S.apps.forEach(function (a) { var fs = filesFor(a); Object.keys(fs).forEach(function (p) { all[p] = fs[p]; }); rm = rm.concat(extraFiles(a.chemin, fs)); });
+  if (S.clients) { var pg = clientPages(S.clients, S.apps); Object.keys(pg.files).forEach(function (p) { all[p] = pg.files[p]; }); rm = rm.concat(pg.stale); }
+  writeFiles(all, 'Mise à jour des dossiers des apps et des pages clients', rm).then(function (n) { S.busy = ''; S.flash = n ? n + ' fichier(s) remis à jour.' : 'Tous les dossiers sont à jour.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
 function delApp(id) {
-  var paths = Object.keys(S.tree).filter(function (p) { return p.indexOf(id + '/') === 0; }), n = 0;
+  var a0 = S.apps.filter(function (a) { return a.id === id; })[0] || { chemin: id }, paths = appFilesUnder(a0.chemin), n = 0;
   paths.reduce(function (p, path) { return p.then(function () { S.busy = 'Suppression (' + (++n) + '/' + paths.length + ')…'; render(); return gh(cpath(path), { method: 'DELETE', body: { message: 'Suppression de l’app ' + id + ' : ' + path, sha: S.tree[path] } }).then(function () { delete S.tree[path]; }); }); }, Promise.resolve())
+    .then(function () { return syncClientPages(S.clients, S.apps.filter(function (a) { return a.id !== id; })); })
     .then(function () { S.busy = ''; S.del = null; S.flash = 'App « ' + id + ' » supprimée. Ses données (dépôt privé) ne sont pas touchées.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
 function saveClient() {
   var f = S.cform, nom = (f.nom || '').trim(); if (!nom) { S.err = 'Indiquez le nom du client.'; render(); return; }
   var cs = JSON.parse(JSON.stringify(S.clients || {})), id = f.id || ('c' + Date.now().toString(36));
-  cs[id] = { nom: nom, contact: (f.contact || '').trim(), email: (f.email || '').trim(), tel: (f.tel || '').trim(), note: (f.note || '').trim(), creeLe: (cs[id] && cs[id].creeLe) || new Date().toISOString().slice(0, 10) };
+  var page = slugify(f.page || nom) || id;
+  if (Object.keys(cs).some(function (k) { return k !== id && pageOf(k, cs) === page; })) { S.err = 'L’adresse « ' + page + ' » est déjà prise par un autre client.'; render(); return; }
+  if (RESERVED.indexOf(page) >= 0 || S.apps.some(function (a) { return a.chemin === page; })) { S.err = 'L’adresse « ' + page + ' » est déjà utilisée (app sans client ou nom réservé).'; render(); return; }
+  var oldPage = f.id ? pageOf(f.id, cs) : '';
+  cs[id] = { nom: nom, page: page, contact: (f.contact || '').trim(), email: (f.email || '').trim(), tel: (f.tel || '').trim(), note: (f.note || '').trim(), creeLe: (cs[id] && cs[id].creeLe) || new Date().toISOString().slice(0, 10) };
   S.busy = 'Enregistrement du client…'; S.err = null; render();
-  clientsSave(cs, (f.id ? 'Client modifié' : 'Nouveau client') + ' (SuperAdmin)').then(function () { S.busy = ''; S.cform = null; S.flash = 'Client « ' + nom + ' » enregistré.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+  var mine = S.apps.filter(function (a) { return a.client === id; }), moving = oldPage && oldPage !== page ? mine : [];
+  clientsSave(cs, (f.id ? 'Client modifié' : 'Nouveau client') + ' (SuperAdmin)').then(function () {
+    return moving.reduce(function (pr, a) { return pr.then(function () { var cl = JSON.parse(JSON.stringify(a)); cl.chemin = page + '/' + a.id; var fs = filesFor(cl); return writeFiles(fs, 'Déplacement de l’app ' + a.id, appFilesUnder(a.chemin).filter(function (p) { return !fs[p]; })).then(function () { a.chemin = cl.chemin; a.racine = cl.racine; }); }); }, Promise.resolve());
+  }).then(function () { return syncClientPages(cs, S.apps); }).then(function () { S.busy = ''; S.cform = null; S.flash = 'Client « ' + nom + ' » enregistré. Sa page : ' + page + '/' + (moving.length ? ' ; ' + moving.length + ' app(s) déplacée(s) : leurs tablettes doivent être réinstallées' : '') + '.'; load(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
 function delClient(id) {
+  if (S.apps.some(function (a) { return a.client === id; })) { S.err = 'Ce client a encore des apps : supprimez-les ou rattachez-les à un autre client d’abord.'; S.cdel = null; render(); return; }
   var cs = JSON.parse(JSON.stringify(S.clients || {})), nom = (cs[id] || {}).nom; delete cs[id];
   S.busy = 'Suppression du client…'; render();
-  clientsSave(cs, 'Client supprimé (SuperAdmin)').then(function () { S.busy = ''; S.cdel = null; S.flash = 'Client « ' + nom + ' » supprimé (ses apps restent, sans client).'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
+  clientsSave(cs, 'Client supprimé (SuperAdmin)').then(function () { return syncClientPages(cs, S.apps); }).then(function () { S.busy = ''; S.cdel = null; S.flash = 'Client « ' + nom + ' » supprimé.'; render(); }, function (e) { S.busy = ''; S.err = e.message; render(); });
 }
+/* ---------- Page publique de chaque client : <page>/index.html, la liste de ses apps (rangées dans <page>/<app>/).
+   Pas de coordonnées (le dépôt est public) : seulement le nom du client et ses apps. Régénérée à chaque changement. ---------- */
+function slugify(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); }
+function pageUsed(slug) { var cs = S.clients || {}; return Object.keys(cs).some(function (k) { return pageOf(k, cs) === slug; }); }
+function pageOf(cid, cs) { var c = (cs || S.clients || {})[cid]; return c ? (c.page || slugify(c.nom) || cid) : ''; }
+function clientPageHtml(cid, cs, apps) {
+  var c = cs[cid], mine = apps.filter(function (a) { return a.client === cid; }).sort(function (a, b) { return (a.nom || a.id).localeCompare(b.nom || b.id, 'fr'); });
+  function btn(href, t) { return '<a class="b" href="' + href + '">' + t + '</a>'; }
+  return '<!DOCTYPE html>\n<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">\n<title>' + esc(c.nom) + ' · Caisse</title><link rel="icon" href="../core/icons/caisse-192.png">\n' +
+    '<style>body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#F3F5F8;color:#1A2230}main{max-width:760px;margin:0 auto;padding:32px 18px 60px}h1{font-size:28px;margin:0 0 4px}p{color:#586273;line-height:1.5}' +
+    '.app{background:#fff;border:1px solid #DCE1E8;border-radius:16px;padding:18px;margin-top:14px}.app h2{font-size:20px;margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#E8F0F8;color:#2F5D8A}.tag.so{background:#F1E8FA;color:#6A3F99}' +
+    '.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.b{display:inline-block;padding:12px 16px;border-radius:12px;background:#2F5D8A;color:#fff;font-weight:700;text-decoration:none}.b.sec{background:#fff;color:#2F5D8A;border:1px solid #2F5D8A}small{color:#586273}</style></head>\n' +
+    '<body><main><h1>' + esc(c.nom) + '</h1><p>' + (mine.length ? 'Vos applications : ouvrez celle dont vous avez besoin. Sur une tablette, ouvrez l’app puis « Ajouter à l’écran d’accueil » pour l’installer.' : 'Aucune application pour l’instant.') + '</p>' +
+    mine.map(function (a) { var so = a.type !== 'simple', b = './' + a.id + '/';
+      return '<div class="app"><h2>' + esc(a.nom || a.id) + ' <span class="tag' + (so ? ' so' : '') + '">' + (so ? 'Caisse complexe (soirée)' : 'Caisse simple') + '</span></h2><small>' + esc(a.id) + '</small>' +
+        '<div class="row">' + btn(b + 'caisse/', 'Caisse') + (so ? btn(b + 'soiree/', 'Caisse Soirée') : '') + btn(b + 'admin/', 'Admin') + '<a class="b sec" href="' + b + '">Accueil de l’app</a></div></div>'; }).join('') +
+    '</main></body></html>\n';
+}
+function clientPages(cs, apps) {
+  var files = {}; Object.keys(cs || {}).forEach(function (cid) { var pg = pageOf(cid, cs); if (pg) files[pg + '/index.html'] = clientPageHtml(cid, cs, apps); });
+  var appDirs = {}; apps.forEach(function (a) { appDirs[a.chemin || a.id] = 1; });
+  var stale = Object.keys(S.tree).filter(function (p) { if (files[p]) return false; if (p.indexOf('client/') === 0) return true; var m = /^([^/]+)\/index\.html$/.exec(p); return !!(m && !appDirs[m[1]] && RESERVED.indexOf(m[1]) < 0 && !S.tree[m[1] + '/client.js'] && Object.keys(S.tree).filter(function (q) { return q.indexOf(m[1] + '/') === 0; }).length === 1); });
+  return { files: files, stale: stale };
+}
+function syncClientPages(cs, apps) { if (!cs) return Promise.resolve(0); var pg = clientPages(cs, apps); return writeFiles(pg.files, 'Pages des clients', pg.stale); }
 /* ---------- affichage ---------- */
 function vLock() {
   var has = !!localStorage.getItem(K + 'cle');
@@ -162,7 +204,7 @@ function vAppForm(isNew) {
   function type(v, t, d) { return '<label class="type' + (f.type === v ? ' on' : '') + '"><input type="radio" name="ty" data-f="type" value="' + v + '"' + (f.type === v ? ' checked' : '') + '><b>' + t + '</b><span class="faint">' + d + '</span></label>'; }
   return '<section><h2>' + (isNew ? 'Nouvelle app' : 'Modifier l’app « ' + esc(f.id) + ' »') + '</h2>' +
     '<label>Type</label><div class="types">' + type('simple', 'Caisse simple', 'Caisse et Admin : articles, panier, encaissement, ticket, stock, commandes…') + type('soiree', 'Caisse complexe (soirée)', 'En plus : la Caisse Soirée (entrées, cartes à cases, boissons en cases, préventes) et son module dans l’Admin.') + '</div>' +
-    '<div class="two"><div><label>Identifiant (adresse)</label><input data-f="id" value="' + esc(f.id) + '"' + (isNew ? '' : ' disabled') + ' placeholder="ex. jardin"><p class="faint">Adresse : scraper147.github.io/app/<strong>' + esc(f.id || '…') + '</strong>/</p></div>' +
+    '<div class="two"><div><label>Identifiant (adresse)</label><input data-f="id" value="' + esc(f.id) + '"' + (isNew ? '' : ' disabled') + ' placeholder="ex. jardin"><p class="faint">Adresse : scraper147.github.io/app/<strong>' + esc(f.client && S.clients && S.clients[f.client] ? pageOf(f.client) + '/' + (f.id || '…') : (f.id || '…')) + '</strong>/</p>' + (S.edit && S.apps && (S.apps.filter(function (a) { return a.id === S.edit; })[0] || {}).chemin !== cheminOf(f.id, f.client) ? '<p class="err">L’adresse de l’app va changer : envoyez les ventes en attente des tablettes, puis réinstallez-les depuis la nouvelle adresse.</p>' : '') + '</div>' +
     '<div><label>Nom de l’app</label><input data-f="nom" value="' + esc(f.nom) + '" placeholder="ex. Marché de Noël"></div></div>' +
     '<label>Client</label>' + (S.clients ? '<div class="row" style="flex-wrap:nowrap"><select data-f="client">' + clientOptions(f.client) + '</select><button class="sec" data-a="cnewFromApp" style="white-space:nowrap">+ Nouveau client</button></div>' : '<p class="err">' + esc(S.clientsErr || 'Clients indisponibles') + '</p>') +
     '<label>Données</label><select data-f="donnees"><option value="local"' + (f.donnees === 'local' ? ' selected' : '') + '>Démonstration (navigateur, un seul appareil)</option><option value="github"' + (f.donnees === 'github' ? ' selected' : '') + '>Dépôt GitHub privé (plusieurs appareils)</option></select>' +
@@ -174,6 +216,7 @@ function vClientForm() {
   var f = S.cform;
   return '<section><h2>' + (f.id ? 'Modifier le client' : 'Nouveau client') + '</h2><div class="two"><div><label>Nom (commerce, association…)</label><input data-cf="nom" value="' + esc(f.nom) + '"></div><div><label>Personne de contact</label><input data-cf="contact" value="' + esc(f.contact) + '"></div></div>' +
     '<div class="two"><div><label>E-mail</label><input data-cf="email" value="' + esc(f.email) + '"></div><div><label>Téléphone</label><input data-cf="tel" value="' + esc(f.tel) + '"></div></div>' +
+    '<label>Adresse de sa page</label><input data-cf="page" value="' + esc(f.page) + '" placeholder="' + esc(slugify(f.nom) || 'ex. jardin-de-marie') + '"><p class="faint">Page publique avec la liste de ses apps : scraper147.github.io/app/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/ ; ses apps sont rangées dessous (…/<strong>' + esc(slugify(f.page || f.nom) || '…') + '</strong>/nom-de-l-app/). Seulement le nom et les apps, jamais les coordonnées. Changer cette adresse déplace ses apps (tablettes à réinstaller).</p>' +
     '<label>Note</label><textarea class="note" data-cf="note">' + esc(f.note) + '</textarea><p class="faint">Enregistré chiffré dans le dépôt du site (lisible seulement avec votre phrase de passe SuperAdmin).</p>' +
     '<div class="row" style="margin-top:12px"><button data-a="csave"' + (S.busy ? ' disabled' : '') + '>Enregistrer</button><button class="sec" data-a="ccancel">Annuler</button></div></section>';
 }
@@ -185,10 +228,10 @@ function vApps() {
     '<div class="grid" style="margin-top:14px">' + list.map(function (a) {
       var gh = a.donnees === 'github', so = a.type !== 'simple', cn = clientName(a.client);
       return '<div class="card"><div class="row" style="justify-content:space-between"><h3>' + esc(a.nom || a.id) + '</h3><span><span class="tag' + (so ? ' so' : '') + '">' + (so ? 'Soirée' : 'Simple') + '</span> <span class="tag' + (gh ? ' gh' : '') + '">' + (gh ? 'GitHub' : 'Démo locale') + '</span></span></div>' +
-        '<div class="mono">' + esc(a.id) + '/</div>' +
+        '<div class="mono">' + esc(a.chemin || a.id) + '/</div>' +
         '<div>' + (cn ? 'Client : <strong>' + esc(cn) + '</strong>' : '<span class="faint">Aucun client</span>') + '</div>' +
         '<div class="faint">' + (a.creeLe ? 'Créée le ' + esc(a.creeLe) + ' · ' : '') + 'canal ' + esc(a.canal || 'stable') + (gh ? ' · ' + (a.cle ? 'clé du ' + esc(a.cle.le || '?') : '<span class="tag warn">clé manquante</span>') : '') + '</div>' +
-        '<div class="row"><a class="b sec" href="' + base + a.id + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + a.id + '/admin/" target="_blank">Admin</a><a class="b sec" href="' + base + a.id + '/caisse/" target="_blank">Caisse</a>' + (so ? '<a class="b sec" href="' + base + a.id + '/soiree/" target="_blank">Soirée</a>' : '') + '</div>' +
+        '<div class="row"><a class="b sec" href="' + base + (a.chemin || a.id) + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + (a.chemin || a.id) + '/admin/" target="_blank">Admin</a><a class="b sec" href="' + base + (a.chemin || a.id) + '/caisse/" target="_blank">Caisse</a>' + (so ? '<a class="b sec" href="' + base + (a.chemin || a.id) + '/soiree/" target="_blank">Soirée</a>' : '') + '</div>' +
         (S.del === a.id ? '<div><p class="err">Supprimer l’app « ' + esc(a.id) + ' » ? Ses tablettes ne s’ouvriront plus. Ses données ne sont pas touchées.</p><div class="row"><button class="danger" data-a="delGo" data-v="' + esc(a.id) + '">Oui, supprimer</button><button class="sec" data-a="delNo">Annuler</button></div></div>'
           : '<div class="row"><button class="sec" data-a="edit" data-v="' + esc(a.id) + '">Modifier</button><button class="danger" data-a="del" data-v="' + esc(a.id) + '">Supprimer</button></div>') + '</div>';
     }).join('') + '</div></section>';
@@ -204,11 +247,11 @@ function vClients() {
         '<div class="faint">' + [c.email ? '<a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '', c.tel ? esc(c.tel) : ''].filter(Boolean).join(' · ') + '</div>' + (c.note ? '<div class="faint">' + esc(c.note) + '</div>' : '') +
         '<div>' + (apps.length ? apps.length + ' app' + (apps.length > 1 ? 's' : '') + ' : ' + apps.map(function (a) { return '<span class="tag' + (a.type !== 'simple' ? ' so' : '') + '">' + esc(a.nom || a.id) + '</span>'; }).join(' ') : '<span class="faint">Aucune app</span>') + '</div>' +
         (S.cdel === id ? '<div><p class="err">Supprimer ce client ? Ses apps restent, sans client.</p><div class="row"><button class="danger" data-a="cdelGo" data-v="' + esc(id) + '">Oui, supprimer</button><button class="sec" data-a="cdelNo">Annuler</button></div></div>'
-          : '<div class="row"><button class="sec" data-a="cedit" data-v="' + esc(id) + '">Modifier</button><button class="sec" data-a="cnewApp" data-v="' + esc(id) + '">+ App pour ce client</button><button class="danger" data-a="cdel" data-v="' + esc(id) + '">Supprimer</button></div>') + '</div>';
+          : '<div class="row"><a class="b" href="' + location.href.replace(/superadmin\/.*$/, '') + esc(pageOf(id)) + '/" target="_blank">Page du client</a><button class="sec" data-a="ccopy" data-v="' + esc(id) + '">Copier le lien</button></div><div class="row"><button class="sec" data-a="cedit" data-v="' + esc(id) + '">Modifier</button><button class="sec" data-a="cnewApp" data-v="' + esc(id) + '">+ App pour ce client</button><button class="danger" data-a="cdel" data-v="' + esc(id) + '">Supprimer</button></div>') + '</div>';
     }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v8';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v10';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
@@ -220,10 +263,10 @@ function render() {
 }
 document.addEventListener('input', function (e) {
   var t = e.target, k = t.getAttribute && t.getAttribute('data-f'), kc = t.getAttribute && t.getAttribute('data-cf');
-  if (k && S.form) S.form[k] = t.value; if (kc && S.cform) S.cform[kc] = t.value;
+  if (k && S.form) S.form[k] = t.value; if (kc && S.cform) { S.cform[kc] = t.value; if (kc === 'nom' || kc === 'page') { var hint = t.closest('section').querySelector('[data-cf="page"] + .faint strong'); if (hint) hint.textContent = slugify(S.cform.page || S.cform.nom) || '…'; } }
   if (t.hasAttribute && t.hasAttribute('data-flt')) { S.filtre = t.value; var pos = t.selectionStart; render(); var n = document.querySelector('[data-flt]'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
 });
-document.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) { S.form[k] = e.target.value; if (k === 'type') render(); } });
+document.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-f'); if (k && S.form) { S.form[k] = e.target.value; if (k === 'type' || k === 'client') render(); } });
 function unlocked(acc, pass) { return clientsKeyFrom(pass).then(function (ck) { S.acc = acc; S.ck = ck; sessionStorage.setItem(K + 'acces', JSON.stringify(acc)); sessionStorage.setItem(K + 'ck', ck); S.busy = ''; load(); }); }
 document.addEventListener('click', function (e) {
   var b = e.target.closest('[data-a]'); if (!b || b.disabled) return; var a = b.getAttribute('data-a'), v = b.getAttribute('data-v');
@@ -253,12 +296,13 @@ document.addEventListener('click', function (e) {
   else if (a === 'del') { S.del = v; render(); }
   else if (a === 'delNo') { S.del = null; render(); }
   else if (a === 'delGo') delApp(v);
-  else if (a === 'cnew' || a === 'cnewFromApp') { S.cform = { id: '', nom: '', contact: '', email: '', tel: '', note: '', fromApp: a === 'cnewFromApp' }; S.err = null; render(); window.scrollTo(0, 0); }
-  else if (a === 'cedit') { var c = S.clients[v]; S.cform = { id: v, nom: c.nom, contact: c.contact || '', email: c.email || '', tel: c.tel || '', note: c.note || '' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'cnew' || a === 'cnewFromApp') { S.cform = { id: '', nom: '', page: '', contact: '', email: '', tel: '', note: '', fromApp: a === 'cnewFromApp' }; S.err = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'cedit') { var c = S.clients[v]; S.cform = { id: v, nom: c.nom, page: c.page || pageOf(v), contact: c.contact || '', email: c.email || '', tel: c.tel || '', note: c.note || '' }; S.err = null; render(); window.scrollTo(0, 0); }
   else if (a === 'ccancel') { S.cform = null; S.err = null; render(); }
   else if (a === 'csave') { var fromApp = S.cform.fromApp, before = Object.keys(S.clients || {}); saveClient(); if (fromApp) { var iv = setInterval(function () { if (!S.cform) { clearInterval(iv); var nid = Object.keys(S.clients || {}).filter(function (k) { return before.indexOf(k) < 0; })[0]; if (S.form && nid) S.form.client = nid; render(); } }, 200); } }
   else if (a === 'cdel') { S.cdel = v; render(); }
   else if (a === 'cdelNo') { S.cdel = null; render(); }
+  else if (a === 'ccopy') { var url = location.href.replace(/superadmin\/.*$/, '') + pageOf(v) + '/'; (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { S.flash = 'Lien copié : ' + url; render(); }, function () { S.flash = 'Lien : ' + url; render(); }); }
   else if (a === 'cdelGo') delClient(v);
   else if (a === 'cnewApp') { S.tab = 'apps'; S.form = { id: '', nom: '', type: 'simple', client: v, donnees: 'local', cle: '' }; S.edit = null; render(); window.scrollTo(0, 0); }
   else if (a === 'creset') { S.clients = {}; S.clientsErr = null; S.flash = 'Liste des clients vide : elle sera réécrite au prochain enregistrement.'; render(); }

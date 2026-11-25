@@ -1,10 +1,11 @@
 /* Service worker commun, importé par <ami>/<app>/sw.js (importScripts) : une mise à jour de ce fichier
    met à jour toutes les tablettes. Réseau d'abord (3 s), sinon cache. Préfixe propre à l'ami et à l'app. */
-var CAISSE_VERSION = '8';
-var parts = self.location.pathname.split('/'), APPN = parts[parts.length - 2], CID = parts[parts.length - 3];
-var PREFIX = 'caisse-' + CID + '-' + APPN + '-', CACHE = PREFIX + 'v' + CAISSE_VERSION;
-var FILES = ['./', './index.html', './manifest.webmanifest', '../client.js', '../../core/' + APPN + '.js', '../../core/' + APPN + '.css',
-  '../../core/icons/' + APPN + '-192.png', '../../core/icons/' + APPN + '-512.png', '../../core/icons/' + APPN + '-maskable-512.png', '../../core/icons/' + APPN + '-apple.png'];
+var CAISSE_VERSION = '10';
+var parts = self.location.pathname.split('/'), APPN = parts[parts.length - 2], CORE = self.CAISSE_CORE || '../../core/'; // CAISSE_CORE : posé par <app>/<x>/sw.js (apps rangées sous un client)
+var BASE = parts.slice(0, -2).join('/').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+var PREFIX = 'caisse-' + BASE + '-' + APPN + '-', CACHE = PREFIX + 'v' + CAISSE_VERSION;
+var FILES = ['./', './index.html', './manifest.webmanifest', '../client.js', CORE + APPN + '.js', CORE + APPN + '.css',
+  CORE + 'icons/' + APPN + '-192.png', CORE + 'icons/' + APPN + '-512.png', CORE + 'icons/' + APPN + '-maskable-512.png', CORE + 'icons/' + APPN + '-apple.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
     return Promise.all(FILES.map(function (f) { return fetch(f, { cache: 'no-store' }).then(function (r) { if (r.ok) return c.put(new URL(f, self.location).href, r); }).catch(function () {}); }));

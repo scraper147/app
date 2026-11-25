@@ -1,4 +1,4 @@
-/* caisse · caisse · v8 — code commun à tous les amis */
+/* caisse · caisse · v10 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -9,7 +9,8 @@ document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 /* Utilisateur (client.js du dossier de l'utilisateur) et préfixe de TOUTES les clés de mémoire : plusieurs utilisateurs
    partagent l'adresse scraper147.github.io, leurs données ne doivent jamais se mélanger. */
 var CLIENT = window.CLIENT || { id: 'demo', donnees: 'local' };
-var KP = 'caisse:' + CLIENT.id + ':';
+var KP = 'caisse:' + (CLIENT.chemin || CLIENT.id) + ':'; // chemin = dossier de l'app (« client/app » quand l'app est rangée sous un client)
+var RACINE = '../' + (CLIENT.racine || '../'); // depuis une page de l'app (caisse/, admin/, soiree/) vers la racine du site
 var APP_ID = window.APP_ID || (/\/admin\//.test(location.pathname) ? 'admin' : /\/soiree\//.test(location.pathname) ? 'soiree' : 'caisse');
 var DEMO_KEY = KP + 'serveur';
 var DEMO_CAT_REPO = 'demo/caisse', DEMO_SALES_REPO = 'demo/ventes';
@@ -562,7 +563,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v8'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v10'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';

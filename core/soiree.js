@@ -1,4 +1,4 @@
-/* caisse · soiree · v8 — code commun à tous les amis */
+/* caisse · soiree · v10 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -9,7 +9,8 @@ document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div i
 /* Utilisateur (client.js du dossier de l'utilisateur) et préfixe de TOUTES les clés de mémoire : plusieurs utilisateurs
    partagent l'adresse scraper147.github.io, leurs données ne doivent jamais se mélanger. */
 var CLIENT = window.CLIENT || { id: 'demo', donnees: 'local' };
-var KP = 'caisse:' + CLIENT.id + ':';
+var KP = 'caisse:' + (CLIENT.chemin || CLIENT.id) + ':'; // chemin = dossier de l'app (« client/app » quand l'app est rangée sous un client)
+var RACINE = '../' + (CLIENT.racine || '../'); // depuis une page de l'app (caisse/, admin/, soiree/) vers la racine du site
 var APP_ID = window.APP_ID || (/\/admin\//.test(location.pathname) ? 'admin' : /\/soiree\//.test(location.pathname) ? 'soiree' : 'caisse');
 var DEMO_KEY = KP + 'serveur';
 var DEMO_CAT_REPO = 'demo/caisse', DEMO_SALES_REPO = 'demo/ventes';
@@ -570,7 +571,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v8'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v10'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';
