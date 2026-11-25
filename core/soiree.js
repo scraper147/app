@@ -1,4 +1,4 @@
-/* caisse · soiree · v7 — code commun à tous les amis */
+/* caisse · soiree · v8 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -378,8 +378,6 @@ var FEATURES = [
   { id: 'suivi', nom: 'Suivi des ventes', items: [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
-  { id: 'affichage', nom: 'Affichage', items: [
-    { id: 'sombreDefaut', nom: 'Thème sombre par défaut', desc: 'La Caisse et l’Admin s’ouvrent en sombre. Chaque appareil peut encore changer avec le bouton lune / soleil, et garde son choix.', off: true } ] },
   { id: 'options', nom: 'Modules en option', items: [
     { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
     { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
@@ -430,6 +428,8 @@ var TH_FONTS = {
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
+  { id: 'ardoise', nom: 'Ardoise (sombre)', mode: 'sombre', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
+  { id: 'lounge', nom: 'Lounge (sombre)', mode: 'sombre', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
   { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
   { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
   { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
@@ -443,7 +443,7 @@ function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
   var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
   return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
-    modele: t.modele || '', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
@@ -490,6 +490,7 @@ function themeLogo(kind) {
   var t = themeGet(); if (kind === 'ticket') { if (t.ticket.logo) return t.ticket.logo; kind = 'print'; } if (t.logo) return t.logo;
   var n = thEsc(t.nom), sub = thEsc(t.ticket.activite || ''), c = kind === 'print' ? '#000' : kind === 'dark' ? thMix(t.couleur, '#ffffff', .35) : t.couleur, ink = kind === 'print' ? '#000' : kind === 'dark' ? '#EEF2F7' : t.couleur;
   if (kind === 'square') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="' + t.couleur + '"/>' + TH_ICON.replace('{c}', '#fff') + '</svg>');
+  if (kind === 'text' && t.mode === 'sombre' && !t.barre) { c = t.sombre.couleur || thMix(t.couleur, '#ffffff', .45); ink = c; }
   if (kind === 'text' && t.barre && thContrast(c, t.barre) < 3) { c = thInk(t.barre); ink = c; }
   if (kind === 'text') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" height="100" width="' + (130 + n.length * 27) + '" viewBox="0 0 ' + (130 + n.length * 27) + ' 100">' + TH_ICON.replace('{c}', c) + '<text x="104" y="66" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="' + ink + '">' + n + '</text></svg>');
   var w = Math.max(900, 300 + n.length * 50);
@@ -569,7 +570,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v7'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v8'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

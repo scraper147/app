@@ -1,4 +1,4 @@
-/* caisse · admin · v7 — code commun à tous les amis */
+/* caisse · admin · v8 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -378,8 +378,6 @@ var FEATURES = [
   { id: 'suivi', nom: 'Suivi des ventes', items: [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
-  { id: 'affichage', nom: 'Affichage', items: [
-    { id: 'sombreDefaut', nom: 'Thème sombre par défaut', desc: 'La Caisse et l’Admin s’ouvrent en sombre. Chaque appareil peut encore changer avec le bouton lune / soleil, et garde son choix.', off: true } ] },
   { id: 'options', nom: 'Modules en option', items: [
     { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
     { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
@@ -430,6 +428,8 @@ var TH_FONTS = {
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
+  { id: 'ardoise', nom: 'Ardoise (sombre)', mode: 'sombre', couleur: '#5B8DEF', accent: '#F2B64C', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'moderne', forme: 'arrondi', ombre: false },
+  { id: 'lounge', nom: 'Lounge (sombre)', mode: 'sombre', couleur: '#D4A657', accent: '#9B6FD0', fond: '', barre: '', tuile: '', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
   { id: 'classique', nom: 'Classique', couleur: '#2F5D8A', accent: '#3A8DB0', fond: '#F5F7FA', barre: '#FFFFFF', tuile: '#FFFFFF', police: 'systeme', policeTitres: 'systeme', forme: 'arrondi', ombre: false },
   { id: 'nature', nom: 'Bois et nature', couleur: '#4F6F3A', accent: '#B5835A', fond: '#F4F0E8', barre: '#3E3226', tuile: '#FFFDF8', police: 'moderne', policeTitres: 'classique', forme: 'arrondi', ombre: true },
   { id: 'nuit', nom: 'Nuit élégante', couleur: '#B08D57', accent: '#7A5C99', fond: '#EFEDE8', barre: '#14161C', tuile: '#FFFFFF', police: 'moderne', policeTitres: 'elegante', forme: 'carre', ombre: true },
@@ -443,7 +443,7 @@ function thHex(v, def) { return /^#[0-9a-f]{6}$/i.test(v || '') ? v : def; }
 function themeGet() {
   var t = themeCopy().t || {}, d = THEME_DEF, tk = t.ticket || {}, af = tk.afficher || {}, sb = t.sombre || {};
   return { nom: (t.nom || '').trim() || d.nom, couleur: thHex(t.couleur, d.couleur), accent: thHex(t.accent, d.accent), logo: t.logo || '',
-    modele: t.modele || '', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
+    modele: t.modele || '', mode: t.mode === 'sombre' ? 'sombre' : 'clair', fond: thHex(t.fond, ''), barre: thHex(t.barre, ''), tuile: thHex(t.tuile, ''),
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
@@ -490,6 +490,7 @@ function themeLogo(kind) {
   var t = themeGet(); if (kind === 'ticket') { if (t.ticket.logo) return t.ticket.logo; kind = 'print'; } if (t.logo) return t.logo;
   var n = thEsc(t.nom), sub = thEsc(t.ticket.activite || ''), c = kind === 'print' ? '#000' : kind === 'dark' ? thMix(t.couleur, '#ffffff', .35) : t.couleur, ink = kind === 'print' ? '#000' : kind === 'dark' ? '#EEF2F7' : t.couleur;
   if (kind === 'square') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="' + t.couleur + '"/>' + TH_ICON.replace('{c}', '#fff') + '</svg>');
+  if (kind === 'text' && t.mode === 'sombre' && !t.barre) { c = t.sombre.couleur || thMix(t.couleur, '#ffffff', .45); ink = c; }
   if (kind === 'text' && t.barre && thContrast(c, t.barre) < 3) { c = thInk(t.barre); ink = c; }
   if (kind === 'text') return thSvg('<svg xmlns="http://www.w3.org/2000/svg" height="100" width="' + (130 + n.length * 27) + '" viewBox="0 0 ' + (130 + n.length * 27) + ' 100">' + TH_ICON.replace('{c}', c) + '<text x="104" y="66" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="' + ink + '">' + n + '</text></svg>');
   var w = Math.max(900, 300 + n.length * 50);
@@ -564,7 +565,7 @@ function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; 
 try { if (!localStorage.getItem(KP + 'admin-gh-token')) { localStorage.setItem(KP + 'admin-gh-token', 'demo'); localStorage.setItem(KP + 'admin-gh-tokens', '["demo"]'); } } catch (e) {}
 var LOGO = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIHJ4PSIyMCIgZmlsbD0iIzJGNUQ4QSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxyZWN0IHg9IjE0IiB5PSI0MCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjQ0IiByeD0iOCIvPjxwYXRoIGQ9Ik0yNiA0MFYyMmg0OHYxOCIvPjxwYXRoIGQ9Ik0zNCAzMGgzMiIvPjxwYXRoIGQ9Ik0yOCA1OGgxMk00OCA1OGgxMk0yOCA3MGgxMk00OCA3MGgxMiIvPjxwYXRoIGQ9Ik02OCA1OGg2djEyaC02eiIvPjwvZz48L3N2Zz4='; // Agri-Garden by Xavier Vaerman (icône de la Caisse)
 var THEME_KEY = KP + 'admin-theme';
-try { var th = localStorage.getItem(THEME_KEY); if (th) document.documentElement.setAttribute('data-theme', th); else if (FEAT('sombreDefaut')) document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}
+try { document.documentElement.setAttribute('data-theme', themeGet().mode === 'sombre' ? 'dark' : 'light'); } catch (e) {}
 
 /* ---------- Données ---------- */
 var FILES = [];            // {name, data, status, note}
@@ -1325,7 +1326,7 @@ SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { render
 var SUBS_SAPIN_ALL = SUBS.sapin.slice(), MODULES_ALL = MODULES.slice();
 /* Menus selon Admin › Paramètres › Fonctionnalités */
 function featApply() {
-  try { if (!localStorage.getItem(THEME_KEY)) { if (FEAT('sombreDefaut')) document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme'); } } catch (e) {}
+  try { document.documentElement.setAttribute('data-theme', themeGet().mode === 'sombre' ? 'dark' : 'light'); } catch (e) {}
   var want = { catalogue: 1, stock: FEAT('stock'), stockevt: FEAT('stockEvenement'), caisse: FEAT('fond'), commandes: FEAT('commandes'), factures: FEAT('facture'), livraisons: FEAT('gestionLivraisons'), bilan: 1, hist: FEAT('historiqueAdmin') };
   SUBS.sapin = SUBS_SAPIN_ALL.filter(function (x) { return want[x.id]; });
   if (!SUBS.sapin.some(function (x) { return x.id === SUB.sapin; })) SUB.sapin = 'catalogue';
@@ -1333,6 +1334,7 @@ function featApply() {
   if (MOD !== 'accueil' && !modById(MOD)) MOD = 'accueil';
 }
 function featPruneAdmin(root) {
+  root.querySelectorAll('[data-a="theme"]').forEach(function (el) { el.remove(); }); // clair / sombre : Paramètres › Apparence de l’app
   function rm(sel, f) { if (!FEAT(f)) root.querySelectorAll(sel).forEach(function (el) { el.remove(); }); }
   rm('[data-cx="form"][data-v="retrait"],[data-cx="form"][data-v="apport"]', 'mouvements');
   rm('[data-cx="form"][data-v="comptage"]', 'decompte');
@@ -3508,7 +3510,7 @@ function thSet(path, v) {
   themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); thRefresh(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 1200); }
 function thModele(id) {
   var m = TH_MODELES.filter(function (x) { return x.id === id; })[0]; if (!m) return; var o = themeCopy(), t = JSON.parse(JSON.stringify(o.t || {}));
-  ['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].forEach(function (k) { t[k] = m[k]; }); t.modele = m.id;
+  ['couleur', 'accent', 'fond', 'barre', 'tuile', 'police', 'policeTitres', 'forme', 'ombre'].forEach(function (k) { if (m[k] === '' ) delete t[k]; else t[k] = m[k]; }); if (m.mode === 'sombre') t.mode = 'sombre'; else delete t.mode; t.modele = m.id;
   themeSaveCopy({ t: t, version: o.version, publieLe: o.publieLe, pending: true, err: null }); themeApply(); render(); clearTimeout(TH_PUB.timer); TH_PUB.timer = setTimeout(thPublish, 800);
 }
 function thRefresh() { var p = document.getElementById('apPrev'); if (p) p.innerHTML = vApPreview(); var st = document.getElementById('apStatus'); if (st) st.innerHTML = thStatus(); var br = document.querySelector('.shell .brand'); if (br) { var im = br.querySelector('img'); if (im) im.src = themeLogo('square'); var sp = br.querySelector('.name span'); if (sp) sp.textContent = themeGet().nom; } }
@@ -3549,12 +3551,12 @@ function vApPreview(part) {
   var t = themeGet(), tk = t.ticket;
   if (part === 'app') {
     var F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, rad = t.forme === 'carre' ? '3px' : t.forme === 'pastille' ? '999px' : '10px', trad = t.forme === 'carre' ? '3px' : t.forme === 'pastille' ? '20px' : '12px';
-    var sh = t.ombre ? 'box-shadow:0 4px 14px rgba(0,0,0,.12);' : '', bar = t.barre || '#ffffff', fond = t.fond || '#F5F7FA', tuile = t.tuile || '#ffffff';
+    var dk = t.mode === 'sombre', sh = t.ombre ? 'box-shadow:0 4px 14px rgba(0,0,0,.12);' : '', bar = t.barre || (dk ? '#131A22' : '#ffffff'), fond = dk ? (t.sombre.fond || '#0B0F14') : (t.fond || '#F5F7FA'), tuile = dk ? thMix(fond, '#ffffff', .06) : (t.tuile || '#ffffff');
     var cats = (thCatList()[0] || { id: '', nom: 'Boissons', produits: [{ id: '', libelle: 'Article', prix: 2.5 }] }), cc = themeCatStyle(cats.id) || t.couleur, pr = (cats.produits || [])[0] || { libelle: 'Article', prix: 2.5 }, ph = pr.id ? thPhotoGet(pr.id) : '';
     return '<div class="apapp" style="font-family:' + F + ';background:' + fond + (t.fondImage ? ';background-image:linear-gradient(rgba(255,255,255,' + t.voile / 100 + '),rgba(255,255,255,' + t.voile / 100 + ')),url(' + t.fondImage + ');background-size:cover' : '') + '">' +
       '<div class="apbar" style="background:' + bar + ';border-color:' + t.couleur + '"><img src="' + themeLogo('text') + '" alt=""></div>' +
       '<div class="apbtns"><span class="apb" style="background:' + cc + ';color:' + thInk(cc) + ';border-radius:' + rad + ';font-family:' + FT + '">' + esc(themeCatEmoji(cats.id) + cats.nom) + '</span><span class="apb ghost" style="border-color:' + t.couleur + ';color:' + t.couleur + ';border-radius:' + rad + '">Historique</span></div>' +
-      '<div class="aptile" style="background:' + tuile + ';border-radius:' + trad + ';' + sh + 'border-top:5px solid ' + cc + '">' + (ph ? '<img src="' + ph + '" alt="">' : '') + '<b style="font-family:' + FT + '">' + esc(pr.libelle) + '</b><span style="color:' + t.couleur + '">' + (Number(pr.prix) || 0).toFixed(2).replace('.', ',') + ' €</span></div>' +
+      '<div class="aptile" style="color:' + thInk(tuile) + ';background:' + tuile + ';border-radius:' + trad + ';' + sh + 'border-top:5px solid ' + cc + '">' + (ph ? '<img src="' + ph + '" alt="">' : '') + '<b style="font-family:' + FT + '">' + esc(pr.libelle) + '</b><span style="color:' + t.couleur + '">' + (Number(pr.prix) || 0).toFixed(2).replace('.', ',') + ' €</span></div>' +
       '<span class="apb" style="display:block;text-align:center;background:' + t.couleur + ';color:' + thInk(t.couleur) + ';border-radius:' + rad + ';margin-top:12px;font-family:' + FT + '">Encaisser</span></div>';
   }
   var W = tk.papier === '58' ? 32 : 48, sep = Array(W + 1).join(tk.separateur), al = tk.entete === 'gauche' ? 'left' : 'center', AF = tk.afficher, lw = { petit: 45, moyen: 66, grand: 88 }[tk.logoTaille];
@@ -3579,6 +3581,20 @@ function thCatList() {
 }
 var TH_CATS = null;
 function thLoadCats() { if (CLIENT.donnees !== 'github' || TH_CATS) return; TH_CATS = []; ghGetCatalogue(DEMO_CAT_REPO, getToken()).then(function (r) { TH_CATS = r.json && r.json.categories ? r.json.categories : []; if (MOD === 'parametres') render(); }, function () {}); }
+var TH_EMO = null, TH_EMOJIS = [
+  ['Boissons', '☕ 🍵 🧃 🥤 🧋 🍺 🍻 🍷 🥂 🍾 🍸 🍹 🥃 🧉 💧 🥛'],
+  ['Nourriture', '🍔 🍟 🌭 🍕 🥪 🌮 🥙 🥗 🍝 🍜 🍲 🍛 🍗 🍖 🥩 🧀 🥚 🥐 🥖 🍞 🥨 🧇 🥞 🍳'],
+  ['Sucré et fruits', '🍦 🍨 🍧 🍰 🎂 🧁 🍩 🍪 🍫 🍬 🍭 🍮 🍯 🍓 🍎 🍐 🍊 🍋 🍌 🍇 🍉 🍒 🥝 🍍'],
+  ['Fêtes et événements', '🎄 🎅 🤶 🎁 🎉 🎊 🎈 🎃 👻 🕯️ ⭐ ❄️ ☃️ 🔥 🎟️ 🎫 🎶 🎵 🎤 🎸 🏆 🥇'],
+  ['Boutique', '👕 👚 👗 👖 🧥 🧣 🧤 👟 🧢 👜 🎒 🧸 🪀 📚 ✏️ 🖼️ 🧴 🧼 🕶️ ⌚ 💍'],
+  ['Nature et jardin', '🌲 🎋 🌳 🌴 🪴 🌵 💐 🌹 🌷 🌻 🌼 🍀 🍁 🍄 🪵 🌿'],
+  ['Services', '🚚 📦 🛒 🛠️ 🔧 🧹 ✂️ 💇 🚗 🅿️ 🏷️ 💳 🧾 📅 ⏰ ♻️ ℹ️'],
+  ['Symboles', '✅ ⭐ ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🟢 🔴 🟡 🔵 🟣 ⚫ 🔶 🔷 ➕ 💯']
+];
+function vEmoGrid(cid, cur) {
+  return '<div class="apemogrid">' + TH_EMOJIS.map(function (g) { return '<div class="apemog"><small>' + esc(g[0]) + '</small><div>' + g[1].split(' ').map(function (e) { return '<button class="' + (e === cur ? 'on' : '') + '" data-p="emoPick" data-cat="' + esc(cid) + '" data-v="' + e + '">' + e + '</button>'; }).join('') + '</div></div>'; }).join('') +
+    '<div class="row" style="gap:8px;margin-top:8px"><button class="btn sm" data-p="emoPick" data-cat="' + esc(cid) + '" data-v="">Aucune icône</button><button class="btn sm" data-p="emoOpen" data-v="">Fermer</button></div></div>';
+}
 function vApparence(part) {
   var t = themeGet(), d = themeCopy().t || {}, tk = (d.ticket || {}), ad = tk.adresse || [], TT = t.ticket;
   function fld(lab, path, val, ph, type, extra) { return '<label class="fl">' + lab + '</label><input type="' + (type || 'text') + '" data-ap="' + path + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + esc(ph || '') + '"' + (extra || '') + '>'; }
@@ -3614,15 +3630,16 @@ function vApparence(part) {
     if (t.tuile && t.fond && thContrast(t.tuile, t.fond) < 1.05) ctr.push('tuiles et fond presque identiques');
     form = h('Modèles') + '<div class="apmods">' + TH_MODELES.map(function (m) {
         return '<button class="apmod' + (t.modele === m.id ? ' on' : '') + '" data-p="thModele" data-v="' + m.id + '" style="font-family:' + TH_FONTS[m.policeTitres].css + '"><span class="sw" style="background:' + (m.barre === '#FFFFFF' ? m.couleur : m.barre) + '"></span><span class="sw" style="background:' + m.couleur + '"></span><span class="sw" style="background:' + m.accent + '"></span><b>' + esc(m.nom) + '</b></button>'; }).join('') + '</div><p class="hint">Un modèle règle couleurs, polices et formes ; logo, nom, ticket, catégories et photos sont gardés.</p>' +
+      h('Style') + '<div class="apmode">' + [['clair', '☀︎ Clair', 'Fond clair, texte foncé'], ['sombre', '☾ Sombre', 'Fond sombre, texte clair']].map(function (m) { return '<button class="apmod' + (t.mode === m[0] ? ' on' : '') + '" data-p="thMode" data-v="' + m[0] + '"><b>' + m[1] + '</b><small>' + m[2] + '</small></button>'; }).join('') + '</div><p class="hint">S’applique à l’Admin et à la Caisse de tous les appareils (la Caisse Soirée reste sombre).</p>' +
       h('Identité') + fld('Nom du commerce', 'nom', d.nom, 'Caisse') + img('Logo', 'apLogo', !!t.logo, 'thLogoDel', 'Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).') +
       h('Couleurs') + '<div class="aprow">' + clr('Principale', 'couleur', d.couleur, t.couleur) + clr('Accent', 'accent', d.accent, t.accent) + clr('Fond', 'fond', t.fond, '#F5F7FA') + clr('Barre du haut', 'barre', t.barre, '#FFFFFF') + clr('Tuiles', 'tuile', t.tuile, '#FFFFFF') + '</div>' +
       (ctr.length ? '<p class="hint warnt">Lisibilité : ' + ctr.join(' ; ') + '.</p>' : '<p class="hint okt">Contrastes lisibles.</p>') +
       h('Polices') + '<div class="aprow"><div>' + sel('Titres', 'policeTitres', t.policeTitres, fonts) + '</div><div>' + sel('Texte', 'police', t.police, fonts) + '</div></div><p class="hint">Polices de l’appareil (aucun téléchargement, fonctionne hors ligne) : le rendu peut varier un peu d’une tablette à l’autre.</p>' +
       h('Formes') + '<div class="aprow"><div>' + sel('Boutons et tuiles', 'forme', t.forme, [['arrondi', 'Arrondis'], ['carre', 'Carrés'], ['pastille', 'Pastilles']]) + '</div><div>' + sel('Densité', 'densite', t.densite, [['normale', 'Normale'], ['compacte', 'Compacte']]) + '</div></div>' + chk('Ombres sous les tuiles et cartes', 'ombre', t.ombre) +
       h('Fond d’écran') + img('Image (accueil de la caisse, bandeau de l’Admin)', 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
-      h('Mode sombre') + '<div class="aprow">' + clr('Couleur principale', 'sombre.couleur', t.sombre.couleur, thMix(t.couleur, '#ffffff', .45)) + clr('Fond', 'sombre.fond', t.sombre.fond, '#0B0F14') + '</div>' +
-      h('Catégories') + (cats.length ? '<div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
-        return '<div class="apcat"><input type="color" data-ap="categories.' + esc(k.id) + '.couleur" value="' + (c.couleur || t.couleur) + '"><input type="text" maxlength="4" data-ap="categories.' + esc(k.id) + '.emoji" value="' + esc(c.emoji || '') + '" placeholder="🙂" class="apemo"><span>' + esc(k.nom) + '</span>' + (c.couleur ? '<button class="btn sm" data-p="thClr" data-v="categories.' + esc(k.id) + '.couleur">auto</button>' : '') + '</div>'; }).join('') + '</div>' : '<p class="hint">Publiez d’abord un catalogue.</p>') +
+      (t.mode === 'sombre' ? h('Couleurs du thème sombre') + '<div class="aprow">' + clr('Couleur principale', 'sombre.couleur', t.sombre.couleur, thMix(t.couleur, '#ffffff', .45)) + clr('Fond', 'sombre.fond', t.sombre.fond, '#0B0F14') + '</div>' : '') +
+      h('Catégories') + (cats.length ? '<p class="hint">Couleur (onglet et liseré des tuiles) et icône affichée devant le nom de la catégorie sur la caisse.</p><div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
+        return '<div class="apcat"><input type="color" data-ap="categories.' + esc(k.id) + '.couleur" value="' + (c.couleur || t.couleur) + '">' + '<button class="apemo' + (c.emoji ? '' : ' vide') + '" data-p="emoOpen" data-v="' + esc(k.id) + '" title="Icône de la catégorie">' + (c.emoji ? esc(c.emoji) : 'Icône') + '</button><span>' + esc(k.nom) + '</span>' + (c.couleur ? '<button class="btn sm" data-p="thClr" data-v="categories.' + esc(k.id) + '.couleur">auto</button>' : '') + '</div>' + (TH_EMO === k.id ? vEmoGrid(k.id, c.emoji) : ''); }).join('') + '</div>' : '<p class="hint">Publiez d’abord un catalogue.</p>') +
       h('Photos des articles') + (cats.length ? '<div class="apphotos">' + cats.map(function (k) { return (k.produits || []).filter(function (p) { return p.actif !== false && !/^(frais-de-)?livraison$/i.test(slug(p.libelle || '')); }).map(function (p) { var ph = thPhotoGet(p.id);
         return '<div class="apph">' + (ph ? '<img src="' + ph + '" alt="">' : '<span class="apph0">+</span>') + '<small>' + esc(p.libelle) + '</small><label class="btn sm">' + (ph ? 'Changer' : 'Photo') + '<input type="file" accept="image/*" data-photo="' + esc(p.id) + '" hidden></label>' + (ph ? '<button class="btn sm danger" data-p="thPhotoDel" data-v="' + esc(p.id) + '">Retirer</button>' : '') + '</div>'; }).join(''); }).join('') + '</div><p class="hint" id="phStatus">' + phStatus() + '</p>' : '<p class="hint">Publiez d’abord un catalogue.</p>');
   }
@@ -3764,6 +3781,9 @@ function demoParClick(act, el) {
   if (act === 'thModele') { thModele(el.getAttribute('data-v')); return true; }
   if (act === 'thPhotoDel') { thPhotoSet(el.getAttribute('data-v'), ''); render(); return true; }
   if (act === 'phPub') { phPublish(); return true; }
+  if (act === 'thMode') { thSet('mode', el.getAttribute('data-v') === 'sombre' ? 'sombre' : ''); render(); return true; }
+  if (act === 'emoOpen') { var ev = el.getAttribute('data-v'); TH_EMO = ev && TH_EMO !== ev ? ev : null; render(); return true; }
+  if (act === 'emoPick') { thSet('categories.' + el.getAttribute('data-cat') + '.emoji', el.getAttribute('data-v')); TH_EMO = null; render(); return true; }
   if (act === 'demoSeed') { PAR.demoAsk = 'seed'; render(); return true; }
   if (act === 'demoReset') { PAR.demoAsk = 'reset'; render(); return true; }
   if (act === 'demoNo') { PAR.demoAsk = null; render(); return true; }
