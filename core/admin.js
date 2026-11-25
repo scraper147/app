@@ -1,4 +1,4 @@
-/* caisse · admin · v13 — code commun à tous les amis */
+/* caisse · admin · v14 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -11,6 +11,7 @@ document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 var CLIENT = window.CLIENT || { id: 'demo', donnees: 'local' };
 var KP = 'caisse:' + (CLIENT.chemin || CLIENT.id) + ':'; // chemin = dossier de l'app (« client/app » quand l'app est rangée sous un client)
 var RACINE = '../' + (CLIENT.racine || '../'); // depuis une page de l'app (caisse/, admin/, soiree/) vers la racine du site
+var SOIREE = CLIENT.type === 'soiree'; // caisse complexe : Caisse Soirée + Admin de la soirée (pas de caisse simple)
 var APP_ID = window.APP_ID || (/\/admin\//.test(location.pathname) ? 'admin' : /\/soiree\//.test(location.pathname) ? 'soiree' : 'caisse');
 var DEMO_KEY = KP + 'serveur';
 var DEMO_CAT_REPO = 'demo/caisse', DEMO_SALES_REPO = 'demo/ventes';
@@ -380,8 +381,7 @@ var FEATURES = [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
   { id: 'options', nom: 'Modules en option', items: [
-    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
-    { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
+    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true } ] }
 ];
 var FEAT_DEF = {}; FEATURES.forEach(function (g) { g.items.forEach(function (it) { FEAT_DEF[it.id] = it; }); });
 var _featRaw = null, _featCfg = { f: {}, raccourciId: '' };
@@ -390,7 +390,7 @@ function featCfg() {
   if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
   return _featCfg;
 }
-function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; if (id === 'soiree' && CLIENT.type === 'simple') return false; if (c.f[id] != null) return !!c.f[id]; if (id === 'soiree') return CLIENT.type === 'soiree'; return !(d && d.off); }
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; if (c.f[id] != null) return !!c.f[id]; return !(d && d.off); }
 function FEAT(id) {
   var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
   if (d && d.req && !FEAT(d.req)) return false;
@@ -594,10 +594,10 @@ function isLivProduct(p) { return !!p && /^(frais de )?livraison$/i.test(String(
 var CAISSE_OPEN = {};
 function caisseOf(fmt) { return CAISSES_BILAN[fmt] || null; }
 function okVentes(d) { var c = d && caisseOf(d.format); return !!c && (c === 'soiree' ? Array.isArray(d.enregistrements) : Array.isArray(d.ventes)); }
-/* Trois Bilans séparés : « bar » (Bar › Bilan), « soiree » (Soirée démo › Bilan), « sapin » (Gestion d’événement › Bilan).
+/* Trois Bilans séparés : « bar » (Bar › Bilan), « soiree » (Soirée › Bilan), « sapin » (Gestion d’événement › Bilan).
    Chacun garde ses fichiers, ses filtres et son panneau du dépôt ; render() active le bon (bilUse). */
 var BIL_CUR = 'bar', BIL_ST = {};
-var CTX_LABEL = { bar: 'Bar', soiree: 'Soirée démo', sapin: 'Gestion d’événement' };
+var CTX_LABEL = { bar: 'Bar', soiree: 'Soirée', sapin: 'Gestion d’événement' };
 function bilAllowed(c) { return [c || BIL_CUR]; }
 function bilFresh() { return { FILES: [], F: { soiree: null, bar: 'all', caisse: null }, BGH: { open: false, loading: false, files: null, sel: {}, err: null, busy: false, tab: null }, DISMISSED: {} }; }
 function bilUse(c) {
@@ -774,11 +774,11 @@ function toast(t) { toastMsg = t; clearTimeout(toastT); toastT = setTimeout(func
 function isDark() { var a = document.documentElement.getAttribute('data-theme'); return a ? a === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
 
 function vBand(S) {
-  var top = '<div class="band-top"><h1>' + (BIL_CUR === 'sapin' ? 'Bilan des ventes' : BIL_CUR === 'soiree' ? 'Bilan Soirée démo' : 'Bilan du bar') + '</h1></div>';
+  var top = '<div class="band-top"><h1>' + (BIL_CUR === 'sapin' ? 'Bilan des ventes' : BIL_CUR === 'soiree' ? 'Bilan de la soirée' : 'Bilan du bar') + '</h1></div>';
   if (!S) {
     return '<div class="band">' + top + '<div class="drop" id="drop"><h2>Déposez les exports des caisses</h2>' +
       (BIL_CUR === 'sapin' ? '<p>Glissez ici les fichiers <strong>ventes_….json</strong> téléchargés depuis la Caisse, de tous les points de vente et de tous les jours. Ils restent sur cet appareil : rien n\u2019est envoyé sur internet.</p>'
-        : BIL_CUR === 'soiree' ? '<p>Glissez ici les fichiers <strong>chlorophylle_….json</strong> de la Caisse Soirée, de tous les appareils. Ils restent sur cet appareil : rien n\u2019est envoyé sur internet.</p>'
+        : BIL_CUR === 'soiree' ? '<p>Glissez ici les fichiers <strong>soiree_….json</strong> de la Caisse Soirée, de tous les appareils. Ils restent sur cet appareil : rien n\u2019est envoyé sur internet.</p>'
         : '<p>Glissez ici les fichiers <strong>ventes_….json</strong> téléchargés depuis la Caisse Bar, de tous les bars et de tous les jours. Ils restent sur cet appareil : rien n\u2019est envoyé sur internet.</p>') +
       '<div class="acts"><label class="pick">Choisir des fichiers<input type="file" accept=".json,application/json" multiple data-files></label>' +
       '<button class="demo" data-g="open">Charger depuis le serveur</button>' + (BIL_CUR === 'bar' ? '<button class="demo" data-a="demo">Essayer avec des exemples</button>' : '') + '</div></div></div>';
@@ -1318,8 +1318,8 @@ var ICONS = {
 var MODULES = [
   { id: 'sapin', nom: 'Gestion d’événement', court: 'Gestion d’événement', ready: true, ctx: 'sapin', render: function () { renderSub(); },
     desc: 'Catalogue (points de vente, articles par catégorie), stock, caisse, bilan et historique des ventes.' },
-  { id: 'chloro', nom: 'Soirée à tickets', court: 'Soirée à tickets', ready: true, ctx: 'soiree', render: function () { renderSub(); },
-    desc: 'Caisse Soirée : catalogue (entrées, prix de la case, boissons en cases) et bilan de la soirée.' },
+  { id: 'chloro', nom: 'Gestion de la soirée', court: 'Gestion de la soirée', ready: true, ctx: 'soiree', render: function () { renderSub(); },
+    desc: 'Caisse Soirée : catalogue (entrées, prix de la case, boissons en cases), stock de l’événement et bilan de la soirée.' },
   { id: 'parametres', nom: 'Paramètres', court: 'Paramètres', ready: true, render: function () { renderSub(); },
     desc: 'Données de démonstration : charger un exemple ou tout effacer.' }
 ];
@@ -1333,7 +1333,8 @@ var SUB = { bar: 'catalogue', chloro: 'catalogue', sapin: 'catalogue' };
 /* Anciennes adresses (#bilan, #catalogue, #stock) : renvoyées vers le nouveau menu */
 SUBS.parametres = [{ id: 'apparence', nom: 'Apparence de l’app', render: function () { renderParametres(); } }, { id: 'ticket', nom: 'Apparence du ticket', render: function () { renderParametres(); } }, { id: 'fonctionnalites', nom: 'Fonctionnalités', render: function () { renderParametres(); } }, { id: 'securite', nom: 'Sécurité', render: function () { renderParametres(); } }];
 SUB.parametres = 'apparence';
-SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }];
+SUBS.chloro = [{ id: 'catalogue', nom: 'Catalogue', render: function () { renderCatalogue(); } }, { id: 'stock', nom: 'Stock', render: function () { renderStock(); } }, { id: 'bilan', nom: 'Bilan', render: function () { renderBilan(); } }];
+var SUBS_PAR_ALL = SUBS.parametres.slice();
 (function () { var i = SUBS.sapin.map(function (x) { return x.id; }).indexOf('stock') + 1; SUBS.sapin.splice(i, 0, { id: 'stockevt', nom: 'Comptage du stock', render: function () { renderStock(); } }); })();
 var SUBS_SAPIN_ALL = SUBS.sapin.slice(), MODULES_ALL = MODULES.slice();
 /* Menus selon Admin › Paramètres › Fonctionnalités */
@@ -1342,7 +1343,10 @@ function featApply() {
   var want = { catalogue: 1, stock: FEAT('stock'), stockevt: FEAT('stockEvenement'), caisse: FEAT('fond'), commandes: FEAT('commandes'), factures: FEAT('facture'), livraisons: FEAT('gestionLivraisons'), bilan: 1, hist: FEAT('historiqueAdmin') };
   SUBS.sapin = SUBS_SAPIN_ALL.filter(function (x) { return want[x.id]; });
   if (!SUBS.sapin.some(function (x) { return x.id === SUB.sapin; })) SUB.sapin = 'catalogue';
-  MODULES = MODULES_ALL.filter(function (m) { return m.id !== 'chloro' || FEAT('soiree'); });
+  /* caisse simple : Gestion d’événement ; caisse complexe (soirée) : Gestion de la soirée (catalogue, stock, bilan de la Caisse Soirée) */
+  MODULES = MODULES_ALL.filter(function (m) { return SOIREE ? m.id !== 'sapin' : m.id !== 'chloro'; });
+  SUBS.parametres = SUBS_PAR_ALL.filter(function (x) { return !SOIREE || (x.id !== 'ticket' && x.id !== 'fonctionnalites'); });
+  if (!SUBS.parametres.some(function (x) { return x.id === SUB.parametres; })) SUB.parametres = 'apparence';
   if (MOD !== 'accueil' && !modById(MOD)) MOD = 'accueil';
 }
 function featPruneAdmin(root) {
@@ -1390,7 +1394,7 @@ function bilanStatus() {
 function renderHome() {
   var db = demoDb(), cat = (db[DEMO_CAT_REPO] || {})['catalogue.json'], nv = Object.keys(db[DEMO_SALES_REPO] || {}).filter(function (k) { return /^sapin\/\d{4}-\d{2}-\d{2}_/.test(k); }).length;
   document.getElementById('mod').innerHTML =
-    '<div class="band"><div class="home-hero"><h2>Administration de la caisse</h2><p>Version de démonstration : les données restent dans ce navigateur et sont partagées avec l’app Caisse ouverte sur le même appareil.</p></div></div>' +
+    '<div class="band"><div class="home-hero"><h2>' + (SOIREE ? 'Administration de la soirée' : 'Administration de la caisse') + '</h2><p>' + (CLIENT.donnees === 'github' ? 'Les données sont enregistrées dans le dépôt privé du commerce et partagées avec toutes ses tablettes.' : 'Version de démonstration : les données restent dans ce navigateur et sont partagées avec l’app ' + (SOIREE ? 'Caisse Soirée' : 'Caisse') + ' ouverte sur le même appareil.') + '</p></div></div>' +
     '<div class="mods">' + MODULES.map(function (m) {
       return '<button class="mod" data-a="go" data-v="' + m.id + '"><span class="ic">' + ICONS[m.id] + '</span><h3>' + esc(m.nom) + '</h3><p>' + esc(m.desc) + '</p>' +
         '<span class="st num">' + (m.id === 'sapin' ? (cat ? 'Catalogue publié' : 'Catalogue pas encore publié') + ' · ' + nv + ' fichier' + (nv > 1 ? 's' : '') + ' de ventes' : m.id === 'chloro' ? 'Entrées, cartes à cases, préventes' : featCount()) + '</span></button>';
@@ -1401,12 +1405,12 @@ var APPS = [
   { nom: 'Caisse', url: '../caisse/', desc: 'App de vente (tablette ou téléphone)' }
 ];
 function vApps() {
-  APPS = [{ nom: 'Caisse', url: '../caisse/', desc: 'App de vente (tablette ou téléphone)' }].concat(FEAT('soiree') ? [{ nom: 'Caisse Soirée', url: '../soiree/', desc: 'Entrées, cartes à cases, boissons, préventes' }] : []);
+  APPS = SOIREE ? [{ nom: 'Caisse Soirée', url: '../soiree/', desc: 'Entrées, cartes à cases, boissons, préventes' }] : [{ nom: 'Caisse', url: '../caisse/', desc: 'App de vente (tablette ou téléphone)' }];
   return '<div class="apps"><h3>Application de vente</h3><div class="apps-row">' + APPS.map(function (a) {
     return '<a class="app-link" href="' + a.url + '" target="_blank" rel="noopener"><span class="ic">' + ICONS.pdv + '</span><span class="t"><b>' + esc(a.nom) + '</b><small>' + esc(a.desc) + '</small></span><span class="go" aria-hidden="true">↗</span></a>';
   }).join('') + '</div></div>';
 }
-/* ---------- Sous-menus des modules (Bar, Soirée démo, Gestion d’événement) ---------- */
+/* ---------- Sous-menus des modules (Bar, Soirée, Gestion d’événement) ---------- */
 function vSubNav() {
   var m = modById(MOD);
   return '<nav class="subnav" aria-label="' + esc(m ? m.nom : '') + '">' + SUBS[MOD].map(function (x) {
@@ -3073,7 +3077,7 @@ function ghErrText(e, action) {
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
 function todayIso() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function exampleCatalogue(repo) {
-  if (repo.format === SOIREE_FMT) return normalizeCat({ format: SOIREE_FMT, formatVersion: 1, version: 1, date: '2026-10-21', exemple: true, soiree: 'Soirée démo',
+  if (repo.format === SOIREE_FMT) return normalizeCat({ format: SOIREE_FMT, formatVersion: 1, version: 1, date: '2026-10-21', exemple: true, soiree: 'Soirée',
     entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true }, { id: 'vip', libelle: 'Table VIP', prix: 300, ordre: 2, actif: true }],
     tickets: { prixCase: 3, casesParCarte: 18 },
     boissons: [{ id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau-plate', libelle: 'Eau plate', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'coca', libelle: 'Coca-Cola', format: 'verre', cases: 1, ordre: 2, actif: true }] },
@@ -3256,7 +3260,7 @@ function renderCatalogue() {
   if (!CAT.data && !CAT.loading) { loadCatFor(CAT.repo); return; }
   var errs = catErrors(CAT.data), canPub = CAT.data && !errs.length && (dirty() || !CAT.base) && !CAT.busy, unlocked = !!getToken();
   var reps = catRepos();
-  var band = '<div class="band"><div class="band-top"><h1>' + (CAT_CUR === 'sapin' ? 'Catalogue' : CAT_CUR === 'soiree' ? 'Catalogue Soirée démo' : 'Catalogue du bar') + '</h1></div>' +
+  var band = '<div class="band"><div class="band-top"><h1>' + (CAT_CUR === 'sapin' ? 'Catalogue' : CAT_CUR === 'soiree' ? 'Catalogue de la soirée' : 'Catalogue du bar') + '</h1></div>' +
     '<div class="cat-bar">' + (reps.length > 1 ? '<div class="rsel" role="group" aria-label="Caisse">' : '<div class="rsel" hidden>') + reps.map(function (r) { return '<button class="rchip' + (CAT.repo === r.id ? ' on' : '') + '" data-c="repo" data-v="' + r.id + '">' + esc(r.nom) + '</button>'; }).join('') + '</div>' +
     '<p class="cat-status num" id="catStatus">' + catStatusLine() + '</p>' +
     '<div class="cat-acts"><button class="ghost" data-c="reload"' + (CAT.loading ? ' disabled' : '') + '>Recharger</button>' +
@@ -3453,7 +3457,7 @@ function renderParametres() {
     (PAR.demoAsk ? '<div class="alert">' + (PAR.demoAsk === 'seed' ? 'Remplacer toutes les données par l’exemple ?' : 'Effacer toutes les données de démonstration (catalogue, ventes, stock, caisse) ?') + '</div>' : '') +
     '<div class="cbtns">' + (PAR.demoAsk ? '<button class="btn' + (PAR.demoAsk === 'reset' ? ' danger' : '') + '" data-p="demoGo">Oui, ' + (PAR.demoAsk === 'seed' ? 'charger l’exemple' : 'tout effacer') + '</button><button class="btn" data-p="demoNo">Annuler</button>'
       : '<button class="btn" data-p="demoSeed">Charger un exemple</button><button class="btn danger" data-p="demoReset">Tout effacer</button>') + '</div>' +
-    '<p class="hint">L’exemple contient un catalogue (2 points de vente, 3 catégories), un stock avec livraisons et transfert, et deux jours de ventes et de caisse. Rechargez l’app Caisse après le chargement.</p></section>' +
+    '<p class="hint">' + (SOIREE ? 'L’exemple contient un catalogue de soirée (entrées, cases, boissons), un comptage de stock et une liste de préventes.' : 'L’exemple contient un catalogue (2 points de vente, 3 catégories), un stock avec livraisons et transfert, et deux jours de ventes et de caisse.') + ' Rechargez l’app Caisse après le chargement.</p></section>' +
     '<section><h3>Fonctionnement réel</h3><p class="lead">Dans la version réelle, le catalogue, les ventes, le stock et la caisse sont enregistrés sur un dépôt en ligne privé, avec un accès protégé par une phrase de passe. Plusieurs tablettes et l’Admin travaillent alors ensemble à distance.</p></section>')) +
     '</main>' + vToast();
 }
@@ -3644,7 +3648,7 @@ function vApparence(part) {
       h('Modèles') + '<div class="apmods">' + TH_MODELES.map(function (m) {
         return '<button class="apmod' + (t.modele === m.id ? ' on' : '') + '" data-p="thModele" data-v="' + m.id + '" style="font-family:' + TH_FONTS[m.policeTitres].css + '"><span class="sw" style="background:' + (m.barre === '#FFFFFF' ? m.couleur : m.barre) + '"></span><span class="sw" style="background:' + m.couleur + '"></span><span class="sw" style="background:' + m.accent + '"></span><b>' + esc(m.nom) + '</b></button>'; }).join('') + '</div><p class="hint">Un modèle règle couleurs, polices et formes ; le style (clair ou sombre), le logo, le nom, le ticket, les catégories et les photos sont gardés.</p>' +
       h('Identité') + fld('Nom du commerce', 'nom', d.nom, 'Caisse') + img('Logo', 'apLogo', !!t.logo, 'thLogoDel', 'Sans logo : une icône et le nom du commerce. Image redimensionnée sur l’appareil (800 × 300 au plus).') +
-      h('Icône de l’onglet de la caisse') + '<div class="apmode" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">' + [['defaut', 'Par défaut', '../' + RACINE.replace(/^\.\.\//, '') + 'core/icons/caisse-192.png'], ['logo', 'Logo de l’app', t.logo || themeLogo('square')]].concat(CLIENT.logoClient ? [['client', 'Logo du client', CLIENT.logoClient]] : []).concat([['image', 'Image au choix', t.ongletImage]]).map(function (o) {
+      h(SOIREE ? 'Icône de l’onglet de la Caisse Soirée' : 'Icône de l’onglet de la caisse') + '<div class="apmode" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">' + [['defaut', 'Par défaut', '../' + RACINE.replace(/^\.\.\//, '') + 'core/icons/' + (SOIREE ? 'soiree' : 'caisse') + '-192.png'], ['logo', 'Logo de l’app', t.logo || themeLogo('square')]].concat(CLIENT.logoClient ? [['client', 'Logo du client', CLIENT.logoClient]] : []).concat([['image', 'Image au choix', t.ongletImage]]).map(function (o) {
         return '<button class="apmod apong' + (t.onglet === o[0] ? ' on' : '') + '" data-p="thOnglet" data-v="' + o[0] + '">' + (o[2] ? '<img src="' + o[2] + '" alt="">' : '<span class="apph0" style="width:32px;height:32px;font-size:18px">+</span>') + '<b>' + esc(o[1]) + '</b></button>'; }).join('') + '</div>' +
       (t.onglet === 'image' ? img('Image de l’onglet (carrée de préférence)', 'apOnglet', !!t.ongletImage, 'thOngletDel', '') : '') +
       '<p class="hint">Petite image affichée dans l’onglet du navigateur et dans la liste des onglets de la tablette (aussi pour la Caisse Soirée). L’Admin affiche le logo du client, réglé dans le SuperAdmin.</p>' +
@@ -3654,10 +3658,10 @@ function vApparence(part) {
       h('Formes') + '<div class="aprow"><div>' + sel('Boutons et tuiles', 'forme', t.forme, [['arrondi', 'Arrondis'], ['carre', 'Carrés'], ['pastille', 'Pastilles']]) + '</div><div>' + sel('Densité', 'densite', t.densite, [['normale', 'Normale'], ['compacte', 'Compacte']]) + '</div></div>' + chk('Ombres sous les tuiles et cartes', 'ombre', t.ombre) +
       h('Fond d’écran') + img('Image (page d’accueil de la caisse)', 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
       (t.mode === 'sombre' ? h('Couleurs du thème sombre') + '<div class="aprow">' + clr('Couleur principale', 'sombre.couleur', t.sombre.couleur, thMix(t.couleur, '#ffffff', .45)) + clr('Fond', 'sombre.fond', t.sombre.fond, '#0B0F14') + '</div>' : '') +
-      h('Catégories') + (cats.length ? '<p class="hint">Couleur (onglet et liseré des tuiles) et icône affichée devant le nom de la catégorie sur la caisse.</p><div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
+      (SOIREE ? '' : h('Catégories') + (cats.length ? '<p class="hint">Couleur (onglet et liseré des tuiles) et icône affichée devant le nom de la catégorie sur la caisse.</p><div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
         return '<div class="apcat"><input type="color" data-ap="categories.' + esc(k.id) + '.couleur" value="' + (c.couleur || t.couleur) + '">' + '<button class="apemo' + (c.emoji ? '' : ' vide') + '" data-p="emoOpen" data-v="' + esc(k.id) + '" title="Icône de la catégorie">' + (c.emoji ? esc(c.emoji) : 'Icône') + '</button><span>' + esc(k.nom) + '</span>' + (c.couleur ? '<button class="btn sm" data-p="thClr" data-v="categories.' + esc(k.id) + '.couleur">auto</button>' : '') + '</div>' + (TH_EMO === k.id ? vEmoGrid(k.id, c.emoji) : ''); }).join('') + '</div>' : '<p class="hint">Publiez d’abord un catalogue.</p>') +
       h('Photos des articles') + (cats.length ? '<div class="apphotos">' + cats.map(function (k) { return (k.produits || []).filter(function (p) { return p.actif !== false && !/^(frais-de-)?livraison$/i.test(slug(p.libelle || '')); }).map(function (p) { var ph = thPhotoGet(p.id);
-        return '<div class="apph">' + (ph ? '<img src="' + ph + '" alt="">' : '<span class="apph0">+</span>') + '<small>' + esc(p.libelle) + '</small><label class="btn sm">' + (ph ? 'Changer' : 'Photo') + '<input type="file" accept="image/*" data-photo="' + esc(p.id) + '" hidden></label>' + (ph ? '<button class="btn sm danger" data-p="thPhotoDel" data-v="' + esc(p.id) + '">Retirer</button>' : '') + '</div>'; }).join(''); }).join('') + '</div><p class="hint" id="phStatus">' + phStatus() + '</p>' : '<p class="hint">Publiez d’abord un catalogue.</p>');
+        return '<div class="apph">' + (ph ? '<img src="' + ph + '" alt="">' : '<span class="apph0">+</span>') + '<small>' + esc(p.libelle) + '</small><label class="btn sm">' + (ph ? 'Changer' : 'Photo') + '<input type="file" accept="image/*" data-photo="' + esc(p.id) + '" hidden></label>' + (ph ? '<button class="btn sm danger" data-p="thPhotoDel" data-v="' + esc(p.id) + '">Retirer</button>' : '') + '</div>'; }).join(''); }).join('') + '</div><p class="hint" id="phStatus">' + phStatus() + '</p>' : '<p class="hint">Publiez d’abord un catalogue.</p>'));
   }
   if (part !== 'ticket') thLoadCats();
   return '<section><h3>' + (part === 'ticket' ? 'Apparence du ticket' : 'Apparence de l’app') + '</h3><p class="lead">' + (part === 'ticket' ? 'Logo, coordonnées, contenu et messages du ticket de caisse.' : 'Nom, couleurs, polices, formes, fond, catégories et photos de l’Admin, de la Caisse et de la Caisse Soirée.') + ' Publié dans <span class="mono">theme.json</span>, à côté du catalogue.</p>' +
@@ -3706,7 +3710,7 @@ function vFeatures() {
   return '<section><h3>Fonctionnalités</h3><p class="lead">Choisissez ce que la caisse et l’Admin proposent. Chaque changement est <strong>publié</strong> dans le fichier de réglage <span class="mono">config.json</span>, à côté du catalogue : toutes les caisses le lisent à l’ouverture, toutes les 30 secondes, au retour sur l’app et via ⋮ › Vérifier le catalogue. Une option grisée dépend d’une autre, qui est coupée.</p>' +
     '<p class="hint">' + featPubStatus() + '</p><p class="hint">' + featCount() + ' · <button class="btn sm" data-p="featAll">Tout activer</button> <button class="btn sm" data-p="featDefault">Réglages par défaut</button></p>' +
     '<div class="featgrid">' + FEATURES.map(function (g) {
-      return '<div class="featg"><h4>' + esc(g.nom) + '</h4>' + g.items.filter(function (it) { return !(it.id === 'soiree' && CLIENT.type === 'simple'); }).map(function (it) {
+      return '<div class="featg"><h4>' + esc(g.nom) + '</h4>' + g.items.filter(function (it) { return it.id !== 'soiree'; }).map(function (it) {
         var own = featOwn(it.id), dep = it.req && !FEAT(it.req), eff = FEAT(it.id);
         var extra = it.id === 'raccourci' && own ? '<select id="featRac" class="featsel"><option value="">— choisir l’article —</option>' + prods.map(function (p) { return '<option value="' + esc(p.id) + '"' + (cfg.raccourciId === p.id ? ' selected' : '') + '>' + esc(p.t) + '</option>'; }).join('') + '</select>' + (prods.length ? '' : '<span class="faint"> (publiez d’abord un catalogue)</span>') : '';
         return '<label class="featit' + (dep ? ' dep' : '') + '"><input type="checkbox" data-p="feat" data-v="' + it.id + '"' + (own ? ' checked' : '') + (dep ? ' disabled' : '') + '><span><b>' + esc(it.nom) + '</b>' +
@@ -3765,7 +3769,7 @@ function vRemiseCode() {
     '<p class="hint">Les caisses reçoivent le nouveau code à leur prochaine relecture des réglages (au plus tard 30 secondes, ou ⋮ › Vérifier le catalogue). Ce code freine le personnel, ce n’est pas une protection forte.</p></section>';
 }
 function vSecuriteHead() {
-  return vRemiseCode() + (CLIENT.donnees === 'github' ? '' : '<section><h3>Accès</h3><p class="lead">Mode démonstration : aucune clé ni jeton, les données restent dans ce navigateur. Pour enregistrer les données dans un dépôt GitHub privé (plusieurs tablettes), préparez une clé d’accès et envoyez-la à la personne qui gère votre compte.</p><div class="cbtns"><a class="btn" href="' + RACINE + 'cle.html" target="_blank" rel="noopener">Préparer une clé d’accès</a></div></section>');
+  return (SOIREE ? '' : vRemiseCode()) + (CLIENT.donnees === 'github' ? '' : '<section><h3>Accès</h3><p class="lead">Mode démonstration : aucune clé ni jeton, les données restent dans ce navigateur. Pour enregistrer les données dans un dépôt GitHub privé (plusieurs tablettes), préparez une clé d’accès et envoyez-la à la personne qui gère votre compte.</p><div class="cbtns"><a class="btn" href="' + RACINE + 'cle.html" target="_blank" rel="noopener">Préparer une clé d’accès</a></div></section>');
 }
 function vConnexion() {
   var acc = caisseAcces();
@@ -4090,7 +4094,7 @@ function demoEvent() {
   var arts = [['a1', 'Jupiler fût 50 L', 'fûts', 'Bières'], ['a2', 'Bière spéciale', 'bouteilles', 'Bières'], ['a3', 'Coca-Cola 33 cl', 'canettes', 'Softs'], ['a4', 'Eau plate 50 cl', 'bouteilles', 'Softs'], ['a5', 'Vin rouge', 'bouteilles', 'Vins'], ['a6', 'Cava', 'bouteilles', 'Bulles'], ['a7', 'Gobelets 25 cl', 'pièces', 'Matériel']];
   var init = { a1: 12, a2: 240, a3: 480, a4: 360, a5: 60, a6: 48, a7: 5000 };
   var d1 = { a1: 7, a2: 150, a3: 310, a4: 250, a5: 41, a6: 30, a7: 3400 }, d2 = { a1: 3, a2: 60, a3: 120, a4: 160, a5: 22, a6: 14, a7: 1500 };
-  return { format: 'admin/stock', formatVersion: 1, id: 'exemple', nom: 'Soirée démo (exemple)', debut: '2026-10-16', statut: 'ouvert', creeLe: '2026-10-16T10:00:00Z', demo: true,
+  return { format: 'admin/stock', formatVersion: 1, id: 'exemple', nom: 'Soirée (exemple)', debut: '2026-10-16', statut: 'ouvert', creeLe: '2026-10-16T10:00:00Z', demo: true,
     articles: arts.map(function (a) { return { id: a[0], nom: a[1], unite: a[2], categorie: a[3], actif: true }; }), stockInitial: init,
     jours: { '2026-10-16': { livraisons: {}, restant: d1 }, '2026-10-17': { livraisons: { a1: 4, a3: 240 }, restant: d2 }, '2026-10-18': { livraisons: {}, restant: { a1: 2, a2: 31 } } } };
 }
@@ -4139,7 +4143,7 @@ function vStkNew() {
   var f = STK.newForm || (STK.newForm = { nom: '', debut: todayIso(), from: '', carry: true });
   var prev = (STK.list || []).slice().sort(function (a, b) { return a.debut < b.debut ? 1 : -1; });
   return '<div class="band"><div class="band-top"><h1>Nouvel événement</h1></div></div><main><section><form class="stkform" data-s-form="new">' +
-    '<label class="fl" for="evNom">Nom de l’événement</label><input type="text" id="evNom" required value="' + esc(f.nom) + '" placeholder="Ex. Soirée démo 2026">' +
+    '<label class="fl" for="evNom">Nom de l’événement</label><input type="text" id="evNom" required value="' + esc(f.nom) + '" placeholder="Ex. Soirée de Noël 2026">' +
     '<label class="fl" for="evDebut">Premier jour</label><input type="date" id="evDebut" required value="' + esc(f.debut) + '">' +
     (prev.length ? '<label class="fl" for="evFrom">Reprendre les articles de</label><select id="evFrom"><option value="">Aucun : je crée ma liste</option>' + prev.map(function (d) { return '<option value="' + esc(d.id) + '"' + (f.from === d.id ? ' selected' : '') + '>' + esc(d.nom) + ' (' + dmy(d.debut) + ')</option>'; }).join('') + '</select>' +
       '<label class="tog"><input type="checkbox" id="evCarry"' + (f.carry ? ' checked' : '') + '>Avec leur stock restant comme stock de départ</label>' : '') +

@@ -1,4 +1,4 @@
-/* caisse · soiree · v13 — code commun à tous les amis */
+/* caisse · soiree · v14 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -11,6 +11,7 @@ document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div i
 var CLIENT = window.CLIENT || { id: 'demo', donnees: 'local' };
 var KP = 'caisse:' + (CLIENT.chemin || CLIENT.id) + ':'; // chemin = dossier de l'app (« client/app » quand l'app est rangée sous un client)
 var RACINE = '../' + (CLIENT.racine || '../'); // depuis une page de l'app (caisse/, admin/, soiree/) vers la racine du site
+var SOIREE = CLIENT.type === 'soiree'; // caisse complexe : Caisse Soirée + Admin de la soirée (pas de caisse simple)
 var APP_ID = window.APP_ID || (/\/admin\//.test(location.pathname) ? 'admin' : /\/soiree\//.test(location.pathname) ? 'soiree' : 'caisse');
 var DEMO_KEY = KP + 'serveur';
 var DEMO_CAT_REPO = 'demo/caisse', DEMO_SALES_REPO = 'demo/ventes';
@@ -380,8 +381,7 @@ var FEATURES = [
     { id: 'envoiAuto', nom: 'Envoi automatique des ventes', desc: 'Sinon, transfert par fichier exporté.' },
     { id: 'historiqueAdmin', nom: 'Historique de vente (Admin)', desc: '' } ] },
   { id: 'options', nom: 'Modules en option', items: [
-    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true },
-    { id: 'soiree', nom: 'Soirée à tickets', desc: 'Entrées, cartes à cases, boissons en cases et préventes (app Caisse Soirée).', off: true } ] }
+    { id: 'stockEvenement', nom: 'Comptage du stock d’événement', desc: 'Stock de départ, livraisons et restant compté chaque jour, alerte de stock bas.', off: true } ] }
 ];
 var FEAT_DEF = {}; FEATURES.forEach(function (g) { g.items.forEach(function (it) { FEAT_DEF[it.id] = it; }); });
 var _featRaw = null, _featCfg = { f: {}, raccourciId: '' };
@@ -390,7 +390,7 @@ function featCfg() {
   if (raw !== _featRaw) { _featRaw = raw; try { _featCfg = JSON.parse(raw) || {}; } catch (e) { _featCfg = {}; } if (!_featCfg.f) _featCfg.f = {}; }
   return _featCfg;
 }
-function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; if (id === 'soiree' && CLIENT.type === 'simple') return false; if (c.f[id] != null) return !!c.f[id]; if (id === 'soiree') return CLIENT.type === 'soiree'; return !(d && d.off); }
+function featOwn(id) { var c = featCfg(), d = FEAT_DEF[id]; if (c.f[id] != null) return !!c.f[id]; return !(d && d.off); }
 function FEAT(id) {
   var d = FEAT_DEF[id]; if (!featOwn(id)) return false;
   if (d && d.req && !FEAT(d.req)) return false;
@@ -582,7 +582,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v13'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v14'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

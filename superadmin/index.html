@@ -81,17 +81,18 @@ function clientsSave(clients, msg) {
     return gh(cpath(CLIENTS_PATH), { method: 'PUT', body: body }).then(function (r) { S.clientsSha = r.content.sha; S.tree[CLIENTS_PATH] = r.content.sha; S.clients = clients; });
   });
 }
-/* ---------- fichiers d'une app (modèles de core/templates.js) ; une caisse simple n'a pas le dossier soiree/ ---------- */
+/* ---------- fichiers d'une app (modèles de core/templates.js) ; caisse simple = caisse/ + admin/ ; caisse complexe (soirée) = soiree/ + admin/ ---------- */
 function cheminOf(id, cid, cs) { var pg = cid ? pageOf(cid, cs) : ''; return pg ? pg + '/' + id : id; }
 function racineOf(chemin) { return chemin.split('/').map(function () { return '../'; }).join(''); }
 function filesFor(cl) {
   var out = {}, T = window.CAISSE_TEMPLATES || {}, nj = JSON.stringify(cl.nom).slice(1, -1), ch = cl.chemin || cl.id, rr = racineOf(ch);
   cl.chemin = ch; cl.racine = rr; var lc = cl.client && S.clients && S.clients[cl.client] ? S.clients[cl.client].logo : ''; if (lc) cl.logoClient = lc; else delete cl.logoClient;
-  Object.keys(T).forEach(function (rel) { if (cl.type === 'simple' && rel.indexOf('soiree/') === 0) return; out[ch + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{CHEMIN}}').join(ch).split('{{R}}').join(rr).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
+  Object.keys(T).forEach(function (rel) { if (rel.indexOf(skipDir(cl.type)) === 0) return; out[ch + '/' + rel] = T[rel].split('{{ID}}').join(cl.id).split('{{CHEMIN}}').join(ch).split('{{R}}').join(rr).split('{{NOM_HTML}}').join(esc(cl.nom)).split('{{NOM_JSON}}').join(nj); });
   out[ch + '/client.js'] = '/* App « ' + cl.id + ' » : seul fichier propre à cette app. Apparence, fonctionnalités et données : dans ses données (theme.json, config.json…). */\nwindow.CLIENT = ' + JSON.stringify(cl, null, 1) + ';\n';
   return out;
 }
-function extraFiles(ch, files) { return Object.keys(S.tree).filter(function (p) { return p.indexOf(ch + '/soiree/') === 0 && !files[p]; }); }
+function skipDir(type) { return type === 'simple' ? 'soiree/' : 'caisse/'; }
+function extraFiles(ch, files) { return Object.keys(S.tree).filter(function (p) { return (p.indexOf(ch + '/soiree/') === 0 || p.indexOf(ch + '/caisse/') === 0) && !files[p]; }); }
 function appFilesUnder(ch) { var subApps = S.apps ? S.apps.filter(function (a) { return a.chemin !== ch && a.chemin.indexOf(ch + '/') === 0; }).map(function (a) { return a.chemin + '/'; }) : []; return Object.keys(S.tree).filter(function (p) { return p.indexOf(ch + '/') === 0 && !subApps.some(function (x) { return p.indexOf(x) === 0; }) && !(p === ch + '/index.html' && false); }); }
 function writeFiles(files, msg, remove) {
   var paths = Object.keys(files), n = 0;
@@ -204,7 +205,7 @@ function clientPageHtml(cid, cs, apps) {
     '<body><main>' + (c.logo ? '<img src="' + c.logo + '" alt="" style="max-width:160px;max-height:96px;object-fit:contain;display:block;margin-bottom:12px">' : '') + '<h1>' + esc(c.nom) + '</h1><p>' + (mine.length ? 'Vos applications : ouvrez celle dont vous avez besoin. Sur une tablette, ouvrez l’app puis « Ajouter à l’écran d’accueil » pour l’installer.' : 'Aucune application pour l’instant.') + '</p>' +
     mine.map(function (a) { var so = a.type !== 'simple', b = './' + a.id + '/';
       return '<div class="app"><h2>' + esc(a.nom || a.id) + ' <span class="tag' + (so ? ' so' : '') + '">' + (so ? 'Caisse complexe (soirée)' : 'Caisse simple') + '</span></h2><small>' + esc(a.id) + '</small>' +
-        '<div class="row">' + btn(b + 'caisse/', 'Caisse') + (so ? btn(b + 'soiree/', 'Caisse Soirée') : '') + btn(b + 'admin/', 'Admin') + '<a class="b sec" href="' + b + '">Accueil de l’app</a></div></div>'; }).join('') +
+        '<div class="row">' + (so ? btn(b + 'soiree/', 'Caisse Soirée') : btn(b + 'caisse/', 'Caisse')) + btn(b + 'admin/', 'Admin') + '<a class="b sec" href="' + b + '">Accueil de l’app</a></div></div>'; }).join('') +
     '</main></body></html>\n';
 }
 function clientPages(cs, apps) {
@@ -237,7 +238,7 @@ function vAppForm(isNew) {
   var f = S.form;
   function type(v, t, d) { return '<label class="type' + (f.type === v ? ' on' : '') + '"><input type="radio" name="ty" data-f="type" value="' + v + '"' + (f.type === v ? ' checked' : '') + '><b>' + t + '</b><span class="faint">' + d + '</span></label>'; }
   return '<section><h2>' + (isNew ? 'Nouvelle app' : 'Modifier l’app « ' + esc(f.id) + ' »') + '</h2>' +
-    '<label>Type</label><div class="types">' + type('simple', 'Caisse simple', 'Caisse et Admin : articles, panier, encaissement, ticket, stock, commandes…') + type('soiree', 'Caisse complexe (soirée)', 'En plus : la Caisse Soirée (entrées, cartes à cases, boissons en cases, préventes) et son module dans l’Admin.') + '</div>' +
+    (S.edit && S.apps && ((S.apps.filter(function (a) { return a.id === S.edit; })[0] || {}).type === 'simple') !== (f.type === 'simple') ? '<p class="err">Changer le type remplace l’app de vente (Caisse ↔ Caisse Soirée) : les tablettes doivent installer la nouvelle app ; les données restent.</p>' : '') + '<label>Type</label><div class="types">' + type('simple', 'Caisse simple', 'Caisse et Admin : articles, panier, encaissement, ticket, stock, commandes…') + type('soiree', 'Caisse complexe (soirée)', 'Caisse Soirée (entrées, cartes à cases, boissons en cases, préventes) et son Admin : catalogue de la soirée, stock de l’événement, bilan. Sans la caisse simple.') + '</div>' +
     '<div class="two"><div><label>Identifiant (adresse)</label><input data-f="id" value="' + esc(f.id) + '"' + (isNew ? '' : ' disabled') + ' placeholder="ex. jardin"><p class="faint">Adresse : scraper147.github.io/app/<strong>' + esc(f.client && S.clients && S.clients[f.client] ? pageOf(f.client) + '/' + (f.id || '…') : (f.id || '…')) + '</strong>/</p>' + (S.edit && S.apps && (S.apps.filter(function (a) { return a.id === S.edit; })[0] || {}).chemin !== cheminOf(f.id, f.client) ? '<p class="err">L’adresse de l’app va changer : envoyez les ventes en attente des tablettes, puis réinstallez-les depuis la nouvelle adresse.</p>' : '') + '</div>' +
     '<div><label>Nom de l’app</label><input data-f="nom" value="' + esc(f.nom) + '" placeholder="ex. Marché de Noël"></div></div>' +
     '<label>Client</label>' + (S.clients ? '<div class="row" style="flex-wrap:nowrap"><select data-f="client">' + clientOptions(f.client) + '</select><button class="sec" data-a="cnewFromApp" style="white-space:nowrap">+ Nouveau client</button></div>' : '<p class="err">' + esc(S.clientsErr || 'Clients indisponibles') + '</p>') +
@@ -266,7 +267,7 @@ function vApps() {
         '<div class="mono">' + esc(a.chemin || a.id) + '/</div>' +
         '<div>' + (cn ? 'Client : <strong>' + esc(cn) + '</strong>' : '<span class="faint">Aucun client</span>') + '</div>' +
         '<div class="faint">' + (a.creeLe ? 'Créée le ' + esc(a.creeLe) + ' · ' : '') + 'canal ' + esc(a.canal || 'stable') + (gh ? ' · ' + (a.cle ? 'clé du ' + esc(a.cle.le || '?') : '<span class="tag warn">clé manquante</span>') : '') + '</div>' +
-        '<div class="row"><a class="b sec" href="' + base + (a.chemin || a.id) + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + (a.chemin || a.id) + '/admin/" target="_blank">Admin</a><a class="b sec" href="' + base + (a.chemin || a.id) + '/caisse/" target="_blank">Caisse</a>' + (so ? '<a class="b sec" href="' + base + (a.chemin || a.id) + '/soiree/" target="_blank">Soirée</a>' : '') + '</div>' +
+        '<div class="row"><a class="b sec" href="' + base + (a.chemin || a.id) + '/" target="_blank">Accueil</a><a class="b sec" href="' + base + (a.chemin || a.id) + '/admin/" target="_blank">Admin</a>' + (so ? '<a class="b sec" href="' + base + (a.chemin || a.id) + '/soiree/" target="_blank">Soirée</a>' : '<a class="b sec" href="' + base + (a.chemin || a.id) + '/caisse/" target="_blank">Caisse</a>') + '</div>' +
         (S.del === a.id ? '<div><p class="err">Supprimer l’app « ' + esc(a.id) + ' » ? Ses tablettes ne s’ouvriront plus. Ses données ne sont pas touchées.</p><div class="row"><button class="danger" data-a="delGo" data-v="' + esc(a.id) + '">Oui, supprimer</button><button class="sec" data-a="delNo">Annuler</button></div></div>'
           : '<div class="row"><button class="sec" data-a="edit" data-v="' + esc(a.id) + '">Modifier</button><button class="danger" data-a="del" data-v="' + esc(a.id) + '">Supprimer</button></div>') + '</div>';
     }).join('') + '</div></section>';
@@ -286,7 +287,7 @@ function vClients() {
     }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v13';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v14';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
