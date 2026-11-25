@@ -1,4 +1,4 @@
-/* caisse · caisse · v17 — code commun à tous les amis */
+/* caisse · caisse · v18 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -417,15 +417,15 @@ function themeCopy() {
   return _thObj;
 }
 var TH_FONTS = {
-  systeme: { nom: 'Système', css: 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif' },
-  moderne: { nom: 'Moderne', css: '"Avenir Next",Avenir,Montserrat,"Segoe UI","Helvetica Neue",Arial,sans-serif' },
-  arrondie: { nom: 'Arrondie', css: 'ui-rounded,"SF Pro Rounded",Nunito,"Varela Round","Arial Rounded MT Bold",Quicksand,system-ui,sans-serif' },
-  elegante: { nom: 'Élégante', css: '"Playfair Display",Didot,"Bodoni MT",Georgia,serif' },
-  classique: { nom: 'Classique', css: '"Palatino Linotype","Book Antiqua",Palatino,"Noto Serif",Georgia,serif' },
-  condensee: { nom: 'Condensée', css: '"Roboto Condensed","Arial Narrow","sans-serif-condensed","Helvetica Neue",sans-serif' },
-  machine: { nom: 'Machine à écrire', css: '"Courier Prime","Courier New",ui-monospace,monospace' },
-  manuscrite: { nom: 'Manuscrite', css: '"Segoe Print","Bradley Hand","Dancing Script","Brush Script MT",cursive' },
-  affiche: { nom: 'Affiche', css: 'Impact,Anton,Haettenschweiler,"Arial Black",sans-serif' }
+  systeme: { nom: 'Système', css: "system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif" },
+  moderne: { nom: 'Moderne', css: "'Avenir Next',Avenir,Montserrat,'Segoe UI','Helvetica Neue',Arial,sans-serif" },
+  arrondie: { nom: 'Arrondie', css: "ui-rounded,'SF Pro Rounded',Nunito,'Varela Round','Arial Rounded MT Bold',Quicksand,system-ui,sans-serif" },
+  elegante: { nom: 'Élégante', css: "'Playfair Display',Didot,'Bodoni MT',Georgia,serif" },
+  classique: { nom: 'Classique', css: "'Palatino Linotype','Book Antiqua',Palatino,'Noto Serif',Georgia,serif" },
+  condensee: { nom: 'Condensée', css: "'Roboto Condensed','Arial Narrow','sans-serif-condensed','Helvetica Neue',sans-serif" },
+  machine: { nom: 'Machine à écrire', css: "'Courier Prime','Courier New',ui-monospace,monospace" },
+  manuscrite: { nom: 'Manuscrite', css: "'Segoe Print','Bradley Hand','Dancing Script','Brush Script MT',cursive" },
+  affiche: { nom: 'Affiche', css: "Impact,Anton,Haettenschweiler,'Arial Black',sans-serif" }
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
@@ -448,7 +448,7 @@ function themeGet() {
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
-    sombre: { couleur: thHex(sb.couleur, ''), fond: thHex(sb.fond, '') }, categories: t.categories && typeof t.categories === 'object' ? t.categories : {}, photosVersion: +t.photosVersion || 0,
+    sombre: { couleur: thHex(sb.couleur, ''), fond: thHex(sb.fond, '') }, soiree: { entrees: thHex((t.soiree || {}).entrees, ''), tickets: thHex((t.soiree || {}).tickets, ''), boissons: thHex((t.soiree || {}).boissons, ''), fond: thHex((t.soiree || {}).fond, '') }, categories: t.categories && typeof t.categories === 'object' ? t.categories : {}, photosVersion: +t.photosVersion || 0,
     ticket: { activite: tk.activite || '', adresse: Array.isArray(tk.adresse) ? tk.adresse.filter(function (x) { return x && String(x).trim(); }) : [], telephone: tk.telephone || '', email: tk.email || '', tva: tk.tva || '', site: tk.site || '',
       merci: tk.merci != null ? tk.merci : d.ticket.merci, mention: tk.mention != null ? tk.mention : d.ticket.mention,
       logo: tk.logo || '', logoTaille: ['aucun', 'petit', 'grand'].indexOf(tk.logoTaille) >= 0 ? tk.logoTaille : 'moyen', entete: tk.entete === 'gauche' ? 'gauche' : 'centre', nomGrand: !!tk.nomGrand,
@@ -457,6 +457,8 @@ function themeGet() {
       tauxTVA: Math.max(0, +tk.tauxTVA || 0), messageEntete: tk.messageEntete || '', saison: tk.saison || '', saisonDu: tk.saisonDu || '', saisonAu: tk.saisonAu || '', qr: tk.qr || '', qrTexte: tk.qrTexte || '' } };
 }
 /* Message saisonnier : dates JJ/MM (ou MM-JJ), période qui peut passer le 31/12 */
+/* Couleurs de la Caisse Soirée (valeurs effectives) : par défaut Entrées = couleur principale éclaircie, Tickets vert, Boissons ambre */
+function themeSoiree() { var t = themeGet(), so = t.soiree; return { entrees: so.entrees || thMix(t.couleur, '#ffffff', .3), tickets: so.tickets || '#6FC3A0', boissons: so.boissons || '#E0B262', fond: so.fond || '#0B0F14' }; }
 function themeSaisonActive(tk, now) {
   if (!tk.saison) return false; if (!tk.saisonDu || !tk.saisonAu) return true;
   function md(v) { var m = /^(\d{1,2})[\/.-](\d{1,2})$/.exec(String(v).trim()); return m ? (+m[2]) * 100 + (+m[1]) : null; }
@@ -509,7 +511,10 @@ function themeApply() {
     dark = '--green:' + thMix(c, '#ffffff', .45) + ';--green-d:' + thMix(c, '#ffffff', .7) + ';--gold:' + thMix(a, '#ffffff', .3) + ';--gold-soft:' + thMix(a, '#000000', .75) + ';--band:' + thMix(c, '#000000', .88) + ';--band-line:' + thMix(c, '#000000', .72) + ';--s1:' + thMix(a, '#ffffff', .3) + ';--s2:' + thMix(c, '#ffffff', .45);
     css = 'html:root{' + light + '}@media (prefers-color-scheme:dark){html:root:not([data-theme="light"]){' + dark + '}}html:root[data-theme="dark"]{' + dark + '}';
   } else {
-    css = 'html:root{--gold:' + thMix(c, '#ffffff', .3) + ';--gold-l:' + thMix(c, '#ffffff', .55) + '}';
+    /* Caisse Soirée : une couleur par partie (Entrées = --gold, Tickets = --leaf, Boissons = --mint), fond sombre réglable */
+    var so = themeSoiree(), ge = so.entrees, gt = so.tickets, gb = so.boissons;
+    css = 'html:root{--gold:' + ge + ';--gold-l:' + thMix(ge, '#ffffff', .3) + ';--leaf:' + gt + ';--mint:' + gb + ';--on-acc:' + thInk(ge) + (t.soiree.fond ? ';--bg:' + so.fond + ';--surface:' + thMix(so.fond, '#ffffff', .06) + ';--surface2:' + thMix(so.fond, '#ffffff', .1) + ';--soft:' + thMix(so.fond, '#ffffff', .12) : '') + '}' +
+      'html [data-caisse="entrees"]{--on-acc:' + thInk(ge) + '}html [data-caisse="tickets"]{--on-acc:' + thInk(gt) + '}html [data-caisse="boissons"]{--on-acc:' + thInk(gb) + '}';
   }
   /* couleurs fines, mode sombre personnalisé, polices, formes, fond d'écran */
   var sb = t.sombre, F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, R = document.documentElement;
@@ -576,7 +581,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v17'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v18'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';

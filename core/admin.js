@@ -1,4 +1,4 @@
-/* caisse · admin · v17 — code commun à tous les amis */
+/* caisse · admin · v18 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -417,15 +417,15 @@ function themeCopy() {
   return _thObj;
 }
 var TH_FONTS = {
-  systeme: { nom: 'Système', css: 'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif' },
-  moderne: { nom: 'Moderne', css: '"Avenir Next",Avenir,Montserrat,"Segoe UI","Helvetica Neue",Arial,sans-serif' },
-  arrondie: { nom: 'Arrondie', css: 'ui-rounded,"SF Pro Rounded",Nunito,"Varela Round","Arial Rounded MT Bold",Quicksand,system-ui,sans-serif' },
-  elegante: { nom: 'Élégante', css: '"Playfair Display",Didot,"Bodoni MT",Georgia,serif' },
-  classique: { nom: 'Classique', css: '"Palatino Linotype","Book Antiqua",Palatino,"Noto Serif",Georgia,serif' },
-  condensee: { nom: 'Condensée', css: '"Roboto Condensed","Arial Narrow","sans-serif-condensed","Helvetica Neue",sans-serif' },
-  machine: { nom: 'Machine à écrire', css: '"Courier Prime","Courier New",ui-monospace,monospace' },
-  manuscrite: { nom: 'Manuscrite', css: '"Segoe Print","Bradley Hand","Dancing Script","Brush Script MT",cursive' },
-  affiche: { nom: 'Affiche', css: 'Impact,Anton,Haettenschweiler,"Arial Black",sans-serif' }
+  systeme: { nom: 'Système', css: "system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif" },
+  moderne: { nom: 'Moderne', css: "'Avenir Next',Avenir,Montserrat,'Segoe UI','Helvetica Neue',Arial,sans-serif" },
+  arrondie: { nom: 'Arrondie', css: "ui-rounded,'SF Pro Rounded',Nunito,'Varela Round','Arial Rounded MT Bold',Quicksand,system-ui,sans-serif" },
+  elegante: { nom: 'Élégante', css: "'Playfair Display',Didot,'Bodoni MT',Georgia,serif" },
+  classique: { nom: 'Classique', css: "'Palatino Linotype','Book Antiqua',Palatino,'Noto Serif',Georgia,serif" },
+  condensee: { nom: 'Condensée', css: "'Roboto Condensed','Arial Narrow','sans-serif-condensed','Helvetica Neue',sans-serif" },
+  machine: { nom: 'Machine à écrire', css: "'Courier Prime','Courier New',ui-monospace,monospace" },
+  manuscrite: { nom: 'Manuscrite', css: "'Segoe Print','Bradley Hand','Dancing Script','Brush Script MT',cursive" },
+  affiche: { nom: 'Affiche', css: "Impact,Anton,Haettenschweiler,'Arial Black',sans-serif" }
 };
 /* Modèles prêts à l'emploi : couleurs, polices, formes (le logo, le nom, le ticket, les catégories et les photos ne changent pas) */
 var TH_MODELES = [
@@ -448,7 +448,7 @@ function themeGet() {
     police: TH_FONTS[t.police] ? t.police : 'systeme', policeTitres: TH_FONTS[t.policeTitres] ? t.policeTitres : (TH_FONTS[t.police] ? t.police : 'systeme'),
     forme: ['carre', 'pastille'].indexOf(t.forme) >= 0 ? t.forme : 'arrondi', ombre: !!t.ombre, densite: t.densite === 'compacte' ? 'compacte' : 'normale',
     fondImage: t.fondImage || '', voile: Math.max(0, Math.min(85, +(t.voile != null ? t.voile : 35) || 0)),
-    sombre: { couleur: thHex(sb.couleur, ''), fond: thHex(sb.fond, '') }, categories: t.categories && typeof t.categories === 'object' ? t.categories : {}, photosVersion: +t.photosVersion || 0,
+    sombre: { couleur: thHex(sb.couleur, ''), fond: thHex(sb.fond, '') }, soiree: { entrees: thHex((t.soiree || {}).entrees, ''), tickets: thHex((t.soiree || {}).tickets, ''), boissons: thHex((t.soiree || {}).boissons, ''), fond: thHex((t.soiree || {}).fond, '') }, categories: t.categories && typeof t.categories === 'object' ? t.categories : {}, photosVersion: +t.photosVersion || 0,
     ticket: { activite: tk.activite || '', adresse: Array.isArray(tk.adresse) ? tk.adresse.filter(function (x) { return x && String(x).trim(); }) : [], telephone: tk.telephone || '', email: tk.email || '', tva: tk.tva || '', site: tk.site || '',
       merci: tk.merci != null ? tk.merci : d.ticket.merci, mention: tk.mention != null ? tk.mention : d.ticket.mention,
       logo: tk.logo || '', logoTaille: ['aucun', 'petit', 'grand'].indexOf(tk.logoTaille) >= 0 ? tk.logoTaille : 'moyen', entete: tk.entete === 'gauche' ? 'gauche' : 'centre', nomGrand: !!tk.nomGrand,
@@ -457,6 +457,8 @@ function themeGet() {
       tauxTVA: Math.max(0, +tk.tauxTVA || 0), messageEntete: tk.messageEntete || '', saison: tk.saison || '', saisonDu: tk.saisonDu || '', saisonAu: tk.saisonAu || '', qr: tk.qr || '', qrTexte: tk.qrTexte || '' } };
 }
 /* Message saisonnier : dates JJ/MM (ou MM-JJ), période qui peut passer le 31/12 */
+/* Couleurs de la Caisse Soirée (valeurs effectives) : par défaut Entrées = couleur principale éclaircie, Tickets vert, Boissons ambre */
+function themeSoiree() { var t = themeGet(), so = t.soiree; return { entrees: so.entrees || thMix(t.couleur, '#ffffff', .3), tickets: so.tickets || '#6FC3A0', boissons: so.boissons || '#E0B262', fond: so.fond || '#0B0F14' }; }
 function themeSaisonActive(tk, now) {
   if (!tk.saison) return false; if (!tk.saisonDu || !tk.saisonAu) return true;
   function md(v) { var m = /^(\d{1,2})[\/.-](\d{1,2})$/.exec(String(v).trim()); return m ? (+m[2]) * 100 + (+m[1]) : null; }
@@ -509,7 +511,10 @@ function themeApply() {
     dark = '--green:' + thMix(c, '#ffffff', .45) + ';--green-d:' + thMix(c, '#ffffff', .7) + ';--gold:' + thMix(a, '#ffffff', .3) + ';--gold-soft:' + thMix(a, '#000000', .75) + ';--band:' + thMix(c, '#000000', .88) + ';--band-line:' + thMix(c, '#000000', .72) + ';--s1:' + thMix(a, '#ffffff', .3) + ';--s2:' + thMix(c, '#ffffff', .45);
     css = 'html:root{' + light + '}@media (prefers-color-scheme:dark){html:root:not([data-theme="light"]){' + dark + '}}html:root[data-theme="dark"]{' + dark + '}';
   } else {
-    css = 'html:root{--gold:' + thMix(c, '#ffffff', .3) + ';--gold-l:' + thMix(c, '#ffffff', .55) + '}';
+    /* Caisse Soirée : une couleur par partie (Entrées = --gold, Tickets = --leaf, Boissons = --mint), fond sombre réglable */
+    var so = themeSoiree(), ge = so.entrees, gt = so.tickets, gb = so.boissons;
+    css = 'html:root{--gold:' + ge + ';--gold-l:' + thMix(ge, '#ffffff', .3) + ';--leaf:' + gt + ';--mint:' + gb + ';--on-acc:' + thInk(ge) + (t.soiree.fond ? ';--bg:' + so.fond + ';--surface:' + thMix(so.fond, '#ffffff', .06) + ';--surface2:' + thMix(so.fond, '#ffffff', .1) + ';--soft:' + thMix(so.fond, '#ffffff', .12) : '') + '}' +
+      'html [data-caisse="entrees"]{--on-acc:' + thInk(ge) + '}html [data-caisse="tickets"]{--on-acc:' + thInk(gt) + '}html [data-caisse="boissons"]{--on-acc:' + thInk(gb) + '}';
   }
   /* couleurs fines, mode sombre personnalisé, polices, formes, fond d'écran */
   var sb = t.sombre, F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, R = document.documentElement;
@@ -3567,6 +3572,13 @@ function thStatus() {
 function vApPreview(part) {
   part = part || (SUB.parametres === 'ticket' ? 'ticket' : 'app');
   var t = themeGet(), tk = t.ticket;
+  if (part === 'app' && SOIREE) {
+    var so = themeSoiree(), bgs = so.fond, sf = thMix(bgs, '#ffffff', .06), F2 = TH_FONTS[t.police].css, FT2 = TH_FONTS[t.policeTitres].css;
+    return '<div class="apapp" style="font-family:' + F2 + ';background:' + bgs + (t.fondImage ? ';background-image:linear-gradient(rgba(0,0,0,' + t.voile / 100 + '),rgba(0,0,0,' + t.voile / 100 + ')),url(' + t.fondImage + ');background-size:cover' : '') + ';color:#EEF2F7;display:flex;flex-direction:column;gap:10px;align-items:center">' +
+      '<img src="' + themeLogo('dark') + '" alt="" style="max-height:44px;max-width:80%;object-fit:contain">' +
+      [['Entrées', so.entrees, '0 entrée ce soir'], ['Tickets', so.tickets, '0 case vendue'], ['Boissons', so.boissons, '0 commande']].map(function (x) { return '<div style="width:100%;box-sizing:border-box;background:' + sf + ';border:1px solid ' + thMix(bgs, '#ffffff', .15) + ';border-left:5px solid ' + x[1] + ';border-radius:12px;padding:10px 12px"><b style="font-family:' + FT2 + ';font-size:16px">' + x[0] + '</b><div style="color:' + x[1] + ';font-weight:700;font-size:13px">' + x[2] + '</div></div>'; }).join('') +
+      '<span class="apb" style="display:block;width:100%;box-sizing:border-box;text-align:center;background:' + so.boissons + ';color:' + thInk(so.boissons) + '">Encaisser (Boissons)</span></div>';
+  }
   if (part === 'app') {
     var F = TH_FONTS[t.police].css, FT = TH_FONTS[t.policeTitres].css, rad = t.forme === 'carre' ? '3px' : t.forme === 'pastille' ? '999px' : '10px', trad = t.forme === 'carre' ? '3px' : t.forme === 'pastille' ? '20px' : '12px';
     var dk = t.mode === 'sombre', sh = t.ombre ? 'box-shadow:0 4px 14px rgba(0,0,0,.12);' : '', bar = t.barre || (dk ? '#131A22' : '#ffffff'), fond = dk ? (t.sombre.fond || '#0B0F14') : (t.fond || '#F5F7FA'), tuile = dk ? thMix(fond, '#ffffff', .06) : (t.tuile || '#ffffff');
@@ -3654,7 +3666,8 @@ function vApparence(part) {
         return '<button class="apmod apong' + (t.onglet === o[0] ? ' on' : '') + '" data-p="thOnglet" data-v="' + o[0] + '">' + (o[2] ? '<img src="' + o[2] + '" alt="">' : '<span class="apph0" style="width:32px;height:32px;font-size:18px">+</span>') + '<b>' + esc(o[1]) + '</b></button>'; }).join('') + '</div>' +
       (t.onglet === 'image' ? img('Image de l’onglet (carrée de préférence)', 'apOnglet', !!t.ongletImage, 'thOngletDel', '') : '') +
       '<p class="hint">Petite image affichée dans l’onglet du navigateur et dans la liste des onglets de la tablette (aussi pour la Caisse Soirée). L’Admin affiche le logo du client, réglé dans le SuperAdmin.</p>' +
-      h('Couleurs') + '<div class="aprow">' + clr('Principale', 'couleur', d.couleur, t.couleur) + clr('Accent', 'accent', d.accent, t.accent) + clr('Fond', 'fond', t.fond, '#F5F7FA') + clr('Barre du haut', 'barre', t.barre, '#FFFFFF') + clr('Tuiles', 'tuile', t.tuile, '#FFFFFF') + '</div>' +
+      (SOIREE ? h('Couleurs de la Caisse Soirée') + '<div class="aprow">' + clr('Entrées', 'soiree.entrees', t.soiree.entrees, themeSoiree().entrees) + clr('Tickets', 'soiree.tickets', t.soiree.tickets, themeSoiree().tickets) + clr('Boissons', 'soiree.boissons', t.soiree.boissons, themeSoiree().boissons) + clr('Fond', 'soiree.fond', t.soiree.fond, '#0B0F14') + '</div><p class="hint">Chaque partie garde sa couleur : tuile de l’accueil, boutons, panier et encaissement. La Caisse Soirée reste sombre.</p>' : '') +
+      h(SOIREE ? 'Couleurs de l’Admin' : 'Couleurs') + '<div class="aprow">' + clr('Principale', 'couleur', d.couleur, t.couleur) + clr('Accent', 'accent', d.accent, t.accent) + clr('Fond', 'fond', t.fond, '#F5F7FA') + clr('Barre du haut', 'barre', t.barre, '#FFFFFF') + clr('Tuiles', 'tuile', t.tuile, '#FFFFFF') + '</div>' +
       (ctr.length ? '<p class="hint warnt">Lisibilité : ' + ctr.join(' ; ') + '.</p>' : '<p class="hint okt">Contrastes lisibles.</p>') +
       h('Polices') + '<div class="aprow"><div>' + sel('Titres', 'policeTitres', t.policeTitres, fonts) + '</div><div>' + sel('Texte', 'police', t.police, fonts) + '</div></div><p class="hint">Polices de l’appareil (aucun téléchargement, fonctionne hors ligne) : le rendu peut varier un peu d’une tablette à l’autre.</p>' +
       h('Formes') + '<div class="aprow"><div>' + sel('Boutons et tuiles', 'forme', t.forme, [['arrondi', 'Arrondis'], ['carre', 'Carrés'], ['pastille', 'Pastilles']]) + '</div><div>' + sel('Densité', 'densite', t.densite, [['normale', 'Normale'], ['compacte', 'Compacte']]) + '</div></div>' + chk('Ombres sous les tuiles et cartes', 'ombre', t.ombre) +
@@ -3666,7 +3679,7 @@ function vApparence(part) {
         return '<div class="apph">' + (ph ? '<img src="' + ph + '" alt="">' : '<span class="apph0">+</span>') + '<small>' + esc(p.libelle) + '</small><label class="btn sm">' + (ph ? 'Changer' : 'Photo') + '<input type="file" accept="image/*" data-photo="' + esc(p.id) + '" hidden></label>' + (ph ? '<button class="btn sm danger" data-p="thPhotoDel" data-v="' + esc(p.id) + '">Retirer</button>' : '') + '</div>'; }).join(''); }).join('') + '</div><p class="hint" id="phStatus">' + phStatus() + '</p>' : '<p class="hint">Publiez d’abord un catalogue.</p>'));
   }
   if (part !== 'ticket') thLoadCats();
-  return '<section><h3>' + (part === 'ticket' ? 'Apparence du ticket' : 'Apparence de l’app') + '</h3><p class="lead">' + (part === 'ticket' ? 'Logo, coordonnées, contenu et messages du ticket de caisse.' : 'Nom, couleurs, polices, formes, fond, catégories et photos de l’Admin, de la Caisse et de la Caisse Soirée.') + ' Publié dans <span class="mono">theme.json</span>, à côté du catalogue.</p>' +
+  return '<section><h3>' + (part === 'ticket' ? 'Apparence du ticket' : 'Apparence de l’app') + '</h3><p class="lead">' + (part === 'ticket' ? 'Logo, coordonnées, contenu et messages du ticket de caisse.' : (SOIREE ? 'Nom, logo, couleurs des trois parties, polices et fond de la Caisse Soirée et de l’Admin.' : 'Nom, couleurs, polices, formes, fond, catégories et photos de l’Admin et de la Caisse.')) + ' Publié dans <span class="mono">theme.json</span>, à côté du catalogue.</p>' +
     '<p class="hint" id="apStatus">' + thStatus() + '</p>' +
     '<div class="apgrid"><div class="apform">' + form + '</div><div class="apprev"><div class="fl">Aperçu</div><div id="apPrev">' + vApPreview(part) + '</div></div></div></section>';
 }
