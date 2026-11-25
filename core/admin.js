@@ -1,4 +1,4 @@
-/* caisse · admin · v14 — code commun à tous les amis */
+/* caisse · admin · v17 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -526,6 +526,8 @@ function themeApply() {
     css += 'html:root{--text:' + F + ';--display:' + FT + '}';
   } else {
     css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
+    /* Caisse Soirée (toujours sombre) : fond d'écran sur la page d'accueil, voile sombre */
+    if (t.fondImage) css += '.home{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
   }
   css += 'html.th-carre *:not(.cbadge):not(.dot):not(.sw){border-radius:3px!important}' +
     'html.th-pastille :is(button,.btn,.cat,.rchip,.small,.free,.apb,select,input[type=text],input[type=password],input[type=search]){border-radius:999px!important}html.th-pastille :is(.prod,.mtile,.mod,section,.card,.modal){border-radius:24px!important}' +
@@ -3656,7 +3658,7 @@ function vApparence(part) {
       (ctr.length ? '<p class="hint warnt">Lisibilité : ' + ctr.join(' ; ') + '.</p>' : '<p class="hint okt">Contrastes lisibles.</p>') +
       h('Polices') + '<div class="aprow"><div>' + sel('Titres', 'policeTitres', t.policeTitres, fonts) + '</div><div>' + sel('Texte', 'police', t.police, fonts) + '</div></div><p class="hint">Polices de l’appareil (aucun téléchargement, fonctionne hors ligne) : le rendu peut varier un peu d’une tablette à l’autre.</p>' +
       h('Formes') + '<div class="aprow"><div>' + sel('Boutons et tuiles', 'forme', t.forme, [['arrondi', 'Arrondis'], ['carre', 'Carrés'], ['pastille', 'Pastilles']]) + '</div><div>' + sel('Densité', 'densite', t.densite, [['normale', 'Normale'], ['compacte', 'Compacte']]) + '</div></div>' + chk('Ombres sous les tuiles et cartes', 'ombre', t.ombre) +
-      h('Fond d’écran') + img('Image (page d’accueil de la caisse)', 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
+      h('Fond d’écran') + img((SOIREE ? 'Image (page d’accueil de la Caisse Soirée)' : 'Image (page d’accueil de la caisse)'), 'apFond', !!t.fondImage, 'thFondDel', '') + (t.fondImage ? '<label class="fl">Voile pour la lisibilité : ' + t.voile + ' %</label><input type="range" min="0" max="85" step="5" data-ap="voile" value="' + t.voile + '">' : '') +
       (t.mode === 'sombre' ? h('Couleurs du thème sombre') + '<div class="aprow">' + clr('Couleur principale', 'sombre.couleur', t.sombre.couleur, thMix(t.couleur, '#ffffff', .45)) + clr('Fond', 'sombre.fond', t.sombre.fond, '#0B0F14') + '</div>' : '') +
       (SOIREE ? '' : h('Catégories') + (cats.length ? '<p class="hint">Couleur (onglet et liseré des tuiles) et icône affichée devant le nom de la catégorie sur la caisse.</p><div class="apcats">' + cats.map(function (k) { var c = t.categories[k.id] || {};
         return '<div class="apcat"><input type="color" data-ap="categories.' + esc(k.id) + '.couleur" value="' + (c.couleur || t.couleur) + '">' + '<button class="apemo' + (c.emoji ? '' : ' vide') + '" data-p="emoOpen" data-v="' + esc(k.id) + '" title="Icône de la catégorie">' + (c.emoji ? esc(c.emoji) : 'Icône') + '</button><span>' + esc(k.nom) + '</span>' + (c.couleur ? '<button class="btn sm" data-p="thClr" data-v="categories.' + esc(k.id) + '.couleur">auto</button>' : '') + '</div>' + (TH_EMO === k.id ? vEmoGrid(k.id, c.emoji) : ''); }).join('') + '</div>' : '<p class="hint">Publiez d’abord un catalogue.</p>') +
@@ -3914,7 +3916,7 @@ function stkLocal() {
         var o = JSON.parse(localStorage.getItem(k)); if (!o || !o.remote) continue;
         if (!o.isNew && !(o.ops && o.ops.length)) continue;
         var doc = (o.ops || []).reduce(function (d, op) { return applyOp(d, op); }, clone(o.remote));
-        out.push({ id: k.slice(16), doc: doc, isNew: !!o.isNew, n: (o.ops || []).length, err: o.err || null });
+        out.push({ id: k.slice((KP + 'admin-stock-ops:').length), doc: doc, isNew: !!o.isNew, n: (o.ops || []).length, err: o.err || null });
       } catch (e) {}
     }
   } catch (e) {}

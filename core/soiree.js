@@ -1,4 +1,4 @@
-/* caisse · soiree · v14 — code commun à tous les amis */
+/* caisse · soiree · v17 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -526,6 +526,8 @@ function themeApply() {
     css += 'html:root{--text:' + F + ';--display:' + FT + '}';
   } else {
     css += 'body,button,input,select,textarea{font-family:' + F + '}h1,h2,h3{font-family:' + FT + '}';
+    /* Caisse Soirée (toujours sombre) : fond d'écran sur la page d'accueil, voile sombre */
+    if (t.fondImage) css += '.home{background-image:linear-gradient(rgba(0,0,0,' + (t.voile / 100) + '),rgba(0,0,0,' + (t.voile / 100) + ')),url("' + t.fondImage + '");background-size:cover;background-position:center}';
   }
   css += 'html.th-carre *:not(.cbadge):not(.dot):not(.sw){border-radius:3px!important}' +
     'html.th-pastille :is(button,.btn,.cat,.rchip,.small,.free,.apb,select,input[type=text],input[type=password],input[type=search]){border-radius:999px!important}html.th-pastille :is(.prod,.mtile,.mod,section,.card,.modal){border-radius:24px!important}' +
@@ -582,7 +584,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v14'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v17'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';
@@ -1456,7 +1458,7 @@ function vHome() {
     vAutoBar() +
     '<div class="ctiles">' + Object.keys(CAISSES).map(function (c) {
       return '<button class="ctile" data-caisse="' + c + '" data-a="open" data-v="' + c + '">' + svg(I[c], 40) +
-        '<div style="display:flex;flex-direction:column;gap:6px"><span class="t">' + CAISSES[c].nom + '</span><span class="d">' + CAISSES[c].desc + '</span><span class="k">' + k[c] + '</span></div></button>';
+        '<div style="display:flex;flex-direction:column;gap:6px"><span class="t">' + CAISSES[c].nom + '</span><span class="k">' + k[c] + '</span></div></button>';
     }).join('') + '</div>' +
     '<div class="homelinks"><span class="sub">App ' + APP_VERSION + ' · ' + esc(catalogueLabel(CATALOGUE)) + '</span>' +
       '<button class="btn-link" data-a="device">Nom de l’appareil</button>' +
