@@ -1,4 +1,4 @@
-/* caisse · admin · v18 — code commun à tous les amis */
+/* caisse · admin · v19 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -3721,7 +3721,8 @@ function featCount() { var n = 0, on = 0; FEATURES.forEach(function (g) { g.item
 /* Paramètres › Fonctionnalités : une carte par groupe, un interrupteur par fonctionnalité */
 function vFeatures() {
   var cfg = featCfg(), prods = [];
-  try { var cj = JSON.parse((demoDb()[DEMO_CAT_REPO] || {})['catalogue.json'].text); (cj.categories || []).forEach(function (k) { (k.produits || []).forEach(function (p) { if (k.actif !== false && p.actif !== false) prods.push({ id: p.id, t: k.nom + ' · ' + p.libelle }); }); }); } catch (e) {}
+  /* catalogue publié : serveur local (démo) ou dépôt GitHub de l'app (chargé à la demande, comme pour l'Apparence) */
+  thLoadCats(); thCatList().forEach(function (k) { (k.produits || []).forEach(function (p) { if (k.actif !== false && p.actif !== false) prods.push({ id: p.id, t: k.nom + ' · ' + p.libelle }); }); });
   return '<section><h3>Fonctionnalités</h3><p class="lead">Choisissez ce que la caisse et l’Admin proposent. Chaque changement est <strong>publié</strong> dans le fichier de réglage <span class="mono">config.json</span>, à côté du catalogue : toutes les caisses le lisent à l’ouverture, toutes les 30 secondes, au retour sur l’app et via ⋮ › Vérifier le catalogue. Une option grisée dépend d’une autre, qui est coupée.</p>' +
     '<p class="hint">' + featPubStatus() + '</p><p class="hint">' + featCount() + ' · <button class="btn sm" data-p="featAll">Tout activer</button> <button class="btn sm" data-p="featDefault">Réglages par défaut</button></p>' +
     '<div class="featgrid">' + FEATURES.map(function (g) {

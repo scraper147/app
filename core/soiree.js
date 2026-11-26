@@ -1,4 +1,4 @@
-/* caisse · soiree · v18 — code commun à tous les amis */
+/* caisse · soiree · v19 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -589,7 +589,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v18'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v19'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';

@@ -1,4 +1,4 @@
-/* caisse · caisse · v18 — code commun à tous les amis */
+/* caisse · caisse · v19 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -581,7 +581,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v18'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v19'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';
