@@ -1,4 +1,4 @@
-/* caisse · caisse · v19 — code commun à tous les amis */
+/* caisse · caisse · v21 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -197,7 +197,8 @@ var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 
   entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
     { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
   tickets: { prixCase: 3, casesParCarte: 18 },
-  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  /* préventes : code de 32 caractères (0-9 a-f), seul, précédé de DEMO-, ou dans un lien (…?q=CODE…, ex. QR des billetteries) */
+  prevente: { modele: '^(?:.*[?&]q=|DEMO-)?([0-9a-fA-F]{32})(?:&.*)?$', description: 'Code de 32 caractères (0-9 a-f), seul ou dans un lien …?q=CODE' },
   boissons: [
     { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
     { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
@@ -581,7 +582,7 @@ try { themeApply(); } catch (e) {}
 var REMISE_SHA_DEFAUT = '45edae630ded19020597081f0c2a8bce98de6ebf1f6f32422ec4ee761ac944bb'; // 1234
 function remiseCodeSha() { return featCfg().remiseCodeSha || REMISE_SHA_DEFAUT; }
 
-var APP_VERSION = 'v19'; // à monter en même temps que le cache de sw.js
+var APP_VERSION = 'v21'; // à monter en même temps que le cache de sw.js
 var STORE_KEY = KP + 'caisse'; // propre à chaque caisse (même compte GitHub = même mémoire navigateur)
 (function () {
 'use strict';

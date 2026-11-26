@@ -1,4 +1,4 @@
-/* caisse · soiree · v19 — code commun à tous les amis */
+/* caisse · soiree · v21 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n<div id=\"camhold\" style=\"display:none\"><video id=\"cam\" playsinline muted autoplay></video></div>\n<input id=\"plistfile\" type=\"file\" multiple style=\"display:none\">\n<input id=\"importfile\" type=\"file\" accept=\".json,application/json\" multiple style=\"display:none\">\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -197,7 +197,8 @@ var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 
   entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
     { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
   tickets: { prixCase: 3, casesParCarte: 18 },
-  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  /* préventes : code de 32 caractères (0-9 a-f), seul, précédé de DEMO-, ou dans un lien (…?q=CODE…, ex. QR des billetteries) */
+  prevente: { modele: '^(?:.*[?&]q=|DEMO-)?([0-9a-fA-F]{32})(?:&.*)?$', description: 'Code de 32 caractères (0-9 a-f), seul ou dans un lien …?q=CODE' },
   boissons: [
     { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
     { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
@@ -589,7 +590,7 @@ var LOGO_S = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv
 /* Catalogue intégré : utilisé tant que catalogue.json n'a pas pu être chargé (premier lancement sans réseau, aperçu). */
 var DEFAULT_CAT = JSON.parse(JSON.stringify(DEMO_SOIREE_CAT)); // catalogue intégré de démonstration
 
-var APP_VERSION = 'v19'; // = numéro du cache dans sw.js
+var APP_VERSION = 'v21'; // = numéro du cache dans sw.js
 var CAT_KEY = STORE_KEY + '-catalogue';
 var DEV_KEY = STORE_KEY + '-appareil';
 var FORMAT_CAT = 'chlorophylle-caisse/catalogue';
@@ -891,7 +892,8 @@ function recordPrevente(code, anomalie, n) {
 var TEST_EFFACER_PREVENTES = true;
 function countQ() { var n = 0; Object.keys(S.nights).forEach(function (d) { (S.nights[d] || []).forEach(function (r) { if (isQ(r)) n++; }); }); return n; }
 var A = {
-  open: function (c) { S.caisse = c; S.screen = 'pos'; S.tab = 'caisse'; S.menu = false; S.cartOpen = false; persist(); },
+  catRetry: function () { loadSiteCatalogue(true); },
+  open: function (c) { if (catBlocked()) { toast('Vente bloquée : catalogue de la soirée pas encore chargé'); loadSiteCatalogue(false); return; } S.caisse = c; S.screen = 'pos'; S.tab = 'caisse'; S.menu = false; S.cartOpen = false; persist(); },
   caisse: function (c) { S.caisse = c; S.tab = S.tab === 'hist' ? 'hist' : 'caisse'; S.cartOpen = false; S.menu = false; S.histNight = null; persist(); },
   goHome: function () { S.screen = 'home'; S.menu = false; if (S.siteUpdate && !S.modal) { S.importing = S.siteUpdate; S.modal = 'import'; } },
   tab: function (t) { S.tab = t; S.menu = false; S.cartOpen = false; S.histNight = null; },
@@ -1460,8 +1462,8 @@ function vHome() {
   return '<div class="home">' +
     '<img class="logo" src="' + themeLogo('dark') + '" alt="' + esc(themeGet().nom) + '">' +
     (S.usedPct >= 80 ? vStorageBar() : '') +
-    vAutoBar() +
-    '<div class="ctiles">' + Object.keys(CAISSES).map(function (c) {
+    vAutoBar() + vCatBlock() +
+    '<div class="ctiles' + (catBlocked() ? ' off' : '') + '">' + Object.keys(CAISSES).map(function (c) {
       return '<button class="ctile" data-caisse="' + c + '" data-a="open" data-v="' + c + '">' + svg(I[c], 40) +
         '<div style="display:flex;flex-direction:column;gap:6px"><span class="t">' + CAISSES[c].nom + '</span><span class="k">' + k[c] + '</span></div></button>';
     }).join('') + '</div>' +
@@ -1949,13 +1951,19 @@ document.addEventListener('keydown', function (e) {
 });
 
 /* Catalogue : catalogue.json à côté de index.html */
+function catBlocked() { return CLIENT.donnees === 'github' && CATALOGUE.integre; }
+function vCatBlock() {
+  if (!catBlocked()) return '';
+  return '<div class="catblock"><b>Vente bloquée sur cette tablette</b><span>' + (S.catLoading ? 'Chargement du catalogue de la soirée…' : S.catErr === 'absent' ? 'Aucun catalogue de soirée n\u2019est publié : publiez-le dans l\u2019Admin (Gestion de la soirée \u203a Catalogue).' : 'Le catalogue de la soirée n\u2019a pas encore pu être chargé : connectez la tablette à internet.') +
+    ' Tant qu\u2019il n\u2019est pas chargé, la caisse ne vend pas (pour ne pas utiliser les prix d\u2019exemple).</span>' + (S.catLoading ? '' : '<button class="btn" data-a="catRetry">Réessayer</button>') + '</div>';
+}
 function loadSiteCatalogue(manual) {
   if (manual && navigator.onLine === false) { toast('Pas de réseau : impossible de vérifier le catalogue'); render(); return; }
   S.catLoading = true; render();
   fetch('catalogue.json?t=' + Date.now(), { cache: 'no-store' })
-    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (r) { if (!r.ok) { var er = new Error('HTTP ' + r.status); er.status = r.status; throw er; } return r.json(); })
     .then(function (raw) {
-      S.catLoading = false;
+      S.catLoading = false; S.catErr = null;
       var cat;
       try { cat = normalizeCatalogue(raw); } catch (err) { S.importing = { error: err.message }; S.modal = 'import'; render(); return; }
       if (CATALOGUE.integre && !localStorage.getItem(CAT_KEY)) {
@@ -1967,7 +1975,7 @@ function loadSiteCatalogue(manual) {
       } else { S.siteUpdate = null; if (manual) toast('Le catalogue est à jour (' + catalogueLabel(CATALOGUE) + ')'); }
       render();
     })
-    .catch(function () { S.catLoading = false; if (manual) toast('Pas de réseau : impossible de vérifier le catalogue'); render(); });
+    .catch(function (e) { S.catLoading = false; S.catErr = e && e.status === 404 ? 'absent' : 'reseau'; if (manual) toast(S.catErr === 'absent' ? 'Aucun catalogue publié' : 'Pas de réseau : impossible de vérifier le catalogue'); render(); });
 }
 render();
 if (location.protocol !== 'file:') loadSiteCatalogue(false);

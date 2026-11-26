@@ -281,3 +281,4 @@ label.f input{height:52px;border:1px solid var(--line2);border-radius:10px;paddi
 .phone .btable{font-size:14px}.phone .btable th,.phone .btable td{padding:8px}
 .phone .hide-phone{display:none}
 .phone:not(.framed) #app{padding-top:env(safe-area-inset-top,0px)}
+.catblock{max-width:720px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding:14px 16px;border-radius:14px;background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-text)}.catblock b{font-size:17px}.catblock .btn{margin-top:4px}.ctiles.off{opacity:.4;pointer-events:none}

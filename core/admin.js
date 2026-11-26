@@ -1,4 +1,4 @@
-/* caisse · admin · v19 — code commun à tous les amis */
+/* caisse · admin · v21 — code commun à tous les amis */
 document.body.insertAdjacentHTML("afterbegin", "\n<div id=\"app\"></div>\n");
 
 /* ================= Mode démo : serveur local à la place de GitHub =================
@@ -197,7 +197,8 @@ var DEMO_SOIREE_CAT = { format: 'chlorophylle-caisse/catalogue', formatVersion: 
   entrees: [{ id: 'entree', libelle: 'Entrée', prix: 15, ordre: 1, actif: true, compte: 'personne' }, { id: 'vip', libelle: 'Table VIP', prix: 200, ordre: 2, actif: true, compte: 'table' },
     { id: 'invite', libelle: 'Entrée invité/prévente', prix: 0, ordre: 3, actif: true, compte: 'personne' }],
   tickets: { prixCase: 3, casesParCarte: 18 },
-  prevente: { modele: '^(?:DEMO-)?([0-9a-fA-F]{32})$', description: 'QR de démonstration : DEMO-<32 caractères 0-9 a-f>' },
+  /* préventes : code de 32 caractères (0-9 a-f), seul, précédé de DEMO-, ou dans un lien (…?q=CODE…, ex. QR des billetteries) */
+  prevente: { modele: '^(?:.*[?&]q=|DEMO-)?([0-9a-fA-F]{32})(?:&.*)?$', description: 'Code de 32 caractères (0-9 a-f), seul ou dans un lien …?q=CODE' },
   boissons: [
     { id: 'softs', nom: 'Softs', ordre: 1, actif: true, produits: [{ id: 'eau', libelle: 'Eau', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'soft', libelle: 'Soft', format: 'verre', cases: 1, ordre: 2, actif: true }] },
     { id: 'bieres', nom: 'Bières', ordre: 2, actif: true, produits: [{ id: 'biere', libelle: 'Bière', format: 'verre', cases: 1, ordre: 1, actif: true }, { id: 'speciale', libelle: 'Bière spéciale', format: 'verre', cases: 2, ordre: 2, actif: true }] },
@@ -1404,7 +1405,7 @@ function renderHome() {
     '<div class="band"><div class="home-hero"><h2>' + (SOIREE ? 'Administration de la soirée' : 'Administration de la caisse') + '</h2><p>' + (CLIENT.donnees === 'github' ? 'Les données sont enregistrées dans le dépôt privé du commerce et partagées avec toutes ses tablettes.' : 'Version de démonstration : les données restent dans ce navigateur et sont partagées avec l’app ' + (SOIREE ? 'Caisse Soirée' : 'Caisse') + ' ouverte sur le même appareil.') + '</p></div></div>' +
     '<div class="mods">' + MODULES.map(function (m) {
       return '<button class="mod" data-a="go" data-v="' + m.id + '"><span class="ic">' + ICONS[m.id] + '</span><h3>' + esc(m.nom) + '</h3><p>' + esc(m.desc) + '</p>' +
-        '<span class="st num">' + (m.id === 'sapin' ? (cat ? 'Catalogue publié' : 'Catalogue pas encore publié') + ' · ' + nv + ' fichier' + (nv > 1 ? 's' : '') + ' de ventes' : m.id === 'chloro' ? 'Entrées, cartes à cases, préventes' : featCount()) + '</span></button>';
+        '<span class="st num">' + (m.id === 'sapin' ? (CLIENT.donnees === 'github' ? 'Catalogue, stock, caisse, bilan' : (cat ? 'Catalogue publié' : 'Catalogue pas encore publié') + ' · ' + nv + ' fichier' + (nv > 1 ? 's' : '') + ' de ventes') : m.id === 'chloro' ? 'Entrées, cartes à cases, préventes' : featCount()) + '</span></button>';
     }).join('') + '</div>' + vApps() + vToast();
 }
 /* Liens vers les applications des caisses (même site GitHub Pages) */

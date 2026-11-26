@@ -287,7 +287,7 @@ function vClients() {
     }).join('') + '</div>' : '<p>Aucun client pour l’instant.</p>') + '</section>';
 }
 function render() {
-  $('ver').textContent = S.version ? 'v' + S.version.version : 'v19';
+  $('ver').textContent = S.version ? 'v' + S.version.version : 'v21';
   $('hb').innerHTML = S.acc ? '<span class="mono" style="margin-right:10px">' + esc(S.acc.depot) + '</span><button data-a="lock">Verrouiller</button>' : '';
   $('tabs').innerHTML = S.acc ? ['apps', 'clients'].map(function (t) { return '<button class="' + (S.tab === t ? 'on' : '') + '" data-a="tab" data-v="' + t + '">' + (t === 'apps' ? 'Apps' : 'Clients') + '</button>'; }).join('') : '';
   if (!S.acc) { $('m').innerHTML = vLock(); return; }
